@@ -31,7 +31,6 @@ int main(int argc, char** argv){
     srand(std::time(NULL));
     boost::random::mt19937 gen;
 
-
     tbb::task_scheduler_init init;
 
     double A;
@@ -47,9 +46,8 @@ int main(int argc, char** argv){
 
     double error;
 
-    std::vector<int> choices = {-20,-5,4,20};
 
-    std::map<double,Eigen::Vector2i> choice_distribution;
+    std::multimap<double,Eigen::Vector2i> choice_distribution;
     double cumul_est;
 
 
@@ -98,6 +96,8 @@ int main(int argc, char** argv){
 
     error = 1.;
 
+
+
     while(window.isOpen()){
 
         sf::Event event;
@@ -122,10 +122,68 @@ int main(int argc, char** argv){
             window.draw(err);
 
 
-        coord[0] = rand()%MAX_X;
-        coord[1] = rand()%MAX_Y;
 
 
+        std::vector<double> scores = gmm.model_scores();
+        int k =0;
+        Eigen::MatrixXd map = Eigen::MatrixXd::Zero(MAX_X,MAX_Y);
+        double min, dist, cumul = 0.;
+        if(!gmm.get_pos_components().empty() && !gmm.get_neg_components().empty()){
+            for(int i = 0; i < MAX_X; i++){
+                for(int j = 0; j < MAX_Y; j++){
+                    min = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
+                           gmm.get_pos_components()[0]->get_mu()).squaredNorm()/(
+                                gmm.get_pos_components()[0]->get_factor()*scores[0]);
+                    for(const auto& comp : gmm.get_pos_components()){
+                        dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
+                                comp->get_mu()).squaredNorm()/(comp->get_factor()*scores[k]);
+                        k++;
+                        if(min > dist)
+                            min = dist;
+                    }
+
+
+                    for(const auto& comp : gmm.get_neg_components()){
+                        dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
+                                comp->get_mu()).squaredNorm()/(comp->get_factor()*scores[k]);
+                        k++;
+                        if(min > dist)
+                            min = dist;
+                    }
+                    map(i,j) = min;
+
+                }
+            }
+            map = map/map.maxCoeff();
+            for(int i = 0; i < MAX_X; i++){
+                for(int j = 0; j < MAX_Y; j++){
+                    cumul += map(i,j);
+                    choice_distribution.emplace(cumul,Eigen::Vector2i(i,j));
+                }
+            }
+
+            std::cout << cumul << std::endl;
+            boost::random::uniform_real_distribution<> distrib(0.,cumul);
+            double rand_nb = distrib(gen);
+            auto it = choice_distribution.lower_bound(rand_nb);
+            double val = it->first;
+            std::vector<Eigen::Vector2i> possible_choice;
+            while(it->first == val){
+                possible_choice.push_back(it->second);
+                it++;
+            }
+
+            int rnb = rand()%(possible_choice.size());
+            coord[0] = possible_choice[rnb](0);
+            coord[1] = possible_choice[rnb](1);
+        }else{
+            coord[0] = rand()%MAX_X;
+            coord[1] = rand()%MAX_Y;
+        }
+
+
+
+        //        std::cout << map << std::endl;
 
         samples.push_back(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y));
 
@@ -147,26 +205,33 @@ int main(int argc, char** argv){
                 for(int j = 0; j < MAX_Y; j++){
 
                     double est = gmm.compute_GMM(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y));
-//                    std::cout << est << std::endl;
+                    //                    std::cout << est << std::endl;
                     //                    std::cout << (double)i/(double)MAX_X << " " << (double)j/(double)MAX_Y << std::endl;
-//                    if(est > 1.)
-//                        est = 1.;
-//                    if(est < -1)
-//                        est = -1.;
+                    //                    if(est > 1.)
+                    //                        est = 1.;
+                    //                    if(est < -1)
+                    //                        est = -1.;
 
-
-
-                    if(est < 0.4)
-                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                                    sf::Color(0,0,255)
-                                    );
-                    else if(est > 0.6)
-                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                                    sf::Color(255,0,0)
-                                    );
-                    else rects_exact_est[i + j*MAX_Y].setFillColor(
-                                sf::Color(255,0,255)
+                    double dist = map(i,j);
+                    //                    if(dist > 1.) dist = 1.;
+                    //                    dist = dist/5.;
+                    rects_exact_est[i + j*MAX_Y].setFillColor(
+                                sf::Color(255*dist,
+                                          255*dist,
+                                          255*dist)
                                 );
+
+                    //                    if(est < 0.4)
+                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
+                    //                                    sf::Color(0,0,255)
+                    //                                    );
+                    //                    else if(est > 0.6)
+                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
+                    //                                    sf::Color(255,0,0)
+                    //                                    );
+                    //                    else rects_exact_est[i + j*MAX_Y].setFillColor(
+                    //                                sf::Color(255,0,255)
+                    //                                );
 
 
                     error += (est*2 - 1)*real_space[i][j] > 0 ? 0 : 1;//fabs(est-real_space[i][j]);
@@ -174,7 +239,7 @@ int main(int argc, char** argv){
                     cumul_est+= 1-fabs(est);
                     choice_distribution.emplace(cumul_est,Eigen::Vector2i(i,j));
 
-//                    est = (est + 1.)/2.;
+                    //                    est = (est + 1.)/2.;
 
                     //                    std::cout << "estimation : " << est << std::endl;
 
@@ -182,13 +247,9 @@ int main(int argc, char** argv){
                                 sf::Color(255*est,0,255*(1-est))
                                 );
 
-
-
-
                 }
             }
         }
-
         error = error/(double)(MAX_X*MAX_Y);
         sf::RectangleShape error_point(sf::Vector2f(4,4));
         error_point.setFillColor(sf::Color(0,255,0));
@@ -199,25 +260,23 @@ int main(int argc, char** argv){
         //        Eigen::MatrixXd eigenvect;
         components_center.clear();
         for(const auto& c : gmm.get_pos_components()){
-            c.second->print_parameters();
+            c->print_parameters();
             components_center.push_back(sf::CircleShape(2.));
 
             components_center.back().setFillColor(sf::Color(255,255,0));
-            components_center.back().setPosition(c.second->get_mu()(0)*MAX_X*4+MAX_X*4,c.second->get_mu()(1)*MAX_Y*4);
+            components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
 
-            std::cout << "factor : " << c.first << std::endl;
             //            c->compute_eigenvalues(eigenval,eigenvect);
             //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
         }
 
         for(const auto& c : gmm.get_neg_components()){
-            c.second->print_parameters();
+            c->print_parameters();
             components_center.push_back(sf::CircleShape(2.));
             components_center.back().setFillColor(sf::Color(0,255,255));
 
-            components_center.back().setPosition(c.second->get_mu()(0)*MAX_X*4+MAX_X*4,c.second->get_mu()(1)*MAX_Y*4);
+            components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
 
-            std::cout << "factor : " << c.first << std::endl;
             //            c->compute_eigenvalues(eigenval,eigenvect);
             //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
         }

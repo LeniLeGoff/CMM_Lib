@@ -6,13 +6,13 @@ void GMM::operator ()(const tbb::blocked_range<size_t>& r){
     double sum = _sign > 0 ? _pos_sum : _neg_sum;
     double val;
 
-    std::vector<std::pair<double,Component::Ptr>> model = _sign > 0 ? _pos_components : _neg_components;
+    model_t model = _sign > 0 ? _pos_components : _neg_components;
 
     Eigen::VectorXd X = _X;
 
     for(size_t i=r.begin(); i != r.end(); ++i){
-        val = model[i].first*model[i].second->compute_multivariate_normal_dist(X)
-                /model[i].second->compute_multivariate_normal_dist(model[i].second->get_mu());
+        val = model[i]->get_factor()*model[i]->compute_multivariate_normal_dist(X)
+                /model[i]->compute_multivariate_normal_dist(model[i]->get_mu());
         sum += val;
 
     }
@@ -37,15 +37,19 @@ double GMM::compute_GMM(Eigen::VectorXd X){
 
 void GMM::update_factors(){
     for(auto& c: _pos_components)
-        c.first = (double)c.second->size()/((double)_pos_components.size() +
-                                            (double)_neg_components.size())*(double)number_of_samples();
+        c->set_factor((double)c->size()/(((double)_pos_components.size() +
+                                            (double)_neg_components.size())*(double)number_of_samples()));
 
     for(auto& c: _neg_components)
-        c.first = (double)c.second->size()/((double)_pos_components.size() +
-                                            (double)_neg_components.size())*(double)number_of_samples();
+        c->set_factor((double)c->size()/(((double)_pos_components.size() +
+                                            (double)_neg_components.size())*(double)number_of_samples()));
 
 }
 
+double GMM::unit_factor(){
+    return 1./(((double)_pos_components.size() +
+             (double)_neg_components.size())*(double)number_of_samples());
+}
 
 
 void GMM::_new_component(const std::vector<Eigen::VectorXd>& samples, double label){
@@ -57,8 +61,8 @@ void GMM::_new_component(const std::vector<Eigen::VectorXd>& samples, double lab
     component->update_parameters();
 
     if(label > 0)
-        _pos_components.push_back(std::make_pair(0,component));
-    else _neg_components.push_back(std::make_pair(0,component));
+        _pos_components.push_back(component);
+    else _neg_components.push_back(component);
     update_factors();
 }
 
@@ -76,6 +80,23 @@ double GMM::model_score(const std::vector<Eigen::VectorXd>& samples, const std::
    return 1.f/score/*/predictions.size()*/;
 }
 
+std::vector<double> GMM::model_scores(){
+    double score = 0;
+    std::vector<double> scores;
+    for(const auto& comp: _pos_components){
+        for(const auto& s: comp->get_samples()){
+            score += compute_GMM(s);
+        }
+        scores.push_back(score/(double)comp->get_samples().size());
+    }
+    for(const auto& comp: _neg_components){
+        for(const auto& s: comp->get_samples()){
+            score += (1-compute_GMM(s));
+        }
+        scores.push_back(score/(double)comp->get_samples().size());
+    }
+    return scores;
+}
 
 void GMM::knn(const Eigen::VectorXd& center, const std::vector<Eigen::VectorXd> &samples, const std::vector<double> &label,
               std::vector<Eigen::VectorXd> &output, std::vector<double> &label_output, int k){
@@ -109,25 +130,25 @@ void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const st
     std::vector<double> lbl_output;
     std::vector<Component::Ptr> new_comps;
     for(auto& comp : components){
-        if(comp.second->size() < 4)
+        if(comp->size() < 4)
             continue;
         knn_output.clear();
         lbl_output.clear();
         score = 0;
-        knn(comp.second->get_mu(),samples,label,knn_output,lbl_output,comp.second->size());
+        knn(comp->get_mu(),samples,label,knn_output,lbl_output,comp->size());
 
         for(int i = 0; i < knn_output.size(); i++){
-            score += (comp.second->get_sign()*comp.second->compute_multivariate_normal_dist(knn_output[i])
-                      /comp.second->compute_multivariate_normal_dist(comp.second->get_mu())- lbl_output[i])*
-                    (comp.second->get_sign()*comp.second->compute_multivariate_normal_dist(knn_output[i])
-                     /comp.second->compute_multivariate_normal_dist(comp.second->get_mu()) - lbl_output[i]);
+            score += (comp->get_sign()*comp->compute_multivariate_normal_dist(knn_output[i])
+                      /comp->compute_multivariate_normal_dist(comp->get_mu())- lbl_output[i])*
+                    (comp->get_sign()*comp->compute_multivariate_normal_dist(knn_output[i])
+                     /comp->compute_multivariate_normal_dist(comp->get_mu()) - lbl_output[i]);
         }
         score = score/(double)knn_output.size();
-        intern_score = comp.second->component_score();
+        intern_score = comp->component_score();
 //        std::cout << "score : " << score << " vs intern score : " << intern_score << std::endl;
 
         if(score > 2.*intern_score){
-            Component::Ptr new_component = comp.second->split();
+            Component::Ptr new_component = comp->split();
             if(new_component){
                 std::cout << "-_- SPLIT _-_" << std::endl;
                 new_comps.push_back(new_component);
@@ -135,13 +156,95 @@ void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const st
         }
     }
     for(auto& comp : new_comps)
-        components.push_back(std::make_pair(0,comp));
+        components.push_back(comp);
 
     if(sign > 0)
         _pos_components = components;
     else _neg_components = components;
 
     update_factors();
+}
+
+Eigen::VectorXd GMM::next_sample(int* space, Eigen::MatrixXd& means_entropy_map){
+
+    std::vector<std::pair<double,Eigen::VectorXd>> list_candidate_samples;
+
+    double actual_entropy, next_entropy, diameter;
+    Component test_comp;
+    Eigen::VectorXd proposed_sample(2);
+    means_entropy_map = Eigen::MatrixXd::Constant(space[0],space[1],-10000.);
+    Eigen::MatrixXd entropy_map(space[0],space[1]);
+    for(const auto& comp : _pos_components){
+        actual_entropy = comp->entropy();
+        for(int i = 0; i < space[0]; i++){
+            for(int j = 0; j < space[1]; j++){
+                proposed_sample(0) = (double)i/(double)space[0];
+                proposed_sample(1) = (double)j/(double)space[1];
+                test_comp = Component(*comp);
+                test_comp.add(proposed_sample);
+                test_comp.update_parameters();
+                test_comp.set_factor((double)test_comp.size()/(
+                                         ((double)_pos_components.size()+(double)_neg_components.size())*
+                                         ((double) number_of_samples() + 1)));
+                entropy_map(i,j) = fabs(test_comp.entropy()-actual_entropy);
+                means_entropy_map(i,j) = entropy_map(i,j) > means_entropy_map(i,j) ?
+                            entropy_map(i,j) :  means_entropy_map(i,j) ;
+            }
+        }
+        int r,c;
+        next_entropy = entropy_map.maxCoeff(&r,&c);
+        proposed_sample(0) = r;
+        proposed_sample(1) = c;
+        list_candidate_samples.push_back(std::make_pair(next_entropy,proposed_sample));
+
+    }
+    for(const auto& comp : _neg_components){
+        actual_entropy = comp->entropy();
+        for(int i = 0; i < space[0]; i++){
+            for(int j = 0; j < space[1]; j++){
+                proposed_sample(0) = (double)i/(double)space[0];
+                proposed_sample(1) = (double)j/(double)space[1];
+                test_comp = Component(*comp);
+                test_comp.add(proposed_sample);
+                test_comp.update_parameters();
+                test_comp.set_factor((double)test_comp.size()/(
+                                         ((double)_pos_components.size()+(double)_neg_components.size())*
+                                         ((double) number_of_samples() + 1)));
+                entropy_map(i,j) = fabs(test_comp.entropy()-actual_entropy);
+                means_entropy_map(i,j) = entropy_map(i,j) > means_entropy_map(i,j) ?
+                            entropy_map(i,j) :  means_entropy_map(i,j);
+
+            }
+        }
+        int r,c;
+        next_entropy = entropy_map.maxCoeff(&r,&c);
+        proposed_sample(0) = r;
+        proposed_sample(1) = c;
+        list_candidate_samples.push_back(std::make_pair(next_entropy,proposed_sample));
+
+    }
+
+
+
+    if(list_candidate_samples.empty()){
+        Eigen::VectorXd v(2);
+        v << 0,0;
+        return v;
+    }
+
+//    double min_entr = list_candidate_samples.front().first;
+//    Eigen::VectorXd elected_sample = list_candidate_samples.front().second;
+    for(const auto& candidate : list_candidate_samples){
+        std::cout << candidate.second << std::endl;
+        std::cout << " -- " << std::endl;
+        //        if(min_entr > candidate.first)
+//            elected_sample = candidate.second;
+    }
+    int r,c;
+    next_entropy = means_entropy_map.maxCoeff(&r,&c);
+    proposed_sample(0) = r;
+    proposed_sample(1) = c;
+    return proposed_sample;
 }
 
 void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::vector<double> &label){
@@ -179,27 +282,27 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
 
         for (int j = 0; j < _pos_components.size(); j++) {
             for (int k=0; k < new_sample.size(); k++) {
-                d2(k,j) = (new_sample[k]-_pos_components[j].second->get_mu()).squaredNorm();
+                d2(k,j) = (new_sample[k]-_pos_components[j]->get_mu()).squaredNorm();
             }
         }
 
         for (int k=0; k < new_sample.size(); k++) {
             d2.row(k).minCoeff(&r,&c);
-            _pos_components[c].second->add(new_sample[k]);
-            _pos_components[c].second->update_parameters();
+            _pos_components[c]->add(new_sample[k]);
+            _pos_components[c]->update_parameters();
         }
     }else{
         Eigen::MatrixXd d2((int)new_sample.size(), (int)_neg_components.size());
         for (int j = 0; j < _neg_components.size(); j++) {
             for (int k=0; k < new_sample.size(); k++) {
-                d2(k,j) = (new_sample[k]-_neg_components[j].second->get_mu()).squaredNorm();
+                d2(k,j) = (new_sample[k]-_neg_components[j]->get_mu()).squaredNorm();
             }
         }
 
         for (int k=0; k < new_sample.size(); k++) {
             d2.row(k).minCoeff(&r,&c);
-            _neg_components[c].second->add(new_sample[k]);
-            _neg_components[c].second->update_parameters();
+            _neg_components[c]->add(new_sample[k]);
+            _neg_components[c]->update_parameters();
         }
     }
 
@@ -219,10 +322,10 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
 
 
     for(auto& comp : _pos_components)
-        comp.second->update_parameters();
+        comp->update_parameters();
 
     for(auto& comp : _neg_components)
-        comp.second->update_parameters();
+        comp->update_parameters();
 
 }
 
@@ -234,12 +337,12 @@ std::vector<int> GMM::find_closest_components(double& min_dist, double sign){
     indexes[1] = 1;
 
 
-    min_dist = (comp[0].second->get_mu()-comp[1].second->get_mu()).squaredNorm();
+    min_dist = (comp[0]->get_mu()-comp[1]->get_mu()).squaredNorm();
 
     double dist;
     for(int i = 1; i < comp.size(); i++){
         for(int j = i+1; j < comp.size(); j++){
-            dist = (comp[i].second->get_mu()-comp[j].second->get_mu()).squaredNorm();
+            dist = (comp[i]->get_mu()-comp[j]->get_mu()).squaredNorm();
             if(dist < min_dist){
                 indexes[0] = i;
                 indexes[1] = j;
@@ -260,7 +363,7 @@ int GMM::find_closest(int i, double &min_dist, double sign){
         if(j == i)
             continue;
 
-        distances(k) =  (comp[i].second->get_mu() - comp[j].second->get_mu()).squaredNorm();
+        distances(k) =  (comp[i]->get_mu() - comp[j]->get_mu()).squaredNorm();
         k++;
     }
     int r, c;

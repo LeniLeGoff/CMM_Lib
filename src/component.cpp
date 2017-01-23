@@ -140,8 +140,9 @@ double Component::component_score() const {
     return sum/(double)_samples.size();
 }
 
-
-
+double Component::entropy(){
+    return _factor*(-std::log(_factor) + 1./2.*std::log((2.*PI*std::exp(1.)*_covariance).determinant()));
+}
 
 void Component::compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixXd& eigenvectors) const {
     Eigen::EigenSolver<Eigen::MatrixXd> solver(_covariance);
@@ -162,6 +163,7 @@ void Component::print_parameters() const {
     std::cout << "sign : " << _sign << std::endl;
     std::cout << "covariance : " << _covariance << std::endl;
     std::cout << "mu : " << _mu << std::endl;
+    std::cout << "factor : " << _factor << std::endl;
     std::cout << "size : " << _samples.size() << std::endl;
     std::cout << "score : " << component_score() << std::endl;
     std::cout << "standard deviation : " << get_standard_deviation() << std::endl;

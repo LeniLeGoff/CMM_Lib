@@ -4,6 +4,9 @@
 #include <iostream>
 #include <memory>
 #include <math.h>
+#include <vector>
+
+#include "boost/random.hpp"
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
@@ -18,24 +21,24 @@ namespace iagmm{
 class GMM{
 public:
 
-    typedef std::vector<std::pair<double,Component::Ptr>> model_t;
+    typedef std::vector<Component::Ptr> model_t;
 
     GMM() : _pos_sum(0), _neg_sum(0){}
 
-    GMM(const std::vector<std::pair<double, Component::Ptr>>& pos_components,
-        const std::vector<std::pair<double, Component::Ptr>>& neg_components) :
+    GMM(const model_t& pos_components,
+        const model_t& neg_components) :
         _pos_sum(0), _neg_sum(0)
     {
 
         for(const auto& elt : pos_components)
-            _pos_components.push_back(std::make_pair(elt.first,Component::Ptr(new Component(*(elt.second)))));
+            _pos_components.push_back(Component::Ptr(new Component(*(elt))));
         for(const auto& elt : neg_components)
-            _neg_components.push_back(std::make_pair(elt.first,Component::Ptr(new Component(*(elt.second)))));
+            _neg_components.push_back(Component::Ptr(new Component(*(elt))));
 
     }
 
-    GMM(const std::vector<std::pair<double,Component::Ptr>>& pos_components,
-        const std::vector<std::pair<double,Component::Ptr>>& neg_components , const Eigen::VectorXd& X) :
+    GMM(const model_t& pos_components,
+        const model_t& neg_components , const Eigen::VectorXd& X) :
         _pos_components(pos_components), _neg_components(neg_components),
         _X(X), _pos_sum(0), _neg_sum(0), _sign(1){}
 
@@ -46,10 +49,10 @@ public:
 
     ~GMM(){
         for(auto& elt: _pos_components)
-            elt.second.reset();
+            elt.reset();
 
         for(auto& elt: _neg_components)
-            elt.second.reset();
+            elt.reset();
     }
 
     void operator()(const tbb::blocked_range<size_t>& r);
@@ -73,8 +76,16 @@ public:
     int find_closest(int i, double& min_dist, double sign);
 
     void update_factors();
+    double unit_factor();
 
     double model_score(const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
+
+    std::vector<double> model_scores();
+
+
+    double entropy(int i, int sign);
+
+    Eigen::VectorXd next_sample(int* space, Eigen::MatrixXd &means_entropy_map);
 
     /**
      * @brief k nearst neighbor
@@ -89,9 +100,9 @@ public:
     int number_of_samples(){
         int res = 0;
         for(const auto& c : _pos_components)
-            res += c.second->size();
+            res += c->size();
         for(const auto& c : _neg_components)
-            res += c.second->size();
+            res += c->size();
 
         return res;
     }
@@ -109,6 +120,8 @@ private:
     double _pos_sum;
     double _neg_sum;
     int _sign;
+
+    boost::random::mt19937 _gen;
 
 };
 }
