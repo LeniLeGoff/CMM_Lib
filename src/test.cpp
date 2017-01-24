@@ -131,6 +131,7 @@ int main(int argc, char** argv){
         if(!gmm.get_pos_components().empty() && !gmm.get_neg_components().empty()){
             for(int i = 0; i < MAX_X; i++){
                 for(int j = 0; j < MAX_Y; j++){
+                    k = 0;
                     min = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
                            gmm.get_pos_components()[0]->get_mu()).squaredNorm()/(
                                 gmm.get_pos_components()[0]->get_factor()*scores[0]);

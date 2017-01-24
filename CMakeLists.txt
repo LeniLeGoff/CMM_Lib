@@ -13,7 +13,7 @@ add_library(iagmm src/gmm.cpp src/component.cpp)
 target_link_libraries(iagmm tbb)
 
 
-add_executable(test src/test.cpp)
-target_link_libraries(test iagmm tbb sfml-window sfml-system sfml-graphics)
+add_executable(test_1 src/test.cpp)
+target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics)
 
 
