@@ -84,12 +84,14 @@ std::vector<double> GMM::model_scores(){
     double score = 0;
     std::vector<double> scores;
     for(const auto& comp: _pos_components){
+        score = 0;
         for(const auto& s: comp->get_samples()){
             score += compute_GMM(s);
         }
         scores.push_back(score/(double)comp->get_samples().size());
     }
     for(const auto& comp: _neg_components){
+        score = 0;
         for(const auto& s: comp->get_samples()){
             score += (1-compute_GMM(s));
         }
@@ -121,6 +123,63 @@ void GMM::knn(const Eigen::VectorXd& center, const std::vector<Eigen::VectorXd> 
         cpy_label.erase(cpy_label.begin() + min_index);
         cpy_label.shrink_to_fit();
     }
+}
+
+void GMM::_merge(int sign){
+    model_t components = sign > 0 ? _pos_components : _neg_components;
+    model_t candidate_comp;
+    double dist, score = 0, score2, candidate_score;
+    int index;
+    GMM candidate;
+    std::vector<Eigen::VectorXd> local_samples;
+    for(int i = 0; i < components.size(); i++){
+        index = find_closest(i,dist,sign);
+
+        if(dist <= components[i]->diameter()+components[index]->diameter()){
+            score2 = _component_score(index,sign);
+            score =_component_score(i,sign);
+
+            candidate = GMM(_pos_components,_neg_components);
+            candidate_comp = sign > 0 ?  candidate.get_pos_components() :  candidate.get_neg_components();
+
+            candidate_comp[i] =
+                    candidate_comp[i]->merge(candidate_comp[index]);
+            local_samples = candidate_comp[i]->get_samples();
+            candidate_comp.erase(candidate_comp.begin() + index);
+
+            if(sign > 0)
+                 candidate._pos_components = candidate_comp;
+            else candidate._neg_components = candidate_comp;
+
+            candidate.update_factors();
+
+            candidate_score = 0;
+            for(const auto& s: local_samples){
+                candidate_score += candidate.compute_GMM(s);
+            }
+            candidate_score = candidate_score/(double)local_samples.size();
+
+            if(candidate_score >= (score + score2)/2.){
+                std::cout << "-_- MERGE _-_" << std::endl;
+                if(sign > 0)
+                     _pos_components = candidate_comp;
+                else _neg_components = candidate_comp;
+
+                update_factors();
+                break;
+            }
+        }
+    }
+}
+
+double GMM::_component_score(int i, int sign){
+    model_t components = sign > 0 ? _pos_components : _neg_components;
+
+    double score = 0;
+    for(const auto& s: components[i]->get_samples()){
+        score += compute_GMM(s);
+    }
+    return score/(double)components[i]->get_samples().size();
 }
 
 void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label){
@@ -156,7 +215,7 @@ void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const st
         }
     }
     for(auto& comp : new_comps)
-        components.push_back(comp);
+        components.push_back(comp);/*window.isOpen()*/
 
     if(sign > 0)
         _pos_components = components;
@@ -261,6 +320,9 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
     }
     //--
 
+    int nbr_pos = _pos_components.size();
+    int nbr_neg = _neg_components.size();
+
     std::cout << "nb of pos components : " << _pos_components.size() << std::endl;
     std::cout << "nb of neg components : " << _neg_components.size() << std::endl;
 
@@ -312,8 +374,18 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
     _split(1,samples,label);
     _split(-1,samples,label);
 
+    std::vector<double> scores;
+    double dist, score = 0, candidate_score;
+    int index;
+    GMM candidate;
+    if(nbr_pos > 1)
+        _merge(1);
 
-//    if(_pos_comp_ind.empty() || _neg_comp_ind.empty())
+    if(nbr_neg > 1)
+        _merge(-1);
+
+
+    //    if(_pos_comp_ind.empty() || _neg_comp_ind.empty())
 //        return;
 
 

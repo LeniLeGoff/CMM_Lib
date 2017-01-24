@@ -125,39 +125,49 @@ int main(int argc, char** argv){
 
 
         std::vector<double> scores = gmm.model_scores();
-        int k =0;
+        for(auto s : scores)
+            std::cout << s << ";";
+        std::cout << std::endl;
+        int k =0,min_k;
         Eigen::MatrixXd map = Eigen::MatrixXd::Zero(MAX_X,MAX_Y);
-        double min, dist, cumul = 0.;
+        Eigen::MatrixXi k_map = Eigen::MatrixXi::Zero(MAX_X,MAX_Y);
+        double min, dist = 0, cumul = 0.;
         if(!gmm.get_pos_components().empty() && !gmm.get_neg_components().empty()){
             for(int i = 0; i < MAX_X; i++){
                 for(int j = 0; j < MAX_Y; j++){
+                    k=0,min_k=0;
                     min = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
                            gmm.get_pos_components()[0]->get_mu()).squaredNorm()/(
-                                gmm.get_pos_components()[0]->get_factor()*scores[0]);
+                                gmm.get_pos_components()[0]->get_factor());
                     for(const auto& comp : gmm.get_pos_components()){
                         dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
-                                comp->get_mu()).squaredNorm()/(comp->get_factor()*scores[k]);
-                        k++;
-                        if(min > dist)
+                                comp->get_mu()).squaredNorm()/(comp->get_factor());
+                        if(min > dist){
                             min = dist;
+                            min_k = k;
+                        }
+                        k++;
                     }
 
 
                     for(const auto& comp : gmm.get_neg_components()){
                         dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
-                                comp->get_mu()).squaredNorm()/(comp->get_factor()*scores[k]);
-                        k++;
-                        if(min > dist)
+                                comp->get_mu()).squaredNorm()/(comp->get_factor());
+                        if(min > dist){
                             min = dist;
+                            min_k = k;
+                        }
+                        k++;
                     }
                     map(i,j) = min;
-
+                    k_map(i,j) = min_k;
                 }
             }
             map = map/map.maxCoeff();
             for(int i = 0; i < MAX_X; i++){
                 for(int j = 0; j < MAX_Y; j++){
-                    cumul += map(i,j);
+                    map(i,j) = fabs((1 - scores[k_map(i,j)]) - map(i,j));
+                    cumul += map(i,j) ;
                     choice_distribution.emplace(cumul,Eigen::Vector2i(i,j));
                 }
             }

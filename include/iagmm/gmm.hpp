@@ -110,6 +110,8 @@ public:
 
 private:
 
+    void _merge(int sign);
+    double _component_score(int i, int sign);
     void _split(int sign, const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
     void _new_component(const std::vector<Eigen::VectorXd> &samples, double label);
 
