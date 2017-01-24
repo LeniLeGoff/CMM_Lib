@@ -85,7 +85,7 @@ public:
 
     double entropy(int i, int sign);
 
-    Eigen::VectorXd next_sample(int* space, Eigen::MatrixXd &means_entropy_map);
+    Eigen::VectorXd next_sample(Eigen::MatrixXd &means_entropy_map);
 
     /**
      * @brief k nearst neighbor
@@ -110,6 +110,8 @@ public:
 
 private:
 
+    void _merge(int sign);
+    double _component_score(int i, int sign);
     void _split(int sign, const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
     void _new_component(const std::vector<Eigen::VectorXd> &samples, double label);
 

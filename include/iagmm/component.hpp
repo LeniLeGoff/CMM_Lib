@@ -12,6 +12,8 @@
 
 namespace iagmm {
 
+typedef std::vector<Eigen::VectorXd> samples_t;
+
 class Component{
 public:
 

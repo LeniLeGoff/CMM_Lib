@@ -84,12 +84,14 @@ std::vector<double> GMM::model_scores(){
     double score = 0;
     std::vector<double> scores;
     for(const auto& comp: _pos_components){
+        score = 0;
         for(const auto& s: comp->get_samples()){
             score += compute_GMM(s);
         }
         scores.push_back(score/(double)comp->get_samples().size());
     }
     for(const auto& comp: _neg_components){
+        score = 0;
         for(const auto& s: comp->get_samples()){
             score += (1-compute_GMM(s));
         }
@@ -121,6 +123,63 @@ void GMM::knn(const Eigen::VectorXd& center, const std::vector<Eigen::VectorXd> 
         cpy_label.erase(cpy_label.begin() + min_index);
         cpy_label.shrink_to_fit();
     }
+}
+
+void GMM::_merge(int sign){
+    model_t components = sign > 0 ? _pos_components : _neg_components;
+    model_t candidate_comp;
+    double dist, score = 0, score2, candidate_score;
+    int index;
+    GMM candidate;
+    std::vector<Eigen::VectorXd> local_samples;
+    for(int i = 0; i < components.size(); i++){
+        index = find_closest(i,dist,sign);
+
+        if(dist <= components[i]->diameter()+components[index]->diameter()){
+            score2 = _component_score(index,sign);
+            score =_component_score(i,sign);
+
+            candidate = GMM(_pos_components,_neg_components);
+            candidate_comp = sign > 0 ?  candidate.get_pos_components() :  candidate.get_neg_components();
+
+            candidate_comp[i] =
+                    candidate_comp[i]->merge(candidate_comp[index]);
+            local_samples = candidate_comp[i]->get_samples();
+            candidate_comp.erase(candidate_comp.begin() + index);
+
+            if(sign > 0)
+                 candidate._pos_components = candidate_comp;
+            else candidate._neg_components = candidate_comp;
+
+            candidate.update_factors();
+
+            candidate_score = 0;
+            for(const auto& s: local_samples){
+                candidate_score += candidate.compute_GMM(s);
+            }
+            candidate_score = candidate_score/(double)local_samples.size();
+
+            if(candidate_score >= (score + score2)/2.){
+                std::cout << "-_- MERGE _-_" << std::endl;
+                if(sign > 0)
+                     _pos_components = candidate_comp;
+                else _neg_components = candidate_comp;
+
+                update_factors();
+                break;
+            }
+        }
+    }
+}
+
+double GMM::_component_score(int i, int sign){
+    model_t components = sign > 0 ? _pos_components : _neg_components;
+
+    double score = 0;
+    for(const auto& s: components[i]->get_samples()){
+        score += compute_GMM(s);
+    }
+    return score/(double)components[i]->get_samples().size();
 }
 
 void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label){
@@ -156,7 +215,7 @@ void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const st
         }
     }
     for(auto& comp : new_comps)
-        components.push_back(comp);
+        components.push_back(comp);/*window.isOpen()*/
 
     if(sign > 0)
         _pos_components = components;
@@ -165,86 +224,71 @@ void GMM::_split(int sign, const std::vector<Eigen::VectorXd>& samples, const st
     update_factors();
 }
 
-Eigen::VectorXd GMM::next_sample(int* space, Eigen::MatrixXd& means_entropy_map){
+Eigen::VectorXd GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
 
-    std::vector<std::pair<double,Eigen::VectorXd>> list_candidate_samples;
+    std::vector<double> scores = gmm.model_scores();
+    Eigen::VectorXd chosen_sample;
+    for(auto s : scores)
+        std::cout << s << ";";
+    std::cout << std::endl;
+    int k =0,min_k;
+    choice_dist_map = Eigen::VectorXd::Zero(samples.size());
+    Eigen::VectorXd k_map = Eigen::VectorXd::Zero(MAX_X,MAX_Y);
+    double min, dist = 0, cumul = 0.;
+    if(!gmm.get_pos_components().empty() && !gmm.get_neg_components().empty()){
+        for(const auto& s : samples){
+            k=0,min_k=0;
 
-    double actual_entropy, next_entropy, diameter;
-    Component test_comp;
-    Eigen::VectorXd proposed_sample(2);
-    means_entropy_map = Eigen::MatrixXd::Constant(space[0],space[1],-10000.);
-    Eigen::MatrixXd entropy_map(space[0],space[1]);
-    for(const auto& comp : _pos_components){
-        actual_entropy = comp->entropy();
-        for(int i = 0; i < space[0]; i++){
-            for(int j = 0; j < space[1]; j++){
-                proposed_sample(0) = (double)i/(double)space[0];
-                proposed_sample(1) = (double)j/(double)space[1];
-                test_comp = Component(*comp);
-                test_comp.add(proposed_sample);
-                test_comp.update_parameters();
-                test_comp.set_factor((double)test_comp.size()/(
-                                         ((double)_pos_components.size()+(double)_neg_components.size())*
-                                         ((double) number_of_samples() + 1)));
-                entropy_map(i,j) = fabs(test_comp.entropy()-actual_entropy);
-                means_entropy_map(i,j) = entropy_map(i,j) > means_entropy_map(i,j) ?
-                            entropy_map(i,j) :  means_entropy_map(i,j) ;
+            min = (s - gmm.get_pos_components()[0]->get_mu()).squaredNorm()/
+                    (gmm.get_pos_components()[0]->get_factor());
+
+            for(const auto& comp : gmm.get_pos_components()){
+                dist = (s - comp->get_mu()).squaredNorm()/(comp->get_factor());
+                if(min > dist){
+                    min = dist;
+                    min_k = k;
+                }
+                k++;
+            }
+
+            for(const auto& comp : gmm.get_neg_components()){
+                dist = (s - comp->get_mu()).squaredNorm()/(comp->get_factor());
+                if(min > dist){
+                    min = dist;
+                    min_k = k;
+                }
+                k++;
+            }
+            choice_dist_map(i,j) = min;
+            k_map(i,j) = min_k;
+        }
+
+        choice_dist_map = choice_dist_map/choice_dist_map.maxCoeff();
+        for(int i = 0; i < MAX_X; i++){
+            for(int j = 0; j < MAX_Y; j++){
+                choice_dist_map(i,j) = fabs((1 - scores[k_map(i,j)]) - map(i,j));
+                cumul += choice_dist_map(i,j) ;
+                choice_distribution.emplace(cumul,Eigen::Vector2i(i,j));
             }
         }
-        int r,c;
-        next_entropy = entropy_map.maxCoeff(&r,&c);
-        proposed_sample(0) = r;
-        proposed_sample(1) = c;
-        list_candidate_samples.push_back(std::make_pair(next_entropy,proposed_sample));
 
-    }
-    for(const auto& comp : _neg_components){
-        actual_entropy = comp->entropy();
-        for(int i = 0; i < space[0]; i++){
-            for(int j = 0; j < space[1]; j++){
-                proposed_sample(0) = (double)i/(double)space[0];
-                proposed_sample(1) = (double)j/(double)space[1];
-                test_comp = Component(*comp);
-                test_comp.add(proposed_sample);
-                test_comp.update_parameters();
-                test_comp.set_factor((double)test_comp.size()/(
-                                         ((double)_pos_components.size()+(double)_neg_components.size())*
-                                         ((double) number_of_samples() + 1)));
-                entropy_map(i,j) = fabs(test_comp.entropy()-actual_entropy);
-                means_entropy_map(i,j) = entropy_map(i,j) > means_entropy_map(i,j) ?
-                            entropy_map(i,j) :  means_entropy_map(i,j);
-
-            }
+        std::cout << cumul << std::endl;
+        boost::random::uniform_real_distribution<> distrib(0.,cumul);
+        double rand_nb = distrib(gen);
+        auto it = choice_distribution.lower_bound(rand_nb);
+        double val = it->first;
+        std::vector<Eigen::Vector2i> possible_choice;
+        while(it->first == val){
+            possible_choice.push_back(it->second);
+            it++;
         }
-        int r,c;
-        next_entropy = entropy_map.maxCoeff(&r,&c);
-        proposed_sample(0) = r;
-        proposed_sample(1) = c;
-        list_candidate_samples.push_back(std::make_pair(next_entropy,proposed_sample));
 
+        int rnb = rand()%(possible_choice.size());
+        chosen_sample(0) = possible_choice[rnb](0);
+        chosen_sample(1) = possible_choice[rnb](1);
+
+        return chosen_sample;
     }
-
-
-
-    if(list_candidate_samples.empty()){
-        Eigen::VectorXd v(2);
-        v << 0,0;
-        return v;
-    }
-
-//    double min_entr = list_candidate_samples.front().first;
-//    Eigen::VectorXd elected_sample = list_candidate_samples.front().second;
-    for(const auto& candidate : list_candidate_samples){
-        std::cout << candidate.second << std::endl;
-        std::cout << " -- " << std::endl;
-        //        if(min_entr > candidate.first)
-//            elected_sample = candidate.second;
-    }
-    int r,c;
-    next_entropy = means_entropy_map.maxCoeff(&r,&c);
-    proposed_sample(0) = r;
-    proposed_sample(1) = c;
-    return proposed_sample;
 }
 
 void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::vector<double> &label){
@@ -260,6 +304,9 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
         return;
     }
     //--
+
+    int nbr_pos = _pos_components.size();
+    int nbr_neg = _neg_components.size();
 
     std::cout << "nb of pos components : " << _pos_components.size() << std::endl;
     std::cout << "nb of neg components : " << _neg_components.size() << std::endl;
@@ -312,8 +359,18 @@ void GMM::update_model(const std::vector<Eigen::VectorXd> &samples, const std::v
     _split(1,samples,label);
     _split(-1,samples,label);
 
+    std::vector<double> scores;
+    double dist, score = 0, candidate_score;
+    int index;
+    GMM candidate;
+    if(nbr_pos > 1)
+        _merge(1);
 
-//    if(_pos_comp_ind.empty() || _neg_comp_ind.empty())
+    if(nbr_neg > 1)
+        _merge(-1);
+
+
+    //    if(_pos_comp_ind.empty() || _neg_comp_ind.empty())
 //        return;
 
 
