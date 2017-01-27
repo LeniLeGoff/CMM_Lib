@@ -40,9 +40,10 @@ int main(int argc, char** argv){
     int real_space[MAX_X][MAX_Y];
     double estimated_space[MAX_X][MAX_Y];
     std::vector<Eigen::VectorXd> samples;
-    std::vector<double> label;
+    std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
-    GMM gmm;
+    GMM gmm(2,2);
+    Eigen::VectorXd choice_dist_map;
 
     double error;
 
@@ -65,6 +66,8 @@ int main(int argc, char** argv){
     std::vector<sf::RectangleShape> error_curve;
 
     Eigen::Vector2i coord(0,0);
+    samples_t all_sample;
+
 
     for(int i = 0; i < MAX_X*MAX_Y; i++){
         coord[0] = i%MAX_X;
@@ -73,11 +76,13 @@ int main(int argc, char** argv){
         if(coord[1] >= MAX_Y)
             coord[1] = 0;
 
+        all_sample.push_back(Eigen::Vector2d(coord[0]/(double)MAX_X,coord[1]/(double)MAX_Y));
+
         if(compute_f(A,coord[0] - MAX_X/2,coord[1] - MAX_Y/2) > 0){
             real_space[coord[0]][coord[1]] = 1;
             rects_real[i].setFillColor(sf::Color(255,0,0));
         }else{
-            real_space[coord[0]][coord[1]] = -1;
+            real_space[coord[0]][coord[1]] = 0;
             rects_real[i].setFillColor(sf::Color(0,0,255));
         }
         estimated_space[coord[0]][coord[1]] = 0.;
@@ -124,76 +129,9 @@ int main(int argc, char** argv){
 
 
 
-        std::vector<double> scores = gmm.model_scores();
-        for(auto s : scores)
-            std::cout << s << ";";
-        std::cout << std::endl;
-        int k =0,min_k;
-        Eigen::MatrixXd map = Eigen::MatrixXd::Zero(MAX_X,MAX_Y);
-        Eigen::MatrixXi k_map = Eigen::MatrixXi::Zero(MAX_X,MAX_Y);
-        double min, dist = 0, cumul = 0.;
-        if(!gmm.get_pos_components().empty() && !gmm.get_neg_components().empty()){
-            for(int i = 0; i < MAX_X; i++){
-                for(int j = 0; j < MAX_Y; j++){
-
-                    k=0,min_k=0;
-
-                    min = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
-                           gmm.get_pos_components()[0]->get_mu()).squaredNorm()/(
-                                gmm.get_pos_components()[0]->get_factor());
-                    for(const auto& comp : gmm.get_pos_components()){
-                        dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
-                                comp->get_mu()).squaredNorm()/(comp->get_factor());
-                        if(min > dist){
-                            min = dist;
-                            min_k = k;
-                        }
-                        k++;
-                    }
-
-
-                    for(const auto& comp : gmm.get_neg_components()){
-                        dist = (Eigen::Vector2d((double)i/100.,(double)j/100.) -
-                                comp->get_mu()).squaredNorm()/(comp->get_factor());
-                        if(min > dist){
-                            min = dist;
-                            min_k = k;
-                        }
-                        k++;
-                    }
-                    map(i,j) = min;
-                    k_map(i,j) = min_k;
-                }
-            }
-            map = map/map.maxCoeff();
-            for(int i = 0; i < MAX_X; i++){
-                for(int j = 0; j < MAX_Y; j++){
-                    map(i,j) = fabs((1 - scores[k_map(i,j)]) - map(i,j));
-                    cumul += map(i,j) ;
-                    choice_distribution.emplace(cumul,Eigen::Vector2i(i,j));
-                }
-            }
-
-            std::cout << cumul << std::endl;
-            boost::random::uniform_real_distribution<> distrib(0.,cumul);
-            double rand_nb = distrib(gen);
-            auto it = choice_distribution.lower_bound(rand_nb);
-            double val = it->first;
-            std::vector<Eigen::Vector2i> possible_choice;
-            while(it->first == val){
-                possible_choice.push_back(it->second);
-                it++;
-            }
-
-            int rnb = rand()%(possible_choice.size());
-            coord[0] = possible_choice[rnb](0);
-            coord[1] = possible_choice[rnb](1);
-        }else{
-            coord[0] = rand()%MAX_X;
-            coord[1] = rand()%MAX_Y;
-        }
-
-
+        Eigen::VectorXd next_s = gmm.next_sample(all_sample,choice_dist_map);
+        coord[0] = next_s(0)*MAX_X;
+        coord[1] = next_s(1)*MAX_Y;
 
         //        std::cout << map << std::endl;
 
@@ -201,13 +139,15 @@ int main(int argc, char** argv){
 
         label.push_back(real_space[coord[0]][coord[1]]);
 
-
+        gmm.append(std::vector<Eigen::VectorXd>
+                   (1,Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y)),
+                std::vector<int>(1,real_space[coord[0]][coord[1]]));
 
         rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
                     sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
                 );
 
-        gmm.update_model(samples,label);
+        gmm.update_model();
 
         error = 0;
         if(samples.size() > NBR_CLUSTER){
@@ -216,7 +156,7 @@ int main(int argc, char** argv){
             for(int i = 0; i < MAX_X; i++){
                 for(int j = 0; j < MAX_Y; j++){
 
-                    double est = gmm.compute_GMM(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y));
+                    double est = gmm.compute_estimation(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1);
                     //                    std::cout << est << std::endl;
                     //                    std::cout << (double)i/(double)MAX_X << " " << (double)j/(double)MAX_Y << std::endl;
                     //                    if(est > 1.)
@@ -224,7 +164,7 @@ int main(int argc, char** argv){
                     //                    if(est < -1)
                     //                        est = -1.;
 
-                    double dist = map(i,j);
+                    double dist = choice_dist_map(i+j*MAX_Y);
                     //                    if(dist > 1.) dist = 1.;
                     //                    dist = dist/5.;
                     rects_exact_est[i + j*MAX_Y].setFillColor(
@@ -271,27 +211,19 @@ int main(int argc, char** argv){
         //        Eigen::VectorXd eigenval;
         //        Eigen::MatrixXd eigenvect;
         components_center.clear();
-        for(const auto& c : gmm.get_pos_components()){
-            c->print_parameters();
-            components_center.push_back(sf::CircleShape(2.));
+        for(const auto& components : gmm.model()){
+            for(const auto& c : components.second){
+                c->print_parameters();
+                components_center.push_back(sf::CircleShape(2.));
 
-            components_center.back().setFillColor(sf::Color(255,255,0));
-            components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
+                components_center.back().setFillColor(sf::Color(components.first*255,255,(components.first-1)*255));
+                components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
 
-            //            c->compute_eigenvalues(eigenval,eigenvect);
-            //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
+                //            c->compute_eigenvalues(eigenval,eigenvect);
+                //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
+            }
         }
 
-        for(const auto& c : gmm.get_neg_components()){
-            c->print_parameters();
-            components_center.push_back(sf::CircleShape(2.));
-            components_center.back().setFillColor(sf::Color(0,255,255));
-
-            components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
-
-            //            c->compute_eigenvalues(eigenval,eigenvect);
-            //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
-        }
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;

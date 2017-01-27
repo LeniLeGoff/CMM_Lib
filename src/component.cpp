@@ -100,7 +100,7 @@ Component::Ptr Component::split(){
     if(indexes.size() == _samples.size())
         return NULL;
 
-    Component::Ptr new_c(new Component(2,_sign));
+    Component::Ptr new_c(new Component(_dimension,_label));
 //    std::cout << "samples size : " << _samples.size() << std::endl;
     for(int i : indexes){
 //        std::cout << i << " : " << _samples[i] << std::endl;
@@ -160,7 +160,7 @@ void Component::compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixX
 
 void Component::print_parameters() const {
     std::cout << "----------------------" << std::endl;
-    std::cout << "sign : " << _sign << std::endl;
+    std::cout << "lbl : " << _label << std::endl;
     std::cout << "covariance : " << _covariance << std::endl;
     std::cout << "mu : " << _mu << std::endl;
     std::cout << "factor : " << _factor << std::endl;

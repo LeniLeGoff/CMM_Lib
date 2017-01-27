@@ -21,9 +21,9 @@ public:
     typedef std::shared_ptr<const Component> ConstPtr;
 
     Component(){}
-    Component(int dimension, double sign = 1) : _dimension(dimension), _sign(sign), _factor(0){}
+    Component(int dimension, int lbl) : _dimension(dimension), _label(lbl), _factor(0){}
     Component(const Component& c) :
-        _covariance(c._covariance), _mu(c._mu), _sign(c._sign),
+        _covariance(c._covariance), _mu(c._mu), _label(c._label),
         _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
 
 
@@ -50,8 +50,7 @@ public:
     //Getters & Setters
     void set_factor(double f){_factor = f;}
     double get_factor() const {return _factor;}
-    void set_sign(double sign){_sign = sign;}
-    double get_sign() const {return _sign;}
+    int get_label() const {return _label;}
     const Eigen::VectorXd& get_mu() const {return _mu;}
     const Eigen::VectorXd& get_sample(int i) const {return _samples[i];}
     const std::vector<Eigen::VectorXd>& get_samples() const {return _samples;}
@@ -76,8 +75,8 @@ private:
     Eigen::VectorXd _mu;
     std::vector<Eigen::VectorXd> _samples;
     int _dimension;
-    double _sign;
     double _factor;
+    int _label;
 };
 
 }

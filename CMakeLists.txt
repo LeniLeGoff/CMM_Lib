@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(iagmm_lib)
+project(iagmm)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
@@ -8,10 +8,19 @@ include_directories(/usr/local/include/
                     /usr/local/include/SFML
                     include)
 
+FILE(GLOB_RECURSE HEADFILES "include/*.hpp")
+add_custom_target(headers SOURCES ${HEADFILES})
 
-add_library(iagmm src/gmm.cpp src/component.cpp)
+install(DIRECTORY include/iagmm/  DESTINATION /usr/local/include/${PROJECT_NAME})
+
+
+
+add_library(iagmm src/gmm.cpp src/component.cpp src/nnmap.cpp include/iagmm/classifier.hpp)
 target_link_libraries(iagmm tbb)
 
+install(TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION /usr/local/lib
+    LIBRARY DESTINATION /usr/local/lib)
 
 add_executable(test_1 src/test.cpp)
 target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics)

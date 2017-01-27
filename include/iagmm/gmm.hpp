@@ -5,6 +5,7 @@
 #include <memory>
 #include <math.h>
 #include <vector>
+#include <map>
 
 #include "boost/random.hpp"
 
@@ -15,77 +16,84 @@
 #include <tbb/tbb.h>
 
 #include "component.hpp"
+#include "classifier.hpp"
 
 namespace iagmm{
 
-class GMM{
+class GMM : public Classifier {
 public:
 
-    typedef std::vector<Component::Ptr> model_t;
+    typedef std::map<int, std::vector<Component::Ptr>> model_t;
 
-    GMM() : _pos_sum(0), _neg_sum(0){}
+    GMM(){}
 
-    GMM(const model_t& pos_components,
-        const model_t& neg_components) :
-        _pos_sum(0), _neg_sum(0)
-    {
+    GMM(int dimension, int nbr_class) : Classifier(dimension,nbr_class){
+        for(int i = 0; i < nbr_class; i++)
+            _model.emplace(i,std::vector<Component::Ptr>());
+    }
 
-        for(const auto& elt : pos_components)
-            _pos_components.push_back(Component::Ptr(new Component(*(elt))));
-        for(const auto& elt : neg_components)
-            _neg_components.push_back(Component::Ptr(new Component(*(elt))));
+    GMM(const model_t& model){
+        _dimension = model.at(0)[0]->get_dimension();
+        _nbr_class = model.size();
+        for(const auto& comps : model){
+            _model.emplace(comps.first,std::vector<Component::Ptr>());
+            for(const auto& comp : comps.second)
+                _model[comps.first].push_back(Component::Ptr(new Component(*(comp))));
+        }
 
     }
 
-    GMM(const model_t& pos_components,
-        const model_t& neg_components , const Eigen::VectorXd& X) :
-        _pos_components(pos_components), _neg_components(neg_components),
-        _X(X), _pos_sum(0), _neg_sum(0), _sign(1){}
+    GMM(const model_t& model, const Eigen::VectorXd& X) :
+        _model(model),
+        _X(X), _current_lbl(1){}
 
     GMM(GMM& gmm, tbb::split) :
-        _pos_components(gmm._pos_components),
-        _neg_components(gmm._neg_components),
-        _X(gmm._X) , _pos_sum(0), _neg_sum(0), _sign(gmm._sign){}
+        _model(gmm._model),
+        _X(gmm._X), _current_lbl(gmm._current_lbl){
+        _sum_map[_current_lbl] = 0;
+    }
 
     ~GMM(){
-        for(auto& elt: _pos_components)
-            elt.reset();
-
-        for(auto& elt: _neg_components)
-            elt.reset();
+        for(auto& comps: _model)
+            for(auto& c : comps.second)
+                c.reset();
     }
 
     void operator()(const tbb::blocked_range<size_t>& r);
 
     void join(const GMM& gmm){
-        if(_sign > 0)
-            _pos_sum+=gmm._pos_sum;
-        else _neg_sum+=gmm._neg_sum;
+        _sum_map[_current_lbl] += gmm._sum_map.at(_current_lbl);
     }
 
-    double compute_GMM(Eigen::VectorXd X);
-    model_t& get_pos_components(){return _pos_components;}
-    model_t& get_neg_components(){return _neg_components;}
+    double compute_estimation(const Eigen::VectorXd& sample, int lbl);
+    model_t& model(){return _model;}
 
-    double get_result(){return _pos_sum/(_pos_sum+_neg_sum);}
+    double get_result(int lbl){
+        double sum_of_sums;
+        for(const auto& sum : _sum_map)
+            sum_of_sums +=  sum.second;
+        return _sum_map[lbl]/(sum_of_sums);
+    }
 
-    void update_model(const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
+    void append(const std::vector<Eigen::VectorXd> &samples,const std::vector<int>& lbl);
+    void append(const Eigen::VectorXd &samples,const int& lbl);
 
-    std::vector<int> find_closest_components(double& min_dist, double sign);
+    void update_model();
 
-    int find_closest(int i, double& min_dist, double sign);
+    std::vector<int> find_closest_components(double& min_dist, int lbl);
+
+    int find_closest(int i, double& min_dist, int lbl);
 
     void update_factors();
     double unit_factor();
 
-    double model_score(const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
+    double model_score(const std::vector<Eigen::VectorXd>& samples, const std::vector<int> &label);
 
     std::vector<double> model_scores();
 
-
     double entropy(int i, int sign);
 
-    Eigen::VectorXd next_sample(Eigen::MatrixXd &means_entropy_map);
+    Eigen::VectorXd next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
 
     /**
      * @brief k nearst neighbor
@@ -93,35 +101,35 @@ public:
      * @param output
      * @param k
      */
-    void knn(const Eigen::VectorXd& center, const std::vector<Eigen::VectorXd>& samples
-             , const std::vector<double> &label, std::vector<Eigen::VectorXd>& output,
-             std::vector<double> &label_output, int k);
+    void knn(const Eigen::VectorXd& center,TrainingData& output, int k);
+
 
     int number_of_samples(){
-        int res = 0;
-        for(const auto& c : _pos_components)
-            res += c->size();
-        for(const auto& c : _neg_components)
-            res += c->size();
+        int nbr_s = 0;
+        for(const auto& components : _model)
+            for(const auto& c : components.second)
+                nbr_s += c->size();
 
-        return res;
+        return nbr_s;
     }
-
 
 private:
 
-    void _merge(int sign);
-    double _component_score(int i, int sign);
-    void _split(int sign, const std::vector<Eigen::VectorXd>& samples, const std::vector<double> &label);
-    void _new_component(const std::vector<Eigen::VectorXd> &samples, double label);
+    void _merge(int lbl);
+    double _component_score(int i, int lbl);
+    void _split(int sign);
+    void _new_component(const Eigen::VectorXd &samples, int label);
 
-    model_t _pos_components;
-    model_t _neg_components;
+//    model_t _pos_components;
+//    model_t _neg_components;
+
+    model_t _model;
 
     Eigen::VectorXd _X;
-    double _pos_sum;
-    double _neg_sum;
-    int _sign;
+
+    //variables for parallel computation
+    std::map<int,double> _sum_map;
+    int _current_lbl;
 
     boost::random::mt19937 _gen;
 
