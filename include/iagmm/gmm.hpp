@@ -13,6 +13,10 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
 
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+
 #include <tbb/tbb.h>
 
 #include "component.hpp"
@@ -113,6 +117,13 @@ public:
         return nbr_s;
     }
 
+    template <typename archive>
+    void serialize(archive& arch, const unsigned int v){
+        arch & _nbr_class;
+        arch & _dimension;
+        arch & _model;
+    }
+
 private:
 
     void _merge(int lbl);
@@ -120,8 +131,6 @@ private:
     void _split(int sign);
     void _new_component(const Eigen::VectorXd &samples, int label);
 
-//    model_t _pos_components;
-//    model_t _neg_components;
 
     model_t _model;
 

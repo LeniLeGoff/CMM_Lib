@@ -15,14 +15,17 @@ install(DIRECTORY include/iagmm/  DESTINATION /usr/local/include/${PROJECT_NAME}
 
 
 
-add_library(iagmm src/gmm.cpp src/component.cpp src/nnmap.cpp include/iagmm/classifier.hpp)
-target_link_libraries(iagmm tbb)
+add_library(iagmm src/gmm.cpp src/component.cpp src/nnmap.cpp)
+target_link_libraries(iagmm tbb boost_serialization)
 
 install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION /usr/local/lib
     LIBRARY DESTINATION /usr/local/lib)
 
 add_executable(test_1 src/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics)
+target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization)
+
+add_executable(test_serial src/test_serial.cpp)
+target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
 
 
