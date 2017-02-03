@@ -9,6 +9,7 @@
 
 #include <iagmm/serialization.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/shared_ptr.hpp>
 
 #define PI 3.14159265359
 
