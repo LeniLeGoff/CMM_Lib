@@ -22,7 +22,7 @@ install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION /usr/local/lib
     LIBRARY DESTINATION /usr/local/lib)
 
-add_executable(test_1 src/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics)
+#add_executable(test_1 src/test.cpp)
+#target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics)
 
 
