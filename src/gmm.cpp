@@ -77,7 +77,7 @@ std::vector<double> GMM::model_scores(){
             for(const auto& s: comp->get_samples()){
                 score += compute_estimation(s,components.first);
             }
-            scores.push_back(score/(double)comp->get_samples().size());
+            scores.push_back(score/(double)comp->size());
         }
     }
     return scores;

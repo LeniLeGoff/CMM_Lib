@@ -4,6 +4,7 @@
 
 using namespace iagmm;
 
+
 void Component::update_parameters(){
     if(_samples.size() <= 3){
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
@@ -32,6 +33,19 @@ void Component::update_parameters(){
 
 
 }
+
+//void Component::update_parameters(){
+//    if(_size <= 1){
+//        _mu = _samples.back();
+//        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
+//        return;
+//    }
+//    double f_size = _size;
+//    _mu = (f_size-1)/f_size*_mu + 1/f_size*_samples.back();
+//    _covariance = (f_size-2)/(f_size-1)*_covariance
+//            + (f_size)/((f_size-1)*(f_size-1))*
+//            (_samples.back()-_mu)*(_samples.back()-_mu).transpose();
+//}
 
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
     double cm_determinant = (2*PI*_covariance).determinant();

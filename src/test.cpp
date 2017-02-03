@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <memory>
 #include <eigen3/Eigen/Core>
@@ -12,6 +13,8 @@
 
 #include <iagmm/gmm.hpp>
 #include <iagmm/component.hpp>
+
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <SFML/Graphics.hpp>
 
@@ -139,9 +142,8 @@ int main(int argc, char** argv){
 
         label.push_back(real_space[coord[0]][coord[1]]);
 
-        gmm.append(std::vector<Eigen::VectorXd>
-                   (1,Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y)),
-                std::vector<int>(1,real_space[coord[0]][coord[1]]));
+        gmm.append(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y),
+              real_space[coord[0]][coord[1]]);
 
         rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
                     sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
@@ -237,6 +239,10 @@ int main(int argc, char** argv){
 
         //        std::cin.ignore();
     }
+
+    std::ofstream of("archive_gmm");
+    boost::archive::binary_oarchive oarch(of);
+    oarch << gmm;
 
     return 0;
 }

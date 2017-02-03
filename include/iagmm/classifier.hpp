@@ -16,15 +16,17 @@ public:
         _dimension(c._dimension),
         _samples(c._samples){}
 
-    ~Classifier(){}
+    virtual ~Classifier(){}
 
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
-    void add(const Eigen::VectorXd& sample, int lbl){
+    virtual void add(const Eigen::VectorXd& sample, int lbl){
         _samples.add(lbl,sample);
     }
 
     size_t dataset_size() const {return _samples.size();}
     const TrainingData& get_samples() const {return _samples;}
+
+
 
 protected:
     int _nbr_class;
