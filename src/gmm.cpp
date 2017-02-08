@@ -350,3 +350,9 @@ int GMM::find_closest(int i, double &min_dist, int lbl){
     else return r;
 }
 
+std::string GMM::print_info(){
+    std::string infos = "";
+    for(const auto& comps : _model)
+        infos += "class " + std::to_string(comps.first) + " have " + std::to_string(comps.second.size()) + " components\n";
+    return infos;
+}

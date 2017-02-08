@@ -124,6 +124,8 @@ public:
         arch & _model;
     }
 
+    std::string print_info();
+
 private:
 
     void _merge(int lbl);
