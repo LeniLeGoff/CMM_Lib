@@ -6,8 +6,8 @@ using namespace iagmm;
 
 
 void Component::update_parameters(){
-    if(_samples.size() <= 3){
-        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
+    if(_samples.size() <= 2){
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
 //        _factor = _sign;
         _mu = _samples[0];
         return;
@@ -149,8 +149,7 @@ std::vector<double> Component::get_intern_estimation() const {
 double Component::component_score() const {
     double sum = 0;
     for(auto s : _samples)
-        sum += (compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.)*
-                (compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.);
+        sum += fabs(compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.);
     return sum/(double)_samples.size();
 }
 

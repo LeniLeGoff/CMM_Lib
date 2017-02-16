@@ -37,6 +37,7 @@ public:
     }
 
     GMM(const model_t& model){
+
         _dimension = model.at(0)[0]->get_dimension();
         _nbr_class = model.size();
         for(const auto& comps : model){
@@ -80,9 +81,9 @@ public:
     }
 
     void append(const std::vector<Eigen::VectorXd> &samples,const std::vector<int>& lbl);
-    void append(const Eigen::VectorXd &samples,const int& lbl);
+    int append(const Eigen::VectorXd &samples,const int& lbl);
 
-    void update_model();
+    void update_model(int ind, int lbl);
 
     std::vector<int> find_closest_components(double& min_dist, int lbl);
 
@@ -125,12 +126,13 @@ public:
     }
 
     std::string print_info();
+    std::string to_string();
 
 private:
 
-    void _merge(int lbl);
+    void _merge(int ind,int lbl);
     double _component_score(int i, int lbl);
-    void _split(int sign);
+    void _split(int ind ,int sign);
     void _new_component(const Eigen::VectorXd &samples, int label);
 
 

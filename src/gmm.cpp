@@ -78,7 +78,7 @@ std::vector<double> GMM::model_scores(){
         for(const auto& comp: components.second){
             score = 0;
             for(const auto& s: comp->get_samples()){
-                score += compute_estimation(s,components.first);
+                score += fabs(compute_estimation(s,components.first) - 1);
             }
             scores.push_back(score/(double)comp->size());
         }
@@ -105,86 +105,110 @@ void GMM::knn(const Eigen::VectorXd& center, TrainingData& output, int k){
     }
 }
 
-void GMM::_merge(int lbl){
+void GMM::_merge(int ind, int lbl){
     model_t candidate_comp;
     double dist, score = 0, score2, candidate_score;
     int index;
     GMM candidate;
-    std::vector<Eigen::VectorXd> local_samples;
-    for(int i = 0; i < _model[lbl].size(); i++){
-        index = find_closest(i,dist,lbl);
+    boost::random::uniform_real_distribution<> distri(0,1);
 
-        if(dist <= _model[lbl][i]->diameter()+_model[lbl][index]->diameter()){
+    std::vector<Eigen::VectorXd> local_samples;
+//    std::vector<int> rand_ind(_model[lbl].size());
+//    for(int i = 0; i < rand_ind.size(); i++)
+//        rand_ind[i] = i;
+//    for(int i = 0; i < rand_ind.size(); i++){
+//        int n = rand()%rand_ind.size();
+//        int tmp = rand_ind[n];
+//        rand_ind[n] = rand_ind[i];
+//        rand_ind[i] = tmp;
+//    }
+//    for(auto& i : rand_ind){
+        index = find_closest(ind,dist,lbl);
+
+        if(dist <= _model[lbl][ind]->diameter()+_model[lbl][index]->diameter()){
             score2 = _component_score(index,lbl);
-            score = _component_score(i,lbl);
+            score = _component_score(ind,lbl);
 
             candidate = GMM(_model);
+            candidate.set_samples(_samples);
 
-            candidate.model()[lbl][i] =
-                    candidate.model()[lbl][i]->merge(candidate.model()[lbl][index]);
-            local_samples = candidate.model()[lbl][i]->get_samples();
+            candidate.model()[lbl][ind] =
+                    candidate.model()[lbl][ind]->merge(candidate.model()[lbl][index]);
+            local_samples = candidate.model()[lbl][ind]->get_samples();
             candidate.model()[lbl].erase(candidate.model()[lbl].begin() + index);
 
             candidate.update_factors();
 
             candidate_score = 0;
             for(const auto& s: local_samples){
-                candidate_score += candidate.compute_estimation(s,lbl);
+                candidate_score += fabs(candidate.compute_estimation(s,lbl)-1.);
             }
-            candidate_score = candidate_score/(double)local_samples.size();
+            candidate_score = candidate_score/((double)local_samples.size());
 
-            if(candidate_score >= (score + score2)/2.){
+            std::cout << "merge : candidate " << candidate_score << " vs  others " << (score + score2)/2. << std::endl;
+            if(candidate_score > (score + score2)/2. ){
                 std::cout << "-_- MERGE _-_" << std::endl;
 
                 _model[lbl] = candidate.model()[lbl];
 
                 update_factors();
-                break;
+//                break;
             }
         }
-    }
+//    }
 }
 
 double GMM::_component_score(int i, int lbl){
     double score = 0;
     for(const auto& s: _model[lbl][i]->get_samples()){
-        score += compute_estimation(s,lbl);
+        score += fabs(compute_estimation(s,lbl)-1);
     }
     return score/(double)_model[lbl][i]->get_samples().size();
 }
 
-void GMM::_split(int lbl){
+void GMM::_split(int ind, int lbl){
     double score = 0, intern_score = 0;
     TrainingData knn_output;
     std::vector<Component::Ptr> new_comps;
-    for(auto& comp : _model[lbl]){
-        if(comp->size() < 4)
-            continue;
+    boost::random::uniform_real_distribution<> dist(0,1);
+//    std::vector<int> rand_ind(_model[lbl].size());
+//    for(int i = 0; i < rand_ind.size(); i++)
+//        rand_ind[i] = i;
+//    for(int i = 0; i < rand_ind.size(); i++){
+//        int n = rand()%rand_ind.size();
+//        int tmp = rand_ind[n];
+//        rand_ind[n] = rand_ind[i];
+//        rand_ind[i] = tmp;
+//    }
+//    for(int& ind : rand_ind){
+        if(_model[lbl][ind]->size() < 2)
+            return;
         knn_output.clear();
         score = 0;
-        knn(comp->get_mu(),knn_output,comp->size());
+        knn(_model[lbl][ind]->get_mu(),knn_output,_model[lbl][ind]->size());
+
+
 
         for(int i = 0; i < knn_output.size(); i++){
-            score += (comp->compute_multivariate_normal_dist(knn_output[i].second)
-                      /comp->compute_multivariate_normal_dist(comp->get_mu())- knn_output[i].first)*
-                    (comp->compute_multivariate_normal_dist(knn_output[i].second)
-                     /comp->compute_multivariate_normal_dist(comp->get_mu()) - knn_output[i].first);
+            double l = (lbl == knn_output[i].first ? 1. : 0.);
+            score += fabs(_model[lbl][ind]->compute_multivariate_normal_dist(knn_output[i].second)
+                      /_model[lbl][ind]->compute_multivariate_normal_dist(_model[lbl][ind]->get_mu()) - l);
         }
         score = score/(double)knn_output.size();
-        intern_score = comp->component_score();
-//        std::cout << "score : " << score << " vs intern score : " << intern_score << std::endl;
+        intern_score = _model[lbl][ind]->component_score();
+        std::cout << "split : " << "score : " << score << " vs intern score : " << intern_score << std::endl;
 
         if(score > intern_score){
-            Component::Ptr new_component = comp->split();
+            Component::Ptr new_component = _model[lbl][ind]->split();
             if(new_component){
                 std::cout << "-_- SPLIT _-_" << std::endl;
                 new_comps.push_back(new_component);
+//                break;
             }
         }
-    }
+//    }
     for(auto& comp : new_comps)
-        _model[lbl].push_back(comp);/*window.isOpen()*/
-
+        _model[lbl].push_back(comp);
     update_factors();
 }
 
@@ -224,15 +248,19 @@ Eigen::VectorXd GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choi
             k_map(i) = min_k;
             i++;
         }
-
+        double maxcoeff = choice_dist_map.maxCoeff();
         choice_dist_map = choice_dist_map/choice_dist_map.maxCoeff();
         i = 0;
         for(const auto& s : samples){
-            choice_dist_map(i) = fabs((1 - scores[k_map(i)]) - choice_dist_map(i));
+            choice_dist_map(i) = fabs((scores[k_map(i)]) - choice_dist_map(i));
             cumul += choice_dist_map(i) ;
             choice_distribution.emplace(cumul,s);
             i++;
         }
+
+        if(cumul != cumul)
+            return samples[rand()%(samples.size())];
+
 
         boost::random::uniform_real_distribution<> distrib(0.,cumul);
         double rand_nb = distrib(_gen);
@@ -274,13 +302,13 @@ void GMM::append(const std::vector<Eigen::VectorXd> &samples, const std::vector<
 }
 
 
-void GMM::append(const Eigen::VectorXd &sample,const int& lbl){
+int GMM::append(const Eigen::VectorXd &sample,const int& lbl){
     int r,c; //row and column indexes
     add(sample,lbl);
 
     if(_model[lbl].empty()){
         _new_component(sample,lbl);
-        return;
+        return 0;
     }
 
     Eigen::VectorXd distances(_model[lbl].size());
@@ -294,16 +322,32 @@ void GMM::append(const Eigen::VectorXd &sample,const int& lbl){
 
 
     update_factors();
+
+    return r;
 }
 
-void GMM::update_model(){
+void GMM::update_model(int ind, int lbl){
 
-    int n;
+    int n,rand_ind;
+    n = _model[lbl].size();
+    _split(ind,lbl);
+    if(n > 1)
+        _merge(ind,lbl);
+
     for(int i = 0; i < _nbr_class; i++){
         n = _model[i].size();
-        _split(i);
-        if(n > 1)
-            _merge(i);
+        if(n < 2) break;
+        do
+            rand_ind = rand()%n;
+        while(rand_ind == ind);
+        _split(rand_ind,lbl);
+
+
+        do
+            rand_ind = rand()%n;
+        while(rand_ind == ind);
+        _merge(rand_ind,lbl);
+
     }
     for(auto& components : _model)
         for(auto& comp : components.second)
@@ -358,4 +402,8 @@ std::string GMM::print_info(){
     for(const auto& comps : _model)
         infos += "class " + std::to_string(comps.first) + " have " + std::to_string(comps.second.size()) + " components\n";
     return infos;
+}
+
+std::string GMM::to_string(){
+
 }

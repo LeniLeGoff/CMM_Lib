@@ -25,7 +25,7 @@ public:
 
     size_t dataset_size() const {return _samples.size();}
     const TrainingData& get_samples() const {return _samples;}
-
+    void set_samples(TrainingData samples){_samples = samples;}
 
 
 protected:
