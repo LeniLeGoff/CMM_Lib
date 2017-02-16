@@ -212,13 +212,13 @@ void GMM::_split(int ind, int lbl){
     update_factors();
 }
 
-Eigen::VectorXd GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
+int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Zero(samples.size());
 
 
 
     if([&]() -> bool {for(auto& comp : _model) if(comp.second.empty()) return true; return false;}())
-        return samples[rand()%(samples.size())];
+        return rand()%(samples.size());
 
     std::vector<double> scores = model_scores();
     std::multimap<double,Eigen::VectorXd> choice_distribution;
@@ -259,7 +259,7 @@ Eigen::VectorXd GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choi
         }
 
         if(cumul != cumul)
-            return samples[rand()%(samples.size())];
+            return rand()%(samples.size());
 
 
         boost::random::uniform_real_distribution<> distrib(0.,cumul);
@@ -274,7 +274,7 @@ Eigen::VectorXd GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choi
 
         int rnb = rand()%(possible_choice.size());
 
-        return possible_choice[rnb];
+        return rnb;
     }
 }
 
