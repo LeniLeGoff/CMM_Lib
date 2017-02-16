@@ -23,10 +23,13 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION /usr/local/lib)
 
 
-#add_executable(test_1 src/test.cpp)
-#target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization)
+add_executable(load_archive tools/load_archive.cpp)
+target_link_libraries(load_archive iagmm)
 
-#add_executable(test_serial src/test_serial.cpp)
+add_executable(test_1 test/test.cpp)
+target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization)
+
+#add_executable(test_serial test/test_serial.cpp)
 #target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
 
 
