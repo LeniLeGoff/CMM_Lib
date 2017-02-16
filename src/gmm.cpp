@@ -21,6 +21,9 @@ void GMM::operator ()(const tbb::blocked_range<size_t>& r){
 double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
     _X = X;
 
+    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model[i].empty()) return false;} return true;}())
+        return 0.5;
+
     for(auto& sum : _sum_map)
         sum.second = 0;
 
