@@ -98,7 +98,7 @@ public:
 
     double entropy(int i, int sign);
 
-    Eigen::VectorXd next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
 
     /**
      * @brief k nearst neighbor
