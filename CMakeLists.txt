@@ -22,9 +22,8 @@ install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION /usr/local/lib
     LIBRARY DESTINATION /usr/local/lib)
 
-
-add_executable(load_archive tools/load_archive.cpp)
-target_link_libraries(load_archive iagmm)
+#add_executable(load_archive tools/load_archive.cpp)
+#target_link_libraries(load_archive iagmm)
 
 add_executable(test_1 test/test.cpp)
 target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization)

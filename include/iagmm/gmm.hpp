@@ -98,7 +98,7 @@ public:
 
     double entropy(int i, int sign);
 
-    Eigen::VectorXd next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
 
     /**
      * @brief k nearst neighbor
@@ -131,10 +131,12 @@ public:
 private:
 
     void _merge(int ind,int lbl);
+    void _merge_eigen(int ind, int lbl);
     double _component_score(int i, int lbl);
-    void _split(int ind ,int sign);
+    void _split(int ind ,int lbl);
+    void _split_eigen(int ind, int lbl);
     void _new_component(const Eigen::VectorXd &samples, int label);
-
+    std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
     model_t _model;
 
