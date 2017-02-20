@@ -285,6 +285,7 @@ void GMM::_split_eigen(int ind, int lbl){
     }
 }
 
+
 int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Zero(samples.size());
 
@@ -418,10 +419,12 @@ void GMM::update_model(int ind, int lbl){
         _split_eigen(rand_ind,i);
 
 
+
         do
             rand_ind = rand()%n;
         while(rand_ind == ind);
         _merge_eigen(rand_ind,i);
+
 
     }
     for(auto& components : _model)
