@@ -163,6 +163,9 @@ void GMM::_merge(int ind, int lbl){
 }
 
 void GMM::_merge_eigen(int ind, int lbl){
+    GMM candidate;
+    double score, score2, candidate_score;
+
     Eigen::VectorXd eigenval, eigenval2, diff_mu;
     Eigen::MatrixXd eigenvect, eigenvect2;
     _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
@@ -175,11 +178,31 @@ void GMM::_merge_eigen(int ind, int lbl){
                 diff_mu.squaredNorm()*diff_mu.squaredNorm()
                 && diff_mu.dot(eigenvect.col(0)) >
                 diff_mu.squaredNorm()*diff_mu.squaredNorm()){
-            std::cout << "-_- MERGE _-_" << std::endl;
-            _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][i]);
-            _model[lbl].erase(_model[lbl].begin() + i);
-            update_factors();
-            return;
+
+            score = _component_score(ind,lbl);
+            score2 = _component_score(i,lbl);
+
+            candidate = GMM(_model);
+            candidate.set_samples(_samples);
+            candidate.model()[lbl][ind] =
+                    candidate.model()[lbl][ind]->merge(candidate.model()[lbl][i]);
+            TrainingData knn_output;
+            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
+            candidate.model()[lbl].erase(candidate.model()[lbl].begin() + i);
+            candidate.update_factors();
+            candidate_score = 0;
+            for(const auto& s: knn_output.get()){
+                candidate_score += fabs(candidate.compute_estimation(s.second,s.first)-1.);
+            }
+            candidate_score = candidate_score/((double)knn_output.size());
+
+            if(candidate_score < (score + score2)/2. ){
+                std::cout << "-_- MERGE _-_" << std::endl;
+                _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][i]);
+                _model[lbl].erase(_model[lbl].begin() + i);
+                update_factors();
+                return;
+            }
         }
     }
 }
