@@ -166,7 +166,7 @@ void GMM::_merge_eigen(int ind, int lbl){
     GMM candidate;
     double score, score2, candidate_score;
 
-    Eigen::VectorXd eigenval, eigenval2, diff_mu;
+    Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1, ellipse_vect2;
     Eigen::MatrixXd eigenvect, eigenvect2;
     _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
     for(int i = 0; i < _model[lbl].size(); i++){
@@ -174,11 +174,12 @@ void GMM::_merge_eigen(int ind, int lbl){
             continue;
         _model[lbl][i]->compute_eigenvalues(eigenval2,eigenvect2);
         diff_mu = _model[lbl][i]->get_mu() - _model[lbl][ind]->get_mu();
-        if(diff_mu.dot(eigenvect2.col(0)) >
-                diff_mu.squaredNorm()*diff_mu.squaredNorm()
-                && diff_mu.dot(eigenvect.col(0)) >
-                diff_mu.squaredNorm()*diff_mu.squaredNorm()){
+        ellipse_vect1 = _model[lbl][ind]->get_mu()
+                + (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = _model[lbl][i]->get_mu()
+                + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
 
+        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
             score = _component_score(ind,lbl);
             score2 = _component_score(i,lbl);
 
@@ -281,27 +282,52 @@ void GMM::_split(int ind, int lbl){
 void GMM::_split_eigen(int ind, int lbl){
     if(_model[lbl][ind]->size() < 4)
        return;
-    Eigen::VectorXd eigenval, eigenval2, diff_mu;
+    GMM candidate;
+
+    Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1,ellipse_vect2;
     Eigen::MatrixXd eigenvect, eigenvect2;
     _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
+    double cand_score1, cand_score2, score;
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
             continue;
         for(const auto& comp :  _model[l]){
             comp->compute_eigenvalues(eigenval2,eigenvect2);
 
+
             diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
-            if(diff_mu.dot(eigenvect2.col(0)) >
-               diff_mu.squaredNorm()*diff_mu.squaredNorm()
-               || diff_mu.dot(eigenvect.col(0)) >
-               diff_mu.squaredNorm()*diff_mu.squaredNorm()){
-                Component::Ptr new_component = _model[lbl][ind]->split();
+            ellipse_vect1 = _model[lbl][ind]->get_mu()
+                    + (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect2 = comp->get_mu()
+                    + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
+
+            if(diff_mu.squaredNorm() < fabs(ellipse_vect1.squaredNorm() - ellipse_vect2.squaredNorm())){
+                candidate = GMM(_model);
+                candidate.set_samples(_samples);
+                Component::Ptr new_component = candidate.model()[lbl][ind]->split();
+
                 if(new_component){
-                    std::cout << "-_- SPLIT _-_" << std::endl;
-                    _model[lbl].push_back(new_component);
-                    update_factors();
-                    return;
+                    candidate.model()[lbl].push_back(new_component);
+                    candidate.update_factors();
+                    cand_score1 = candidate._component_score(ind,lbl);
+                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
+                    score = _component_score(ind,lbl);
+                    if((cand_score1+cand_score2)/2. < score){
+                        std::cout << "-_- SPLIT _-_" << std::endl;
+                        _model = candidate.model();
+                        update_factors();
+                        return;
+                    }
                 }
+
+
+//                Component::Ptr new_component = _model[lbl][ind]->split();
+//                if(new_component){
+//                    std::cout << "-_- SPLIT _-_" << std::endl;
+//                    _model[lbl].push_back(new_component);
+//                    update_factors();
+//                    return;
+//                }
             }
 
         }
