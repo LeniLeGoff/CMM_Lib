@@ -63,6 +63,7 @@ int main(int argc, char** argv){
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
     std::vector<sf::RectangleShape> rects_exact_est(MAX_Y*MAX_X,
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
+    std::vector<sf::Vertex[2]> vect_mean_shift(MAX_Y*MAX_X);
 
     std::vector<sf::CircleShape> components_center;
 
@@ -97,7 +98,6 @@ int main(int argc, char** argv){
 
         rects_real[i].setPosition(coord[0]*4,coord[1]*4);
         rects_explored[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
-
     }
 
     int iteration = 0;
@@ -128,6 +128,8 @@ int main(int argc, char** argv){
             window.draw(circle);
         for(auto err : error_curve)
             window.draw(err);
+        for(auto vect: vect_mean_shift)
+            window.draw(vect,2,sf::Lines);
 
 
 
@@ -149,7 +151,7 @@ int main(int argc, char** argv){
                     sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
                 );
 
-        gmm.update_model(ind,real_space[coord[0]][coord[1]] );
+        gmm.update_model(ind,real_space[coord[0]][coord[1]]);
 
         error = 0;
         if(samples.size() > NBR_CLUSTER){
@@ -159,6 +161,19 @@ int main(int argc, char** argv){
                 for(int j = 0; j < MAX_Y; j++){
 
                     double est = gmm.compute_estimation(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1);
+//                    Eigen::VectorXd mean_shift_vect = (gmm.mean_shift(
+//                                Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1) +
+//                            gmm.mean_shift(
+//                           Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),0))/2.;
+
+
+//                    vect_mean_shift[i + j*MAX_Y][0] =
+//                            sf::Vertex(sf::Vector2f(i*4+2+MAX_X*4*2,j*4+2+MAX_Y*4), sf::Color::Black);
+//                    vect_mean_shift[i + j*MAX_Y][1] =
+//                            sf::Vertex(sf::Vector2f(i*4+2+MAX_X*4*2 + mean_shift_vect(0)*10,
+//                                                    j*4+2+MAX_Y*4 + mean_shift_vect(1)*10),
+//                                       sf::Color::Black);
+
                     //                    std::cout << est << std::endl;
                     //                    std::cout << (double)i/(double)MAX_X << " " << (double)j/(double)MAX_Y << std::endl;
                     //                    if(est > 1.)
@@ -170,9 +185,9 @@ int main(int argc, char** argv){
                     //                    if(dist > 1.) dist = 1.;
                     //                    dist = dist/5.;
 //                    rects_exact_est[i + j*MAX_Y].setFillColor(
-//                                sf::Color(255*dist,
-//                                          255*dist,
-//                                          255*dist)
+//                                sf::Color(255*mean_shift_norm,
+//                                          255*mean_shift_norm,
+//                                          255*mean_shift_norm)
 //                                );
 
                     //                    if(est < 0.4)

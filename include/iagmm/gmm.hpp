@@ -48,15 +48,8 @@ public:
 
     }
 
-    GMM(const model_t& model, const Eigen::VectorXd& X) :
-        _model(model),
-        _X(X), _current_lbl(1){}
-
-    GMM(GMM& gmm, tbb::split) :
-        _model(gmm._model),
-        _X(gmm._X), _current_lbl(gmm._current_lbl){
-        _sum_map[_current_lbl] = 0;
-    }
+    GMM(const GMM& gmm) :
+        _model(gmm._model){}
 
     ~GMM(){
         for(auto& comps: _model)
@@ -66,19 +59,15 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
 
-    void join(const GMM& gmm){
-        _sum_map[_current_lbl] += gmm._sum_map.at(_current_lbl);
-    }
-
     double compute_estimation(const Eigen::VectorXd& sample, int lbl);
     model_t& model(){return _model;}
 
-    double get_result(int lbl){
-        double sum_of_sums;
-        for(const auto& sum : _sum_map)
-            sum_of_sums +=  sum.second;
-        return _sum_map[lbl]/(sum_of_sums);
-    }
+//    double get_result(int lbl){
+//        double sum_of_sums;
+//        for(const auto& sum : _sum_map)
+//            sum_of_sums +=  sum.second;
+//        return _sum_map[lbl]/(sum_of_sums);
+//    }
 
     void append(const std::vector<Eigen::VectorXd> &samples,const std::vector<int>& lbl);
     int append(const Eigen::VectorXd &samples,const int& lbl);
@@ -97,6 +86,8 @@ public:
     std::vector<double> model_scores();
 
     double entropy(int i, int sign);
+
+    Eigen::VectorXd mean_shift(const Eigen::VectorXd& X, int lbl);
 
     int next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
 
@@ -140,13 +131,52 @@ private:
 
     model_t _model;
 
-    Eigen::VectorXd _X;
-
-    //variables for parallel computation
-    std::map<int,double> _sum_map;
-    int _current_lbl;
-
     boost::random::mt19937 _gen;
+
+    class _estimator{
+    public:
+        _estimator(GMM* model, const Eigen::VectorXd& X)
+            : _model(model), _X(X), _current_lbl(0){
+
+            for(int i = 0; i < _model->model().size(); i++)
+                _sum_map.emplace(i,0.);
+        }
+        _estimator(const _estimator& est, tbb::split) : _model(est._model), _X(est._X), _current_lbl(est._current_lbl){
+            _sum_map[_current_lbl] = 0;
+        }
+
+        void operator()(const tbb::blocked_range<size_t>& r);
+        void join(const _estimator& est){
+            _sum_map[_current_lbl] += est._sum_map.at(_current_lbl);
+        }
+
+        double estimation(int lbl);
+
+    private:
+        GMM* _model;
+        std::map<int,double> _sum_map;
+        int _current_lbl;
+        Eigen::VectorXd _X;
+    };
+
+    class _score_calculator{
+    public:
+        _score_calculator(GMM* model, TrainingData samples) :
+            _model(model), _samples(samples), _sum(0){}
+        _score_calculator(const _score_calculator &sc, tbb::split) :
+            _model(sc._model), _samples(sc._samples), _sum(0){}
+
+        void operator ()(const tbb::blocked_range<size_t>& r);
+        void join(const _score_calculator& sc){
+            _sum += sc._sum;
+        }
+        double compute();
+
+    private:
+        GMM* _model;
+        double _sum;
+        TrainingData _samples;
+    };
 
 };
 }

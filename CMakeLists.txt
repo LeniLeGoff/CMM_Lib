@@ -9,13 +9,14 @@ include_directories(/usr/local/include/
                     include)
 
 FILE(GLOB_RECURSE HEADFILES "include/*.hpp")
+FILE(GLOB_RECURSE SRCFILES "src/*cpp")
 add_custom_target(headers SOURCES ${HEADFILES})
 
 install(DIRECTORY include/iagmm/  DESTINATION /usr/local/include/${PROJECT_NAME})
 
 
 
-add_library(iagmm src/gmm.cpp src/component.cpp src/nnmap.cpp)
+add_library(iagmm ${SRCFILES})
 target_link_libraries(iagmm tbb boost_serialization)
 
 install(TARGETS ${PROJECT_NAME}

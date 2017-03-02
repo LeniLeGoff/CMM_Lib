@@ -3,14 +3,15 @@
 
 using namespace iagmm;
 
-void GMM::operator ()(const tbb::blocked_range<size_t>& r){
+void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
     double val;
     double sum = _sum_map[_current_lbl];
 
     Eigen::VectorXd X = _X;
 
     for(size_t i=r.begin(); i != r.end(); ++i){
-        val = _model[_current_lbl][i]->get_factor()*_model[_current_lbl][i]->compute_multivariate_normal_dist(X)
+        val = _model->model()[_current_lbl][i]->get_factor()*
+                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X)
                /* /_model[_current_lbl][i]->compute_multivariate_normal_dist(_model[_current_lbl][i]->get_mu())*/;
         sum += val;
 
@@ -18,27 +19,41 @@ void GMM::operator ()(const tbb::blocked_range<size_t>& r){
     _sum_map[_current_lbl] = sum;
 }
 
-double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
-    _X = X;
+double GMM::_estimator::estimation(int lbl){
 
-    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model[i].empty()) return false;} return true;}())
-        return 0.5;
-
-    for(auto& sum : _sum_map)
-        sum.second = 0;
-
-    for(_current_lbl = 0; _current_lbl < _nbr_class; _current_lbl++)
-        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model[_current_lbl].size()),*this);
+    for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
+        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
 
     double sum_of_sums = 0;
     for(const auto& sum : _sum_map)
         sum_of_sums +=  sum.second;
 
-
     return _sum_map[lbl]/sum_of_sums;
 }
 
+double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
 
+    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model[i].empty()) return false;} return true;}())
+        return 0.5;
+
+    _estimator estimator(this, X);
+
+    return estimator.estimation(lbl);
+}
+
+void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
+    double sum = _sum;
+
+    for(size_t i = r.begin(); i != r.end(); ++i){
+        sum += fabs(_model->compute_estimation(_samples[i].second,_samples[i].first) - 1.);
+    }
+    _sum = sum;
+}
+
+double GMM::_score_calculator::compute(){
+    tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_samples.size()),*this);
+    return _sum/((double)_samples.size());
+}
 
 void GMM::update_factors(){
 
@@ -105,6 +120,19 @@ void GMM::knn(const Eigen::VectorXd& center, TrainingData& output, int k){
     }
 }
 
+Eigen::VectorXd  GMM::mean_shift(const Eigen::VectorXd& X, int lbl){
+    double estimation = 0;
+    Eigen::VectorXd numerator = Eigen::VectorXd::Zero(_dimension);
+//    for(const auto& comps : _model){
+        for(int i = 0; i < _model[lbl].size(); i++){
+            numerator += _model[lbl][i]->get_factor()*_model[lbl][i]->compute_multivariate_normal_dist(X)*_model[lbl][i]->get_mu();
+            estimation += _model[lbl][i]->get_factor()*_model[lbl][i]->compute_multivariate_normal_dist(X);
+        }
+//    }
+
+    return numerator/estimation - X;
+}
+
 void GMM::_merge(int ind, int lbl){
     model_t candidate_comp;
     double dist, score = 0, score2, candidate_score;
@@ -166,6 +194,15 @@ void GMM::_merge_eigen(int ind, int lbl){
     GMM candidate;
     double score, score2, candidate_score;
 
+    _score_calculator sc(this,_samples);
+    score = sc.compute();
+
+//    score = 0;
+//    for(const auto& s: _samples.get()){
+//        score += fabs(compute_estimation(s.second,s.first)-1.);
+//    }
+//    score = score/_samples.size();
+
     Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1, ellipse_vect2;
     Eigen::MatrixXd eigenvect, eigenvect2;
     _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
@@ -180,24 +217,30 @@ void GMM::_merge_eigen(int ind, int lbl){
                 + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
 
         if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
-            score = _component_score(ind,lbl);
-            score2 = _component_score(i,lbl);
+
+
+//            score = _component_score(ind,lbl);
+//            score2 = _component_score(i,lbl);
 
             candidate = GMM(_model);
             candidate.set_samples(_samples);
             candidate.model()[lbl][ind] =
                     candidate.model()[lbl][ind]->merge(candidate.model()[lbl][i]);
-            TrainingData knn_output;
-            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
+//            TrainingData knn_output;
+//            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
             candidate.model()[lbl].erase(candidate.model()[lbl].begin() + i);
             candidate.update_factors();
-            candidate_score = 0;
-            for(const auto& s: knn_output.get()){
-                candidate_score += fabs(candidate.compute_estimation(s.second,s.first)-1.);
-            }
-            candidate_score = candidate_score/((double)knn_output.size());
 
-            if(candidate_score < (score + score2)/2. ){
+            _score_calculator candidate_sc(&candidate,candidate.get_samples());
+            candidate_score  = candidate_sc.compute();
+
+            //            candidate_score = 0;
+//            for(const auto& s: candidate.get_samples().get()){
+//                candidate_score += fabs(candidate.compute_estimation(s.second,s.first)-1.);
+//            }
+//            candidate_score = candidate_score/((double)candidate.get_samples().size());
+            std::cout << candidate_score << " <> " << score << std::endl;
+            if(candidate_score <= score ){
                 std::cout << "-_- MERGE _-_" << std::endl;
                 _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][i]);
                 _model[lbl].erase(_model[lbl].begin() + i);
@@ -457,25 +500,23 @@ void GMM::update_model(int ind, int lbl){
     if(n > 1)
         _merge_eigen(ind,lbl);
 
-
-
-    for(int i = 0; i < _nbr_class; i++){
-        n = _model[i].size();
-        if(n < 2) break;
-        do
-            rand_ind = rand()%n;
-        while(rand_ind == ind);
-        _split_eigen(rand_ind,i);
+//    for(int i = 0; i < _nbr_class; i++){
+//        n = _model[i].size();
+//        if(n < 2) break;
+//        do
+//            rand_ind = rand()%n;
+//        while(rand_ind == ind);
+//        _split_eigen(rand_ind,i);
 
 
 
-        do
-            rand_ind = rand()%n;
-        while(rand_ind == ind);
-        _merge_eigen(rand_ind,i);
+//        do
+//            rand_ind = rand()%n;
+//        while(rand_ind == ind);
+//        _merge_eigen(rand_ind,i);
 
 
-    }
+//    }
     for(auto& components : _model)
         for(auto& comp : components.second)
             comp->update_parameters();
