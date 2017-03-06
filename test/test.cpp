@@ -158,67 +158,27 @@ int main(int argc, char** argv){
         if(samples.size() > NBR_CLUSTER){
             cumul_est = 0;
             choice_distribution.clear();
-            for(int i = 0; i < MAX_X; i++){
-                for(int j = 0; j < MAX_Y; j++){
-
-                    double est = gmm.compute_estimation(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1);
-//                    Eigen::VectorXd mean_shift_vect = (gmm.mean_shift(
-//                                Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1) +
-//                            gmm.mean_shift(
-//                           Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),0))/2.;
-
-
-//                    vect_mean_shift[i + j*MAX_Y][0] =
-//                            sf::Vertex(sf::Vector2f(i*4+2+MAX_X*4*2,j*4+2+MAX_Y*4), sf::Color::Black);
-//                    vect_mean_shift[i + j*MAX_Y][1] =
-//                            sf::Vertex(sf::Vector2f(i*4+2+MAX_X*4*2 + mean_shift_vect(0)*10,
-//                                                    j*4+2+MAX_Y*4 + mean_shift_vect(1)*10),
-//                                       sf::Color::Black);
-
-                    //                    std::cout << est << std::endl;
-                    //                    std::cout << (double)i/(double)MAX_X << " " << (double)j/(double)MAX_Y << std::endl;
-                    //                    if(est > 1.)
-                    //                        est = 1.;
-                    //                    if(est < -1)
-                    //                        est = -1.;
-
-
-
-                    double dist = choice_dist_map(i+j*MAX_Y);
-                    rects_exact_est[i + j*MAX_Y].setFillColor(
+            tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
+                              [&](const tbb::blocked_range<size_t>& r){
+                for(int i = r.begin(); i != r.end(); ++i){
+                    if(i%MAX_X == MAX_X - 1)
+                        coord[1]++;
+                    if(coord[1] >= MAX_Y)
+                        coord[1] = 0;
+                    double est = gmm.compute_estimation(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
+                    double dist = choice_dist_map(i);
+                    rects_exact_est[i].setFillColor(
                                 sf::Color(255*dist,
                                           255*dist,
                                           255*dist)
                                 );
+                    error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
 
-                    //                    if(est < 0.4)
-                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                    sf::Color(0,0,255)
-                    //                                    );
-                    //                    else if(est > 0.6)
-                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                    sf::Color(255,0,0)
-                    //                                    );
-                    //                    else rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                sf::Color(255,0,255)
-                    //                                );
-
-
-                    error += fabs(est-real_space[i][j]);
-
-//                    cumul_est+= 1-fabs(est);
-//                    choice_distribution.emplace(cumul_est,Eigen::Vector2i(i,j));
-
-                    //                    est = (est + 1.)/2.;
-
-                    //                    std::cout << "estimation : " << est << std::endl;
-
-                    rects_estimated[i + j*MAX_Y].setFillColor(
+                    rects_estimated[i].setFillColor(
                                 sf::Color(255*est,0,255*(1-est))
                                 );
-
                 }
-            }
+            });
         }
         error = error/(double)(MAX_X*MAX_Y);
         sf::RectangleShape error_point(sf::Vector2f(4,4));

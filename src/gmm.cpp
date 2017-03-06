@@ -303,7 +303,7 @@ int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map)
         return rand()%(samples.size());
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
-            [&](const tbb::blocked_range<size_t> r){
+            [&](const tbb::blocked_range<size_t>& r){
         double dist, min_dist, comp_radius;
         int min_ind, min_lbl;
         Eigen::VectorXd eigenval, diff;
