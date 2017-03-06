@@ -10,6 +10,7 @@
 #include <ctime>
 
 #include <boost/random.hpp>
+#include <boost/chrono.hpp>
 
 #include <iagmm/gmm.hpp>
 #include <iagmm/component.hpp>
@@ -33,6 +34,7 @@ double compute_f(double A,double x, double y){
 int main(int argc, char** argv){
     srand(std::time(NULL));
     boost::random::mt19937 gen;
+    boost::chrono::system_clock::time_point timer;
 
     tbb::task_scheduler_init init;
 
@@ -93,21 +95,20 @@ int main(int argc, char** argv){
 
         rects_estimated[i].setPosition(coord[0]*4+MAX_X*4,coord[1]*4);
         rects_estimated[i].setFillColor(sf::Color::White);
-        rects_exact_est[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4+MAX_Y*4);
+        rects_exact_est[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
         rects_exact_est[i].setFillColor(sf::Color::White);
 
         rects_real[i].setPosition(coord[0]*4,coord[1]*4);
         rects_explored[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
+        rects_explored[i].setFillColor(sf::Color::Transparent);
     }
 
     int iteration = 0;
 
     error = 1.;
 
-
-
     while(window.isOpen()){
-
+        timer  = boost::chrono::system_clock::now();
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -120,23 +121,23 @@ int main(int argc, char** argv){
             window.draw(rect);
         for(auto rect: rects_real)
             window.draw(rect);
-        for(auto rect: rects_explored)
-            window.draw(rect);
         for(auto rect: rects_exact_est)
+            window.draw(rect);
+        for(auto rect: rects_explored)
             window.draw(rect);
         for(auto circle: components_center)
             window.draw(circle);
         for(auto err : error_curve)
             window.draw(err);
-        for(auto vect: vect_mean_shift)
-            window.draw(vect,2,sf::Lines);
+//        for(auto vect: vect_mean_shift)
+//            window.draw(vect,2,sf::Lines);
 
 
 
 
-//        Eigen::VectorXd next_s = gmm.next_sample(all_sample,choice_dist_map);
-        coord[0] = rand()%MAX_X;
-        coord[1] = rand()%MAX_Y;
+        Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
+        coord[0] = next_s(0)*MAX_X;
+        coord[1] = next_s(1)*MAX_Y;
 
         //        std::cout << map << std::endl;
 
@@ -181,14 +182,14 @@ int main(int argc, char** argv){
                     //                    if(est < -1)
                     //                        est = -1.;
 
-//                    double dist = choice_dist_map(i+j*MAX_Y);
-                    //                    if(dist > 1.) dist = 1.;
-                    //                    dist = dist/5.;
-//                    rects_exact_est[i + j*MAX_Y].setFillColor(
-//                                sf::Color(255*mean_shift_norm,
-//                                          255*mean_shift_norm,
-//                                          255*mean_shift_norm)
-//                                );
+
+
+                    double dist = choice_dist_map(i+j*MAX_Y);
+                    rects_exact_est[i + j*MAX_Y].setFillColor(
+                                sf::Color(255*dist,
+                                          255*dist,
+                                          255*dist)
+                                );
 
                     //                    if(est < 0.4)
                     //                        rects_exact_est[i + j*MAX_Y].setFillColor(
@@ -246,11 +247,14 @@ int main(int argc, char** argv){
         std::cout << "error : " << error << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
+        std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;
         std::cout << "_________________________________________________________________" << std::endl;
 
         iteration++;
 
         window.display();
+
+
 
         //        std::cin.ignore();
     }

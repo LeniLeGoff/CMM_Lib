@@ -17,17 +17,17 @@ install(DIRECTORY include/iagmm/  DESTINATION /usr/local/include/${PROJECT_NAME}
 
 
 add_library(iagmm ${SRCFILES})
-target_link_libraries(iagmm tbb boost_serialization)
+target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_system)
 
 install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION /usr/local/lib
     LIBRARY DESTINATION /usr/local/lib)
 
 add_executable(load_archive tools/load_archive.cpp)
-target_link_libraries(load_archive iagmm)
+target_link_libraries(load_archive iagmm )
 
 add_executable(test_1 test/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization)
+target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 add_executable(test_serial test/test_serial.cpp)
 target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)

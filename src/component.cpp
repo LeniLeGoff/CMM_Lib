@@ -47,11 +47,26 @@ void Component::update_parameters(){
 //            (_samples.back()-_mu)*(_samples.back()-_mu).transpose();
 //}
 
+void Component::_incr_parameters(const Eigen::VectorXd& X){
+    if(_samples.size() <= 1){
+        _mu = X;
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
+        return;
+    }
+    double f_size = _samples.size();
+    _mu = (f_size-1)/f_size*_mu + 1/f_size*X;
+    _covariance = (f_size-2)/(f_size-1)*_covariance
+            + f_size/((f_size-1)*(f_size-1))*(X - _mu)*(X-_mu).transpose();
+
+}
+
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
     double cm_determinant = (2*PI*_covariance).determinant();
     double exp_arg = -1./2.*((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
-
-    return 1/cm_determinant*exp(exp_arg);
+    double res = 1/cm_determinant*exp(exp_arg);
+    if(res == res)
+        return res;
+    else return 0;
 }
 
 
@@ -174,6 +189,11 @@ Component::Ptr Component::split(){
     return new_c;
 
 }
+
+double Component::distance(const Eigen::VectorXd& X) const {
+    return ((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
+}
+
 double Component::get_standard_deviation() const{
     if(_samples.size() <= 1) return 0.;
     return sqrt(_covariance.diagonal().dot(_covariance.diagonal()));

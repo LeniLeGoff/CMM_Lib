@@ -26,10 +26,10 @@ public:
 
     Component(){}
     Component(int dimension, int lbl) :
-        _dimension(dimension), _label(lbl), _factor(0), _size(0){}
+        _dimension(dimension), _label(lbl), _factor(0){}
     Component(const Component& c) :
         _covariance(c._covariance), _mu(c._mu), _label(c._label),
-        _samples(c._samples), _dimension(c._dimension), _factor(c._factor), _size(c._size){}
+        _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
 
     /**
      * @brief update_parameters
@@ -52,7 +52,7 @@ public:
     //Modifiers
     void add(Eigen::VectorXd sample){
         _samples.push_back(sample);
-        _size++;
+        _incr_parameters(sample);
     }
     void clear(){_samples.clear();}
 
@@ -62,6 +62,8 @@ public:
     std::vector<double> get_intern_estimation() const;
     void compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixXd& eigenvectors) const;
     double entropy();
+
+    double distance(const Eigen::VectorXd& X) const;
 
     //Getters & Setters
     void set_factor(double f){_factor = f;}
@@ -98,10 +100,12 @@ public:
     }
 
 private:
+    void _incr_parameters(const Eigen::VectorXd& X);
+
+
     Eigen::MatrixXd _covariance;
     Eigen::VectorXd _mu;
     std::vector<Eigen::VectorXd> _samples;
-    size_t _size;
     int _dimension;
     double _factor;
     int _label;

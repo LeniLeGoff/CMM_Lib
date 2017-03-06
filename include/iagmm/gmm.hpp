@@ -121,11 +121,9 @@ public:
 
 private:
 
-    void _merge(int ind,int lbl);
-    void _merge_eigen(int ind, int lbl);
+    void _merge(int ind, int lbl);
     double _component_score(int i, int lbl);
-    void _split(int ind ,int lbl);
-    void _split_eigen(int ind, int lbl);
+    void _split(int ind, int lbl);
     void _new_component(const Eigen::VectorXd &samples, int label);
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
@@ -176,6 +174,32 @@ private:
         GMM* _model;
         double _sum;
         TrainingData _samples;
+    };
+
+    class _distribution_constructor{
+    public:
+        _distribution_constructor(Eigen::VectorXd proba_map) :
+            _proba_map(proba_map), _cumul(0), _total(0){
+            _distribution = std::map<double,int>();
+        }
+        _distribution_constructor(const _distribution_constructor &dc, tbb::split) :
+            _proba_map(dc._proba_map), _cumul(0), _total(dc._total){
+            _distribution = std::map<double,int>();
+        }
+
+        void operator()(const tbb::blocked_range<size_t>& r);
+        void join(const _distribution_constructor& dc){
+            _cumul += dc._cumul;
+            for(auto it = dc._distribution.begin(); it != dc._distribution.end(); ++it)
+                _distribution.emplace(it->first,it->second);
+        }
+        std::map<double,int> compute();
+
+    private:
+        Eigen::VectorXd _proba_map;
+        std::map<double,int> _distribution;
+        double _cumul;
+        double _total;
     };
 
 };
