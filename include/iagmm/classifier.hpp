@@ -34,7 +34,7 @@ public:
         _dimension(c._dimension),
         _samples(c._samples){}
 
-    ~Classifier(){}
+    virtual ~Classifier(){}
 
     /**
      * @brief compute_estimation : Compute a probability for a "sample" to be of the class "lbl"
@@ -44,12 +44,14 @@ public:
      */
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
 
+
     /**
      * @brief add a sample to the training set of the classifier
      * @param sample
      * @param the label of the classifier
      */
-    void add(const Eigen::VectorXd& sample, int lbl){
+
+    virtual void add(const Eigen::VectorXd& sample, int lbl){
         _samples.add(lbl,sample);
     }
 
@@ -64,6 +66,9 @@ public:
      * @return all the samples of the training dataset
      */
     const TrainingData& get_samples() const {return _samples;}
+    void set_samples(TrainingData samples){_samples = samples;}
+    int get_nbr_class(){return _nbr_class;}
+
 
 protected:
     int _nbr_class;

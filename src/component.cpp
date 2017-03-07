@@ -4,9 +4,10 @@
 
 using namespace iagmm;
 
+
 void Component::update_parameters(){
-    if(_samples.size() <= 3){
-        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
+    if(_samples.size() <= 2){
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
 //        _factor = _sign;
         _mu = _samples[0];
         return;
@@ -33,11 +34,39 @@ void Component::update_parameters(){
 
 }
 
+//void Component::update_parameters(){
+//    if(_size <= 1){
+//        _mu = _samples.back();
+//        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
+//        return;
+//    }
+//    double f_size = _size;
+//    _mu = (f_size-1)/f_size*_mu + 1/f_size*_samples.back();
+//    _covariance = (f_size-2)/(f_size-1)*_covariance
+//            + (f_size)/((f_size-1)*(f_size-1))*
+//            (_samples.back()-_mu)*(_samples.back()-_mu).transpose();
+//}
+
+void Component::_incr_parameters(const Eigen::VectorXd& X){
+    if(_samples.size() <= 1){
+        _mu = X;
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
+        return;
+    }
+    double f_size = _samples.size();
+    _mu = (f_size-1)/f_size*_mu + 1/f_size*X;
+    _covariance = (f_size-2)/(f_size-1)*_covariance
+            + f_size/((f_size-1)*(f_size-1))*(X - _mu)*(X-_mu).transpose();
+
+}
+
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
     double cm_determinant = (2*PI*_covariance).determinant();
     double exp_arg = -1./2.*((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
-
-    return 1/cm_determinant*exp(exp_arg);
+    double res = 1/cm_determinant*exp(exp_arg);
+    if(res == res)
+        return res;
+    else return 0;
 }
 
 
@@ -74,43 +103,83 @@ Component::Ptr Component::split(){
     int r,c;
     for(int i = 0; i < _samples.size(); i++){
        m_dist.row(i).minCoeff(&r,&c);
-       graph.emplace(i,c);
-       graph.emplace(c,i);
+       if([&]()-> bool{auto range = graph.equal_range(i);
+               for(auto& it = range.first; it != range.second; it++)
+               if(c == it->second) return false; return true;}()){
+           graph.emplace(i,c);
+           graph.emplace(c,i);
+       }
        minIndexes(i) = c;
     }
 
 
-    std::vector<int> indexes;
+    std::vector<std::vector<int>> indexes;
+    while(!graph.empty())
+    {
+        std::vector<int> tmp_ind;
+        std::function<void(int)> rec = [&](int current_i){
+            for(auto i : tmp_ind)
+                if(i == current_i)
+                    return;
+            tmp_ind.push_back(current_i);
+            auto range = graph.equal_range(current_i);
+            for(auto it = range.first; it != range.second; it++)
+                rec(it->second);
+        };
+        rec(graph.begin()->first);
 
-    std::function<void(int)> rec = [&](int current_i){
-        for(auto i : indexes)
-            if(i == current_i)
-                return;
-        indexes.push_back(current_i);
-        auto range = graph.equal_range(current_i);
-        for(auto it = range.first; it != range.second; it++)
-            rec(it->second);
-    };
-    rec(0);
+        for(const auto& i : tmp_ind)
+            graph.erase(i);
+
+        indexes.push_back(tmp_ind);
+    }
 
 //    std::cout << indexes.size() << std::endl;
 //    for(auto i : indexes)
 //        std::cout << i << std::endl;
 
-    if(indexes.size() == _samples.size())
+    if(indexes.size() == 1)
         return NULL;
 
+    Eigen::MatrixXd means = Eigen::MatrixXd::Zero(_dimension,indexes.size());
+    Eigen::MatrixXd dist(indexes.size(),indexes.size());
+
+    while(indexes.size() > 2)
+    {
+        means = Eigen::MatrixXd::Zero(_dimension,indexes.size());
+        for(size_t k = 0; k < indexes.size(); k++){
+            for(const auto& i : indexes[k]){
+                means.col(k) += _samples[i];
+            }
+            means.col(k) = means.col(k)/(double)indexes[k].size();
+        }
+        dist.resize(indexes.size(),indexes.size());
+        for(size_t k = 0; k < indexes.size(); k++){
+            for(size_t j = 0; j < indexes.size(); j++){
+                if(k == j){ dist(k,j) = 100000000000; continue;}
+                dist(k,j) = (means.col(k) - means.col(j)).squaredNorm();
+            }
+        }
+
+        dist.minCoeff(&r,&c);
+        for(const auto& i : indexes[r]){
+            indexes[c].push_back(i);
+        }
+        indexes.erase(indexes.begin() + r);
+        indexes.shrink_to_fit();
+    }
+
     Component::Ptr new_c(new Component(_dimension,_label));
-//    std::cout << "samples size : " << _samples.size() << std::endl;
-    for(int i : indexes){
-//        std::cout << i << " : " << _samples[i] << std::endl;
+    //    std::cout << "samples size : " << _samples.size() << std::endl;
+    for(int i : indexes[0]){
+        //        std::cout << i << " : " << _samples[i] << std::endl;
         new_c->add(_samples[i]);
     }
 
     std::vector<Eigen::VectorXd> cpy_samples = _samples;
     _samples.clear();
     for(int i = 0; i < cpy_samples.size(); i++){
-        if([=](int i) -> bool {for(int ind : indexes) {if(i == ind ) return false;} return true;}(i))
+        if([=](int i) -> bool {for(int ind : indexes[1]) {if(i == ind ) return true;} return false;}(i))
             _samples.push_back(cpy_samples[i]);
     }
 
@@ -118,6 +187,11 @@ Component::Ptr Component::split(){
     new_c->update_parameters();
 
     return new_c;
+
+}
+
+double Component::distance(const Eigen::VectorXd& X) const {
+    return ((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
 }
 
 double Component::get_standard_deviation() const{
@@ -135,8 +209,7 @@ std::vector<double> Component::get_intern_estimation() const {
 double Component::component_score() const {
     double sum = 0;
     for(auto s : _samples)
-        sum += (compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.)*
-                (compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.);
+        sum += fabs(compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.);
     return sum/(double)_samples.size();
 }
 

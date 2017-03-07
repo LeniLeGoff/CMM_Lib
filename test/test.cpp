@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <memory>
 #include <eigen3/Eigen/Core>
@@ -9,9 +10,12 @@
 #include <ctime>
 
 #include <boost/random.hpp>
+#include <boost/chrono.hpp>
 
 #include <iagmm/gmm.hpp>
 #include <iagmm/component.hpp>
+
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <SFML/Graphics.hpp>
 
@@ -30,6 +34,7 @@ double compute_f(double A,double x, double y){
 int main(int argc, char** argv){
     srand(std::time(NULL));
     boost::random::mt19937 gen;
+    boost::chrono::system_clock::time_point timer;
 
     tbb::task_scheduler_init init;
 
@@ -60,6 +65,7 @@ int main(int argc, char** argv){
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
     std::vector<sf::RectangleShape> rects_exact_est(MAX_Y*MAX_X,
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
+    std::vector<sf::Vertex[2]> vect_mean_shift(MAX_Y*MAX_X);
 
     std::vector<sf::CircleShape> components_center;
 
@@ -89,22 +95,20 @@ int main(int argc, char** argv){
 
         rects_estimated[i].setPosition(coord[0]*4+MAX_X*4,coord[1]*4);
         rects_estimated[i].setFillColor(sf::Color::White);
-        rects_exact_est[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4+MAX_Y*4);
+        rects_exact_est[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
         rects_exact_est[i].setFillColor(sf::Color::White);
 
         rects_real[i].setPosition(coord[0]*4,coord[1]*4);
         rects_explored[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
-
+        rects_explored[i].setFillColor(sf::Color::Transparent);
     }
 
     int iteration = 0;
 
     error = 1.;
 
-
-
     while(window.isOpen()){
-
+        timer  = boost::chrono::system_clock::now();
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -117,19 +121,21 @@ int main(int argc, char** argv){
             window.draw(rect);
         for(auto rect: rects_real)
             window.draw(rect);
-        for(auto rect: rects_explored)
-            window.draw(rect);
         for(auto rect: rects_exact_est)
+            window.draw(rect);
+        for(auto rect: rects_explored)
             window.draw(rect);
         for(auto circle: components_center)
             window.draw(circle);
         for(auto err : error_curve)
             window.draw(err);
+//        for(auto vect: vect_mean_shift)
+//            window.draw(vect,2,sf::Lines);
 
 
 
 
-        Eigen::VectorXd next_s = gmm.next_sample(all_sample,choice_dist_map);
+        Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
         coord[0] = next_s(0)*MAX_X;
         coord[1] = next_s(1)*MAX_Y;
 
@@ -139,68 +145,40 @@ int main(int argc, char** argv){
 
         label.push_back(real_space[coord[0]][coord[1]]);
 
-        gmm.append(std::vector<Eigen::VectorXd>
-                   (1,Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y)),
-                std::vector<int>(1,real_space[coord[0]][coord[1]]));
+        int ind = gmm.append(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y),
+              real_space[coord[0]][coord[1]]);
 
         rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
                     sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
                 );
 
-        gmm.update_model();
+        gmm.update_model(ind,real_space[coord[0]][coord[1]]);
 
         error = 0;
         if(samples.size() > NBR_CLUSTER){
             cumul_est = 0;
             choice_distribution.clear();
-            for(int i = 0; i < MAX_X; i++){
-                for(int j = 0; j < MAX_Y; j++){
-
-                    double est = gmm.compute_estimation(Eigen::Vector2d((double)i/(double)MAX_X,(double)j/(double)MAX_Y),1);
-                    //                    std::cout << est << std::endl;
-                    //                    std::cout << (double)i/(double)MAX_X << " " << (double)j/(double)MAX_Y << std::endl;
-                    //                    if(est > 1.)
-                    //                        est = 1.;
-                    //                    if(est < -1)
-                    //                        est = -1.;
-
-                    double dist = choice_dist_map(i+j*MAX_Y);
-                    //                    if(dist > 1.) dist = 1.;
-                    //                    dist = dist/5.;
-                    rects_exact_est[i + j*MAX_Y].setFillColor(
+            tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
+                              [&](const tbb::blocked_range<size_t>& r){
+                for(int i = r.begin(); i != r.end(); ++i){
+                    if(i%MAX_X == MAX_X - 1)
+                        coord[1]++;
+                    if(coord[1] >= MAX_Y)
+                        coord[1] = 0;
+                    double est = gmm.compute_estimation(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
+                    double dist = choice_dist_map(i);
+                    rects_exact_est[i].setFillColor(
                                 sf::Color(255*dist,
                                           255*dist,
                                           255*dist)
                                 );
+                    error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
 
-                    //                    if(est < 0.4)
-                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                    sf::Color(0,0,255)
-                    //                                    );
-                    //                    else if(est > 0.6)
-                    //                        rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                    sf::Color(255,0,0)
-                    //                                    );
-                    //                    else rects_exact_est[i + j*MAX_Y].setFillColor(
-                    //                                sf::Color(255,0,255)
-                    //                                );
-
-
-                    error += (est*2 - 1)*real_space[i][j] > 0 ? 0 : 1;//fabs(est-real_space[i][j]);
-
-                    cumul_est+= 1-fabs(est);
-                    choice_distribution.emplace(cumul_est,Eigen::Vector2i(i,j));
-
-                    //                    est = (est + 1.)/2.;
-
-                    //                    std::cout << "estimation : " << est << std::endl;
-
-                    rects_estimated[i + j*MAX_Y].setFillColor(
+                    rects_estimated[i].setFillColor(
                                 sf::Color(255*est,0,255*(1-est))
                                 );
-
                 }
-            }
+            });
         }
         error = error/(double)(MAX_X*MAX_Y);
         sf::RectangleShape error_point(sf::Vector2f(4,4));
@@ -229,14 +207,21 @@ int main(int argc, char** argv){
         std::cout << "error : " << error << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
+        std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;
         std::cout << "_________________________________________________________________" << std::endl;
 
         iteration++;
 
         window.display();
 
+
+
         //        std::cin.ignore();
     }
+
+    std::ofstream of("archive_gmm");
+    boost::archive::binary_oarchive oarch(of);
+    oarch << gmm;
 
     return 0;
 }
