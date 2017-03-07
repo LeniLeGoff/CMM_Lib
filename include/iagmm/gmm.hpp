@@ -18,6 +18,7 @@
 #include "component.hpp"
 #include "classifier.hpp"
 
+
 namespace iagmm{
 
 class GMM : public Classifier {
