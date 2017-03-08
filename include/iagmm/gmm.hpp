@@ -49,6 +49,7 @@ public:
     }
 
     GMM(const GMM& gmm) :
+        Classifier(gmm),
         _model(gmm._model){}
 
     ~GMM(){
