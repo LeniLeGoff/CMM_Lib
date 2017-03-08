@@ -18,15 +18,38 @@ namespace iagmm {
 
 typedef std::vector<Eigen::VectorXd> samples_t;
 
+/**
+ * @brief The Component class
+ * This class is relative to the GMM classifier. A component represent a gaussian. It is constitute of a set of sample of same class, a dimension of the feature space.
+ *
+ * This class compute Gaussian distribution with a set of sample.
+ *
+ * TODO put the formula
+ *
+ */
 class Component{
 public:
 
     typedef boost::shared_ptr<Component> Ptr;
     typedef boost::shared_ptr<const Component> ConstPtr;
 
+    /**
+     * @brief default constructor
+     */
     Component(){}
-    Component(int dimension, int lbl) :
-        _dimension(dimension), _label(lbl), _factor(0){}
+
+    /**
+     * @brief Basic constructor
+     * @param dimension of the feature space
+     * @param label of the class
+     */
+    Component(int dimension, int lbl)
+        : _dimension(dimension), _label(lbl), _factor(0){}
+
+    /**
+     * @brief Copy constructor
+     * @param  a component
+     */
     Component(const Component& c) :
         _covariance(c._covariance), _mu(c._mu), _label(c._label),
         _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
