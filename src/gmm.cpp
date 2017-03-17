@@ -172,7 +172,7 @@ void GMM::_merge(int ind, int lbl){
         ellipse_vect2 = _model[lbl][i]->get_mu()
                 + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
 
-        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
+        if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
 
 
 //            score = _component_score(ind,lbl);
@@ -189,7 +189,7 @@ void GMM::_merge(int ind, int lbl){
             candidate.update_factors();
 
             _score_calculator candidate_sc(&candidate,candidate.get_samples());
-            candidate_score  = candidate_sc.compute();
+            candidate_score = candidate_sc.compute();
 
 
             if(candidate_score <= score ){
