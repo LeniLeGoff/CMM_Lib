@@ -34,6 +34,8 @@ public:
     //parameters
     double distance_threshold;
     double increment_factor;
+    double default_estimation = 0.5;
+
 };
 
 }

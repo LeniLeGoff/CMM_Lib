@@ -5,7 +5,7 @@ using namespace iagmm;
 
 double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
 
-    double estimation = 0.5;
+    double estimation = default_estimation;
 
     for(const auto& s : _samples.get()){
         double dist = _distance(s.second,sample);
