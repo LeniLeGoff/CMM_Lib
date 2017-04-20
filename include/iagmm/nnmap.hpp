@@ -1,6 +1,7 @@
 #ifndef NNMAP_HPP
 #define NNMAP_HPP
 
+#include "functional"
 #include "data.hpp"
 #include "classifier.hpp"
 
@@ -17,7 +18,11 @@ public:
     NNMap(int dimension, int nbr_class, double dist_thre, double incr) :
         Classifier(dimension, nbr_class),
         distance_threshold(dist_thre),
-        increment_factor(incr){}
+        increment_factor(incr){
+        _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+            return (s1 - s2).squaredNorm();
+        };
+    }
     NNMap(const NNMap& nnmap) :
         Classifier(nnmap),
         distance_threshold(nnmap.distance_threshold),
@@ -29,7 +34,7 @@ public:
     //parameters
     double distance_threshold;
     double increment_factor;
-    double default_estimation = 1.;
+    double default_estimation = .5;
 
 };
 
