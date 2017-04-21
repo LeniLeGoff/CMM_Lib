@@ -37,7 +37,8 @@ public:
     Classifier(const Classifier &c) :
         _nbr_class(c._nbr_class),
         _dimension(c._dimension),
-        _samples(c._samples){}
+        _samples(c._samples),
+        _distance(c._distance){}
 
     virtual ~Classifier(){}
 
