@@ -6,8 +6,9 @@ using namespace iagmm;
 
 
 void Component::update_parameters(){
+    double coeff = 1.;
     if(_samples.size() <= 2){
-        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*coeff;
 //        _factor = _sign;
         _mu = _samples[0];
         return;
@@ -25,7 +26,7 @@ void Component::update_parameters(){
     for(const auto& sample : _samples)
         m_sum += (sample - _mu)*(sample - _mu).transpose();
 
-    _covariance = 1./(_samples.size()-1)*m_sum;
+    _covariance = 1./(_samples.size()-1)*m_sum*coeff;
 
 //    _factor = _sign*_samples.size()/(2*nbr_samples*nbr_Components)
             //_sign*get_standard_deviation()*_samples.size();

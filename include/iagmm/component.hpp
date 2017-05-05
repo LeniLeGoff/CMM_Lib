@@ -75,7 +75,7 @@ public:
     //Modifiers
     void add(Eigen::VectorXd sample){
         _samples.push_back(sample);
-        _incr_parameters(sample);
+//        _incr_parameters(sample);
     }
     void clear(){_samples.clear();}
 

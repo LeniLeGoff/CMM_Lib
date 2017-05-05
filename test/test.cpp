@@ -138,6 +138,8 @@ int main(int argc, char** argv){
         Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
         coord[0] = next_s(0)*MAX_X;
         coord[1] = next_s(1)*MAX_Y;
+//        coord[0] = rand()%MAX_X;
+//        coord[1] = rand()%MAX_Y;
 
         //        std::cout << map << std::endl;
 
@@ -153,7 +155,8 @@ int main(int argc, char** argv){
                 );
 
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-
+        gmm.compute_normalisation();
+        std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
         if(samples.size() > NBR_CLUSTER){
             cumul_est = 0;

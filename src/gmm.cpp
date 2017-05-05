@@ -14,8 +14,8 @@ void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
 
     for(size_t i=r.begin(); i != r.end(); ++i){
         val = _model->model()[_current_lbl][i]->get_factor()*
-                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X)
-               /* /_model[_current_lbl][i]->compute_multivariate_normal_dist(_model[_current_lbl][i]->get_mu())*/;
+                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X);
+
         sum += val;
 
     }
@@ -27,11 +27,11 @@ double GMM::_estimator::estimation(int lbl){
     for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
         tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
 
-    double sum_of_sums = 0;
-    for(const auto& sum : _sum_map)
-        sum_of_sums +=  sum.second;
 
-    return _sum_map[lbl]/sum_of_sums;
+
+//    for(const auto& sum : _sum_map)
+//        sum_of_sums += sum.second;
+    return _sum_map[lbl]/_model->_normalisation;
 }
 //--ESTIMATOR
 
@@ -45,6 +45,19 @@ double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
     return estimator.estimation(lbl);
 }
 
+void GMM::compute_normalisation(){
+    double sum_of_sums = 0;
+    double val;
+    for(const auto& model : _model){
+        for(const auto& component : model.second){
+            val = component->get_factor()*
+                    component->compute_multivariate_normal_dist(component->get_mu());
+            sum_of_sums += val;
+        }
+    }
+    _normalisation = sum_of_sums;
+}
+
 //SCORE_CALCULATOR
 void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     double sum = _sum;
@@ -56,6 +69,7 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
 }
 
 double GMM::_score_calculator::compute(){
+    _model->compute_normalisation();
     tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_samples.size()),*this);
     return _sum/((double)_samples.size());
 }
@@ -270,7 +284,7 @@ void GMM::_split(int ind, int lbl){
                     cand_score1 = candidate._component_score(ind,lbl);
                     cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
                     score = _component_score(ind,lbl);
-                    if((cand_score1+cand_score2)/2. < score){
+                    if((cand_score1+cand_score2)/3. < score){
                         std::cout << "-_- SPLIT _-_" << std::endl;
                         _model = candidate.model();
                         update_factors();
@@ -395,19 +409,19 @@ void GMM::update_model(int ind, int lbl){
     if(n > 1)
         _merge(ind,lbl);
 
-    for(int i = 0; i < _nbr_class; i++){
-        n = _model[i].size();
-        if(n < 2) break;
-        do
-            rand_ind = rand()%n;
-        while(rand_ind == ind);
-        _split(rand_ind,i);
+//    for(int i = 0; i < _nbr_class; i++){
+//        n = _model[i].size();
+//        if(n < 2) break;
+//        do
+//            rand_ind = rand()%n;
+//        while(rand_ind == ind);
+//        _split(rand_ind,i);
 
-        do
-            rand_ind = rand()%n;
-        while(rand_ind == ind);
-        _merge(rand_ind,i);
-    }
+//        do
+//            rand_ind = rand()%n;
+//        while(rand_ind == ind);
+//        _merge(rand_ind,i);
+//    }
 
     for(auto& components : _model)
         for(auto& comp : components.second)

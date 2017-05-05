@@ -62,6 +62,7 @@ public:
     void operator()(const tbb::blocked_range<size_t>& r);
 
     double compute_estimation(const Eigen::VectorXd& sample, int lbl);
+    void compute_normalisation();
     model_t& model(){return _model;}
 
 //    double get_result(int lbl){
@@ -121,6 +122,8 @@ public:
     std::string print_info();
     std::string to_string();
 
+    double get_normalisation(){return _normalisation;}
+
 private:
 
     void _merge(int ind, int lbl);
@@ -132,6 +135,8 @@ private:
     model_t _model;
 
     boost::random::mt19937 _gen;
+    double _normalisation;
+
 
     class _estimator{
     public:
