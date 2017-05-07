@@ -19,8 +19,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#define MAX_X 100
-#define MAX_Y 100
+#define MAX_X 20
+#define MAX_Y 20
 #define PI 3.14159265359
 #define NBR_CLUSTER 2
 
