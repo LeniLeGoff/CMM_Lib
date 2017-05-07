@@ -28,10 +28,10 @@ double GMM::_estimator::estimation(int lbl){
         tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
 
 
-
-//    for(const auto& sum : _sum_map)
-//        sum_of_sums += sum.second;
-    return _sum_map[lbl]/_model->_normalisation;
+    double sum_of_sums = 0;
+    for(const auto& sum : _sum_map)
+        sum_of_sums += sum.second;
+    return _sum_map[lbl]/sum_of_sums;
 }
 //--ESTIMATOR
 
@@ -69,7 +69,7 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
 }
 
 double GMM::_score_calculator::compute(){
-    _model->compute_normalisation();
+//    _model->compute_normalisation();
     tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_samples.size()),*this);
     return _sum/((double)_samples.size());
 }
@@ -182,14 +182,17 @@ void GMM::_merge(int ind, int lbl){
             continue;
         _model[lbl][i]->compute_eigenvalues(eigenval2,eigenvect2);
         diff_mu = _model[lbl][i]->get_mu() - _model[lbl][ind]->get_mu();
-        ellipse_vect1 = _model[lbl][ind]->get_mu()
-                + (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = _model[lbl][i]->get_mu()
-                + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
+
+        ellipse_vect1 = (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
+        for(int i = 0; i < eigenval.rows(); i++){
+            ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
+            ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
+        }
 
         if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
 
-
+            std::cout << "Intersection !" << std::endl;
 //            score = _component_score(ind,lbl);
 //            score2 = _component_score(i,lbl);
 
@@ -268,12 +271,16 @@ void GMM::_split(int ind, int lbl){
 
 
             diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
-            ellipse_vect1 = _model[lbl][ind]->get_mu()
-                    + (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
-            ellipse_vect2 = comp->get_mu()
-                    + (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect1 = (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect2 = (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
+            for(int i = 0; i < eigenval.rows(); i++){
+                ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
+                ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
+            }
 
-            if(diff_mu.squaredNorm() < fabs(ellipse_vect1.squaredNorm() - ellipse_vect2.squaredNorm())){
+
+            if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
+                std::cout << "Intersection !" << std::endl;
                 candidate = GMM(_model);
                 candidate.set_samples(_samples);
                 Component::Ptr new_component = candidate.model()[lbl][ind]->split();
@@ -284,7 +291,7 @@ void GMM::_split(int ind, int lbl){
                     cand_score1 = candidate._component_score(ind,lbl);
                     cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
                     score = _component_score(ind,lbl);
-                    if((cand_score1+cand_score2)/3. < score){
+                    if((cand_score1+cand_score2)/2. < score){
                         std::cout << "-_- SPLIT _-_" << std::endl;
                         _model = candidate.model();
                         update_factors();

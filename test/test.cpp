@@ -19,8 +19,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#define MAX_X 100
-#define MAX_Y 100
+#define MAX_X 50
+#define MAX_Y 50
 #define PI 3.14159265359
 #define NBR_CLUSTER 2
 
@@ -155,7 +155,7 @@ int main(int argc, char** argv){
                 );
 
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-        gmm.compute_normalisation();
+//        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
         if(samples.size() > NBR_CLUSTER){
