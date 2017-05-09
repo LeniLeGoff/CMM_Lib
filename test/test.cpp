@@ -19,8 +19,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#define MAX_X 50
-#define MAX_Y 50
+#define MAX_X 100
+#define MAX_Y 100
 #define PI 3.14159265359
 #define NBR_CLUSTER 2
 
@@ -136,10 +136,10 @@ int main(int argc, char** argv){
 
 
         Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
-        coord[0] = next_s(0)*MAX_X;
-        coord[1] = next_s(1)*MAX_Y;
-//        coord[0] = rand()%MAX_X;
-//        coord[1] = rand()%MAX_Y;
+//        coord[0] = next_s(0)*MAX_X;
+//        coord[1] = next_s(1)*MAX_Y;
+        coord[0] = rand()%MAX_X;
+        coord[1] = rand()%MAX_Y;
 
         //        std::cout << map << std::endl;
 

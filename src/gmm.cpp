@@ -182,13 +182,12 @@ void GMM::_merge(int ind, int lbl){
             continue;
         _model[lbl][i]->compute_eigenvalues(eigenval2,eigenvect2);
         diff_mu = _model[lbl][i]->get_mu() - _model[lbl][ind]->get_mu();
-
-        ellipse_vect1 = (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
-        for(int i = 0; i < eigenval.rows(); i++){
-            ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
-            ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
-        }
+        ellipse_vect1 = (_model[lbl][i]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = (_model[lbl][ind]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+//        for(int i = 0; i < eigenval.rows(); i++){
+//            ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
+//            ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
+//        }
 
         if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
 
@@ -271,12 +270,12 @@ void GMM::_split(int ind, int lbl){
 
 
             diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
-            ellipse_vect1 = (eigenvect.transpose()*diff_mu/diff_mu.squaredNorm());
-            ellipse_vect2 = (eigenvect2.transpose()*diff_mu/diff_mu.squaredNorm());
-            for(int i = 0; i < eigenval.rows(); i++){
-                ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
-                ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
-            }
+            ellipse_vect1 = (comp->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect2 = (_model[lbl][ind]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+//            for(int i = 0; i < eigenval.rows(); i++){
+//                ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
+//                ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
+//            }
 
 
             if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
@@ -347,10 +346,9 @@ int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map)
                 }
             }
 
-            _model[min_lbl][min_ind]->compute_eigenvalues(eigenval,eigenvect);
+//            _model[min_lbl][min_ind]->compute_eigenvalues(eigenval,eigenvect);
             diff = _model[min_lbl][min_ind]->get_mu() - samples[j];
-            comp_radius = ((_model[min_lbl][min_ind]->get_mu())
-                           + (eigenvect.transpose()*(diff/diff.squaredNorm()))).squaredNorm();
+            comp_radius = ((_model[min_lbl][min_ind]->get_covariance().inverse().transpose()*(diff/diff.squaredNorm()))).squaredNorm();
             if(min_dist <= comp_radius){
                 choice_dist_map(j) = _model[min_lbl][min_ind]->get_factor()*(1. - min_dist/comp_radius);
                 if(choice_dist_map(j) > max_val)

@@ -64,6 +64,10 @@ void Component::_incr_parameters(const Eigen::VectorXd& X){
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
     double cm_determinant = (2*PI*_covariance).determinant();
     double exp_arg = -1./2.*((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
+    if(exp_arg > 0){
+        std::cerr << "The covariance matrix is not positive definite" << std::endl;
+        return 0;
+    }
     double res = 1/cm_determinant*exp(exp_arg);
     if(res == res)
         return res;
