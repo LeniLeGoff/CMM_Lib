@@ -48,6 +48,10 @@ int main(int argc, char** argv){
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
     GMM gmm(2,2);
+    gmm.set_distance_function(
+        [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+        return (s1 - s2).squaredNorm();
+    });
     Eigen::VectorXd choice_dist_map;
 
     double error;
@@ -136,10 +140,10 @@ int main(int argc, char** argv){
 
 
         Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
-//        coord[0] = next_s(0)*MAX_X;
-//        coord[1] = next_s(1)*MAX_Y;
-        coord[0] = rand()%MAX_X;
-        coord[1] = rand()%MAX_Y;
+        coord[0] = next_s(0)*MAX_X;
+        coord[1] = next_s(1)*MAX_Y;
+//        coord[0] = rand()%MAX_X;
+//        coord[1] = rand()%MAX_Y;
 
         //        std::cout << map << std::endl;
 
@@ -194,10 +198,10 @@ int main(int argc, char** argv){
         components_center.clear();
         for(const auto& components : gmm.model()){
             for(const auto& c : components.second){
-                c->print_parameters();
-                components_center.push_back(sf::CircleShape(2.));
+                std::cout << c->print_parameters();
+                components_center.push_back(sf::CircleShape(5.));
 
-                components_center.back().setFillColor(sf::Color(components.first*255,255,(components.first-1)*255));
+                components_center.back().setFillColor(sf::Color(components.first*255,100,(components.first-1)*255));
                 components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
 
                 //            c->compute_eigenvalues(eigenval,eigenvect);

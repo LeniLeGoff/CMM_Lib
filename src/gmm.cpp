@@ -15,7 +15,6 @@ void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
     for(size_t i=r.begin(); i != r.end(); ++i){
         val = _model->model()[_current_lbl][i]->get_factor()*
                 _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X);
-
         sum += val;
 
     }
@@ -31,7 +30,7 @@ double GMM::_estimator::estimation(int lbl){
     double sum_of_sums = 0;
     for(const auto& sum : _sum_map)
         sum_of_sums += sum.second;
-    return _sum_map[lbl]/sum_of_sums;
+    return (1 + _sum_map[lbl])/(2 + sum_of_sums);
 }
 //--ESTIMATOR
 
@@ -182,16 +181,14 @@ void GMM::_merge(int ind, int lbl){
             continue;
         _model[lbl][i]->compute_eigenvalues(eigenval2,eigenvect2);
         diff_mu = _model[lbl][i]->get_mu() - _model[lbl][ind]->get_mu();
-        ellipse_vect1 = (_model[lbl][i]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = (_model[lbl][ind]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect1 = (_model[lbl][i]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
 //        for(int i = 0; i < eigenval.rows(); i++){
 //            ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
 //            ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
 //        }
 
         if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
-
-            std::cout << "Intersection !" << std::endl;
 //            score = _component_score(ind,lbl);
 //            score2 = _component_score(i,lbl);
 
@@ -270,8 +267,8 @@ void GMM::_split(int ind, int lbl){
 
 
             diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
-            ellipse_vect1 = (comp->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
-            ellipse_vect2 = (_model[lbl][ind]->get_covariance().inverse().transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect1 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+            ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
 //            for(int i = 0; i < eigenval.rows(); i++){
 //                ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
 //                ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
@@ -279,7 +276,6 @@ void GMM::_split(int ind, int lbl){
 
 
             if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
-                std::cout << "Intersection !" << std::endl;
                 candidate = GMM(_model);
                 candidate.set_samples(_samples);
                 Component::Ptr new_component = candidate.model()[lbl][ind]->split();
@@ -294,9 +290,7 @@ void GMM::_split(int ind, int lbl){
                         std::cout << "-_- SPLIT _-_" << std::endl;
                         _model = candidate.model();
                         update_factors();
-                        std::cout << "Merge finish, time spent : "
-                                  << boost::chrono::duration_cast<boost::chrono::milliseconds>(
-                                         boost::chrono::system_clock::now() - timer) << std::endl;
+
                         return;
                     }
                 }
@@ -309,60 +303,31 @@ void GMM::_split(int ind, int lbl){
 
 }
 
-
-int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
-    std::cout << "next_sample function" << std::endl;
-    boost::chrono::system_clock::time_point timer;
-    timer  = boost::chrono::system_clock::now();
-
+int GMM::next_sample(const samples_t &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Zero(samples.size());
+
+
+    if(_samples.size() == 0)
+        return rand()%samples.size();
+
+    TrainingData::element_t last_sample = _samples.last();
+    double total = 0,cumul = 0;
+    double max_dist = _distance(last_sample.second,samples[0]);
     std::map<double,int> choice_distibution;
-    double total = 0, cumul = 0, max_val = 0;
     boost::random::uniform_real_distribution<> distrib(0,1);
 
-    if([&]() -> bool {for(auto& comp : _model) if(comp.second.empty()) return true; return false;}())
-        return rand()%(samples.size());
-
     tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
-            [&](const tbb::blocked_range<size_t>& r){
-        double dist, min_dist, comp_radius;
-        int min_ind, min_lbl;
-        Eigen::VectorXd eigenval, diff;
-        Eigen::MatrixXd eigenvect;
-        for(int j = r.begin(); j != r.end(); ++j){
-
-            min_dist = _model[0][0]->distance(samples[j]);
-            min_ind = 0;
-            min_lbl = 0;
-
-            for(const auto& comps : _model){
-                for(int i = 0; i != comps.second.size(); ++i){
-                    dist = comps.second[i]->distance(samples[j]);
-                    if(dist < min_dist){
-                        min_dist = dist;
-                        min_ind = i;
-                        min_lbl = comps.first;
-                    }
-                }
-            }
-
-//            _model[min_lbl][min_ind]->compute_eigenvalues(eigenval,eigenvect);
-            diff = _model[min_lbl][min_ind]->get_mu() - samples[j];
-            comp_radius = ((_model[min_lbl][min_ind]->get_covariance().inverse().transpose()*(diff/diff.squaredNorm()))).squaredNorm();
-            if(min_dist <= comp_radius){
-                choice_dist_map(j) = _model[min_lbl][min_ind]->get_factor()*(1. - min_dist/comp_radius);
-                if(choice_dist_map(j) > max_val)
-                    max_val = choice_dist_map(j);
-            }
-            else choice_dist_map(j) = 0;
+                      [&](const tbb::blocked_range<size_t>& r){
+        double dist;
+        for(int i = r.begin(); i != r.end(); ++i){
+           dist = _distance(last_sample.second,samples[i]);
+           if(dist > max_dist)
+               max_dist = dist;
+           choice_dist_map(i) = dist;
         }
     });
-    int r,c;
-    if(max_val > 0)
-        choice_dist_map = choice_dist_map/max_val;
-
-    choice_dist_map = Eigen::VectorXd::Constant(samples.size(),1.) - choice_dist_map;
-
+    if(max_dist > 0)
+        choice_dist_map = choice_dist_map/max_dist;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
         total += choice_dist_map(i);
     }
@@ -370,11 +335,81 @@ int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map)
         cumul += choice_dist_map(i);
         choice_distibution.emplace(cumul/total,i);
     }
-    std::cout << "next_sample finish, time spent : "
-              << boost::chrono::duration_cast<boost::chrono::milliseconds>(
-                     boost::chrono::system_clock::now() - timer) << std::endl;
     return choice_distibution.lower_bound(distrib(_gen))->second;
 }
+
+//int GMM::next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map){
+//    std::cout << "next_sample function" << std::endl;
+//    boost::chrono::system_clock::time_point timer;
+//    timer  = boost::chrono::system_clock::now();
+
+//    choice_dist_map = Eigen::VectorXd::Zero(samples.size());
+//    std::map<double,int> choice_distibution;
+//    double total = 0, cumul = 0, max_val = 0;
+//    boost::random::uniform_real_distribution<> distrib(0,1);
+
+//    if([&]() -> bool {for(auto& comp : _model) if(comp.second.empty()) return true; return false;}())
+//        return rand()%(samples.size());
+
+
+//    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
+//            [&](const tbb::blocked_range<size_t>& r){
+//        double dist, min_dist, comp_radius;
+//        int min_ind, min_lbl;
+//        Eigen::VectorXd eigenval, diff;
+//        Eigen::MatrixXd eigenvect;
+//        for(size_t j = r.begin(); j != r.end(); ++j){
+
+//            min_dist = _model[0][0]->distance(samples[j]);
+//            min_ind = 0;
+//            min_lbl = 0;
+
+//            for(const auto& comps : _model){
+//                for(int i = 0; i != comps.second.size(); ++i){
+//                    //                std::cout << comps.second[i]->get_covariance() << std::endl;
+//                    dist = comps.second[i]->distance(samples[j]);
+//                    if(dist < min_dist){
+//                        min_dist = dist;
+//                        min_ind = i;
+//                        min_lbl = comps.first;
+//                    }
+//                }
+//            }
+
+
+//            //            _model[min_lbl][min_ind]->compute_eigenvalues(eigenval,eigenvect);
+//            diff = _model[min_lbl][min_ind]->get_mu() - samples[j];
+//            if(diff.squaredNorm() == 0 || min_dist != min_dist)
+//                choice_dist_map(j) = 0;
+//            else{
+//                comp_radius = ((_model[min_lbl][min_ind]->covariance_pseudoinverse().transpose()*(diff/diff.squaredNorm()))).squaredNorm();
+//                if(min_dist <= comp_radius){
+//                    choice_dist_map(j) = _model[min_lbl][min_ind]->get_factor()*(1. - min_dist/comp_radius);
+//                    if(choice_dist_map(j) > max_val)
+//                        max_val = choice_dist_map(j);
+//                }
+//                else choice_dist_map(j) = 0;
+//            }
+//        }
+//    });
+//    int r,c;
+//    if(max_val > 0)
+//        choice_dist_map = choice_dist_map/max_val;
+
+//    choice_dist_map = Eigen::VectorXd::Constant(samples.size(),1.) - choice_dist_map;
+
+//    for(int i = 0; i < choice_dist_map.rows(); ++i){
+//        total += choice_dist_map(i);
+//    }
+//    for(int i = 0; i < choice_dist_map.rows(); ++i){
+//        cumul += choice_dist_map(i);
+//        choice_distibution.emplace(cumul/total,i);
+//    }
+//    std::cout << "next_sample finish, time spent : "
+//              << boost::chrono::duration_cast<boost::chrono::milliseconds>(
+//                     boost::chrono::system_clock::now() - timer) << std::endl;
+//    return choice_distibution.lower_bound(distrib(_gen))->second;
+//}
 
 void GMM::append(const std::vector<Eigen::VectorXd> &samples, const std::vector<int>& lbl){
     int r,c; //row and column indexes
@@ -414,19 +449,19 @@ void GMM::update_model(int ind, int lbl){
     if(n > 1)
         _merge(ind,lbl);
 
-//    for(int i = 0; i < _nbr_class; i++){
-//        n = _model[i].size();
-//        if(n < 2) break;
-//        do
-//            rand_ind = rand()%n;
-//        while(rand_ind == ind);
-//        _split(rand_ind,i);
+    for(int i = 0; i < _nbr_class; i++){
+        n = _model[i].size();
+        if(n < 2) break;
+        do
+            rand_ind = rand()%n;
+        while(rand_ind == ind);
+        _split(rand_ind,i);
 
-//        do
-//            rand_ind = rand()%n;
-//        while(rand_ind == ind);
-//        _merge(rand_ind,i);
-//    }
+        do
+            rand_ind = rand()%n;
+        while(rand_ind == ind);
+        _merge(rand_ind,i);
+    }
 
     for(auto& components : _model)
         for(auto& comp : components.second)
@@ -478,8 +513,12 @@ int GMM::find_closest(int i, double &min_dist, int lbl){
 
 std::string GMM::print_info(){
     std::string infos = "";
-    for(const auto& comps : _model)
+    for(const auto& comps : _model){
         infos += "class " + std::to_string(comps.first) + " have " + std::to_string(comps.second.size()) + " components\n";
+        for(const auto& comp : comps.second){
+            infos += comp->print_parameters();
+        }
+    }
     return infos;
 }
 
