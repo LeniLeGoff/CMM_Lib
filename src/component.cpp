@@ -219,7 +219,7 @@ Component::Ptr Component::split(){
 }
 
 double Component::distance(const Eigen::VectorXd& X) const {
-    return ((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
+    return ((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
 }
 
 double Component::get_standard_deviation() const{

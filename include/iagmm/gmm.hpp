@@ -92,7 +92,7 @@ public:
 
     Eigen::VectorXd mean_shift(const Eigen::VectorXd& X, int lbl);
 
-    int next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
     /**
      * @brief k nearst neighbor

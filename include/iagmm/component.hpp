@@ -87,6 +87,11 @@ public:
     void compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixXd& eigenvectors) const;
     double entropy();
 
+    /**
+     * @brief compute the mahalanobis distance
+     * @param X a sample
+     * @return
+     */
     double distance(const Eigen::VectorXd& X) const;
 
     //Getters & Setters
