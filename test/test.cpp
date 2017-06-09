@@ -173,12 +173,12 @@ int main(int argc, char** argv){
                     if(coord[1] >= MAX_Y)
                         coord[1] = 0;
                     double est = gmm.compute_estimation(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
-                    double dist = choice_dist_map(i);
-                    rects_exact_est[i].setFillColor(
-                                sf::Color(255*dist,
-                                          255*dist,
-                                          255*dist)
-                                );
+//                    double dist = choice_dist_map(i);
+//                    rects_exact_est[i].setFillColor(
+//                                sf::Color(255*dist,
+//                                          255*dist,
+//                                          255*dist)
+//                                );
                     error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
 
                     rects_estimated[i].setFillColor(
