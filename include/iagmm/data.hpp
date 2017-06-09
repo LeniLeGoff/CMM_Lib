@@ -93,6 +93,8 @@ public:
         return res;
     }
 
+    const element_t& last(){return _data.back();}
+
 protected:
     data_t _data;
 

@@ -1,13 +1,14 @@
 #include <iagmm/component.hpp>
 #include <map>
 #include <iostream>
+#define COEF 1.
 
 using namespace iagmm;
 
 
 void Component::update_parameters(){
-    if(_samples.size() <= 2){
-        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
+    if(_samples.size() <= 10){
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
 //        _factor = _sign;
         _mu = _samples[0];
         return;
@@ -25,8 +26,20 @@ void Component::update_parameters(){
     for(const auto& sample : _samples)
         m_sum += (sample - _mu)*(sample - _mu).transpose();
 
-    _covariance = 1./(_samples.size()-1)*m_sum;
+    if((m_sum-Eigen::MatrixXd::Zero(_dimension,_dimension)).squaredNorm() < 1e-4)
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
+    else
+        _covariance = 1./(_samples.size()-1)*m_sum*COEF;
 
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(2*PI*_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXd singularVal = svd.singularValues();
+    double cm_determinant = 1.;
+    for(int i = 0; i < singularVal.rows(); ++i){
+        if(singularVal(i) > 1e-4)
+            cm_determinant = cm_determinant*singularVal(i);
+    }
+    double exp_arg = -1./2.*((_mu - _mu).transpose()*covariance_pseudoinverse()).dot(_mu - _mu);
+    _max = 1/cm_determinant*exp(exp_arg);
 //    _factor = _sign*_samples.size()/(2*nbr_samples*nbr_Components)
             //_sign*get_standard_deviation()*_samples.size();
 //            _sign*_samples.size()/nbr_samples;
@@ -50,7 +63,7 @@ void Component::update_parameters(){
 void Component::_incr_parameters(const Eigen::VectorXd& X){
     if(_samples.size() <= 1){
         _mu = X;
-        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*1e-10;
+        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
         return;
     }
     double f_size = _samples.size();
@@ -61,8 +74,23 @@ void Component::_incr_parameters(const Eigen::VectorXd& X){
 }
 
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
-    double cm_determinant = (2*PI*_covariance).determinant();
-    double exp_arg = -1./2.*((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
+    if((_covariance - Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF).squaredNorm() == 0)
+        return (X-_mu).squaredNorm() < 1e-4 ? _max : 0;
+
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(2*PI*_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXd singularVal = svd.singularValues();
+
+    double cm_determinant = 1.;
+    for(int i = 0; i < singularVal.rows(); ++i){
+        if(singularVal(i) > 1e-4)
+            cm_determinant = cm_determinant*singularVal(i);
+    }
+
+    double exp_arg = -1./2.*((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
+    if(exp_arg > 0){
+        std::cerr << "The covariance matrix is not positive definite" << std::endl;
+        return 0;
+    }
     double res = 1/cm_determinant*exp(exp_arg);
     if(res == res)
         return res;
@@ -191,7 +219,7 @@ Component::Ptr Component::split(){
 }
 
 double Component::distance(const Eigen::VectorXd& X) const {
-    return ((X - _mu).transpose()*_covariance.inverse()).dot(X - _mu);
+    return ((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
 }
 
 double Component::get_standard_deviation() const{
@@ -230,16 +258,28 @@ void Component::compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixX
     }
 }
 
+Eigen::MatrixXd Component::covariance_pseudoinverse() const{
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXd singularVal = svd.singularValues();
+    Eigen::MatrixXd singularValInv = Eigen::MatrixXd::Zero(_dimension,_dimension);
+    for(int i = 0; i < _dimension; i++)
+        if(singularVal(i) > 1e-4)
+            singularValInv(i,i) = 1./singularVal(i);
+    return svd.matrixV() * singularValInv * svd.matrixU().adjoint();
+}
 
-void Component::print_parameters() const {
-    std::cout << "----------------------" << std::endl;
-    std::cout << "lbl : " << _label << std::endl;
-    std::cout << "covariance : " << _covariance << std::endl;
-    std::cout << "mu : " << _mu << std::endl;
-    std::cout << "factor : " << _factor << std::endl;
-    std::cout << "size : " << _samples.size() << std::endl;
-    std::cout << "score : " << component_score() << std::endl;
-    std::cout << "standard deviation : " << get_standard_deviation() << std::endl;
-    std::cout << "----------------------" << std::endl;
+std::string Component::print_parameters() const {
+    std::stringstream stream;
+    stream << "----------------------" << std::endl;
+    stream << "lbl : " << _label << std::endl;
+    stream << "covariance : \n" << _covariance << std::endl;
+    stream << "mu : \n" << _mu << std::endl;
+    stream << "factor : " << _factor << std::endl;
+    stream << "size : " << _samples.size() << std::endl;
+    stream << "score : " << component_score() << std::endl;
+    stream << "standard deviation : " << get_standard_deviation() << std::endl;
+    stream << "maximum value : " << _max << std::endl;
+    stream << "----------------------" << std::endl;
+    return stream.str();
 }
 // ----------------------

@@ -4,7 +4,7 @@ project(iagmm)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 include_directories(/usr/local/include/
-                    /usr/include/eigen2
+                    /usr/include/eigen3
                     /usr/local/include/SFML
                     include)
 

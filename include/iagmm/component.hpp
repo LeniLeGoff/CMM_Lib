@@ -11,6 +11,7 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/shared_ptr.hpp>
 
+
 #define PI 3.14159265359
 
 
@@ -44,7 +45,7 @@ public:
      * @param label of the class
      */
     Component(int dimension, int lbl)
-        : _dimension(dimension), _label(lbl), _factor(0){}
+        : _dimension(dimension), _label(lbl), _factor(0),_max(1){}
 
     /**
      * @brief Copy constructor
@@ -52,7 +53,7 @@ public:
      */
     Component(const Component& c) :
         _covariance(c._covariance), _mu(c._mu), _label(c._label),
-        _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
+        _samples(c._samples), _dimension(c._dimension), _factor(c._factor),_max(c._max){}
 
     /**
      * @brief update_parameters
@@ -86,6 +87,11 @@ public:
     void compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixXd& eigenvectors) const;
     double entropy();
 
+    /**
+     * @brief compute the mahalanobis distance
+     * @param X a sample
+     * @return
+     */
     double distance(const Eigen::VectorXd& X) const;
 
     //Getters & Setters
@@ -99,7 +105,7 @@ public:
     int get_dimension() const {return _dimension;}
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
 
-    void print_parameters() const;
+    std::string print_parameters() const;
 
 
     double diameter(){
@@ -111,6 +117,8 @@ public:
         }
         return diameter;
     }
+
+    Eigen::MatrixXd covariance_pseudoinverse() const;
 
     template <typename archive>
     void serialize(archive& arch, const unsigned int v){
@@ -132,6 +140,7 @@ private:
     int _dimension;
     double _factor;
     int _label;
+    double _max;
 };
 
 }
