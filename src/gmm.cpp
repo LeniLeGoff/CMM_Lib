@@ -483,6 +483,8 @@ void GMM::update_model(int ind, int lbl){
 
 }
 
+
+
 std::vector<int> GMM::find_closest_components(double& min_dist, int lbl){
 
     std::vector<int> indexes(2);
