@@ -324,7 +324,6 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
                       [&](const tbb::blocked_range<size_t>& r){
         double dist;
         for(int i = r.begin(); i != r.end(); ++i){
-           double est = samples[i].second;
 
            dist = 0;
            for(const auto& s : _samples.get()){
@@ -332,7 +331,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
                    est = (1. - est) * 2.;
                else
                    est = est*2.;
-               dist += _distance(s.second,samples[i].first) + est;
+               dist += _distance(s.second,samples[i].first);
            }
            if(dist > max_dist)
                max_dist = dist;
@@ -342,7 +341,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     if(max_dist > 0)
         choice_dist_map = choice_dist_map/max_dist;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) = 1/(1. + exp(-40.*(choice_dist_map(i) - 0.5)));
+        choice_dist_map(i) = 1/(1. + exp(-40.*((choice_dist_map(i) + samples[i].second)/2. - 0.5)));
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
@@ -482,6 +481,8 @@ void GMM::update_model(int ind, int lbl){
             comp->update_parameters();
 
 }
+
+
 
 std::vector<int> GMM::find_closest_components(double& min_dist, int lbl){
 
