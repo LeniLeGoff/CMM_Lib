@@ -298,7 +298,6 @@ void GMM::_split(int ind, int lbl){
     std::cout << "Split finish, time spent : "
               << boost::chrono::duration_cast<boost::chrono::milliseconds>(
                      boost::chrono::system_clock::now() - timer) << std::endl;
-
 }
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){

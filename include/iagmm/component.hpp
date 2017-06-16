@@ -130,6 +130,8 @@ public:
         arch & _label;
     }
 
+    double get_max(){return _max;}
+
 private:
     void _incr_parameters(const Eigen::VectorXd& X);
 
