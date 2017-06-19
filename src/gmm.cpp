@@ -309,14 +309,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //    TrainingData::element_t last_sample = _samples.last();
     double total = 0,cumul = 0;
     double max_dist = 0;
-    double est = samples[0].second;
-    for(const auto& s : _samples.get()){
-        if(est > .5)
-            est = (1. - est) * 2.;
-        else
-            est = est*2.;
-        max_dist += _distance(s.second,samples[0].first) + est;
-    }
+
     std::map<double,int> choice_distibution;
     boost::random::uniform_real_distribution<> distrib(0,1);
 
@@ -327,10 +320,6 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 
            dist = 0;
            for(const auto& s : _samples.get()){
-               if(est > .5)
-                   est = (1. - est) * 2.;
-               else
-                   est = est*2.;
                dist += _distance(s.second,samples[i].first);
            }
            if(dist > max_dist)
@@ -341,7 +330,13 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     if(max_dist > 0)
         choice_dist_map = choice_dist_map/max_dist;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) = 1/(1. + exp(-40.*((choice_dist_map(i) + samples[i].second)/2. - 0.5)));
+        double est = samples[i].second;
+        if(est > .5)
+            est = (1. - est) * 2.;
+        else
+            est = est*2.;
+//        choice_dist_map(i) = 1/(1. + exp(-40.*((choice_dist_map(i) + samples.size()*est)/(1+samples.size()) - 0.5)));
+        choice_dist_map(i) = (choice_dist_map(i) + samples.size()*est)/(1+samples.size());
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
