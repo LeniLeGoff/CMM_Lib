@@ -313,22 +313,22 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     std::map<double,int> choice_distibution;
     boost::random::uniform_real_distribution<> distrib(0,1);
 
-    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
-                      [&](const tbb::blocked_range<size_t>& r){
-        double dist;
-        for(int i = r.begin(); i != r.end(); ++i){
+//    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
+//                      [&](const tbb::blocked_range<size_t>& r){
+//        double dist;
+//        for(int i = r.begin(); i != r.end(); ++i){
 
-           dist = 0;
-           for(const auto& s : _samples.get()){
-               dist += _distance(s.second,samples[i].first);
-           }
-           if(dist > max_dist)
-               max_dist = dist;
-           choice_dist_map(i) = dist;
-        }
-    });
-    if(max_dist > 0)
-        choice_dist_map = choice_dist_map/max_dist;
+//           dist = 0;
+//           for(const auto& s : _samples.get()){
+//               dist += _distance(s.second,samples[i].first);
+//           }
+//           if(dist > max_dist)
+//               max_dist = dist;
+//           choice_dist_map(i) = dist;
+//        }
+//    });
+//    if(max_dist > 0)
+//        choice_dist_map = choice_dist_map/max_dist;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
         double est = samples[i].second;
         if(est > .5)
@@ -336,7 +336,8 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
         else
             est = est*2.;
 //        choice_dist_map(i) = 1/(1. + exp(-40.*((choice_dist_map(i) + samples.size()*est)/(1+samples.size()) - 0.5)));
-        choice_dist_map(i) = (choice_dist_map(i) + samples.size()*est)/(1+samples.size());
+//        choice_dist_map(i) = (choice_dist_map(i) + samples.size()*est)/(1+samples.size());
+        choice_dist_map(i) = est;
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
