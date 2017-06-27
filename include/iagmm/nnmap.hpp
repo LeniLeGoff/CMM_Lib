@@ -28,6 +28,7 @@ public:
         distance_threshold(nnmap.distance_threshold),
         increment_factor(nnmap.increment_factor){}
 
+    void fit(const Eigen::VectorXd &sample, const int& lbl);
 
     double compute_estimation(const Eigen::VectorXd& sample, int label = 1);
 

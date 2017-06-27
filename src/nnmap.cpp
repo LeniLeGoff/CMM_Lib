@@ -25,3 +25,7 @@ double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
     return estimation;
 
 }
+
+void NNMap::fit(const Eigen::VectorXd& sample, const int& label){
+    add(sample, label);
+}

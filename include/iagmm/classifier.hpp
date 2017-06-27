@@ -50,6 +50,13 @@ public:
      */
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
 
+    /**
+     * @brief fit : train the model with the given sample and label
+     * @param sample
+     * @param label of the class
+     */
+    virtual void fit(const Eigen::VectorXd& sample, const int& lbl) = 0;
+
 
     /**
      * @brief add a sample to the training set of the classifier
