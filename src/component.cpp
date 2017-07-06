@@ -272,7 +272,7 @@ std::string Component::print_parameters() const {
     std::stringstream stream;
     stream << "----------------------" << std::endl;
     stream << "lbl : " << _label << std::endl;
-    stream << "covariance : \n" << _covariance << std::endl;
+//    stream << "covariance : \n" << _covariance << std::endl;
     stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;
