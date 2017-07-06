@@ -30,11 +30,16 @@ public:
 
     typedef std::map<int, std::vector<Component::Ptr>> model_t;
 
-    GMM(){}
+    GMM(){
+        srand(time(NULL));
+        _gen.seed(rand());
+    }
 
     GMM(int dimension, int nbr_class) : Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
+        srand(time(NULL));
+        _gen.seed(rand());
     }
 
     GMM(const model_t& model){
@@ -46,12 +51,13 @@ public:
             for(const auto& comp : comps.second)
                 _model[comps.first].push_back(Component::Ptr(new Component(*(comp))));
         }
-
+        srand(time(NULL));
+        _gen.seed(rand());
     }
 
     GMM(const GMM& gmm) :
         Classifier(gmm),
-        _model(gmm._model){}
+        _model(gmm._model),_gen(gmm._gen){}
 
     ~GMM(){
         for(auto& comps: _model)

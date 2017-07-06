@@ -298,7 +298,6 @@ void GMM::_split(int ind, int lbl){
     std::cout << "Split finish, time spent : "
               << boost::chrono::duration_cast<boost::chrono::milliseconds>(
                      boost::chrono::system_clock::now() - timer) << std::endl;
-
 }
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
@@ -310,40 +309,35 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //    TrainingData::element_t last_sample = _samples.last();
     double total = 0,cumul = 0;
     double max_dist = 0;
-    double est = samples[0].second;
-    for(const auto& s : _samples.get()){
+
+    std::map<double,int> choice_distibution;
+    boost::random::uniform_real_distribution<> distrib(0,1);
+
+//    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
+//                      [&](const tbb::blocked_range<size_t>& r){
+//        double dist;
+//        for(int i = r.begin(); i != r.end(); ++i){
+
+//           dist = 0;
+//           for(const auto& s : _samples.get()){
+//               dist += _distance(s.second,samples[i].first);
+//           }
+//           if(dist > max_dist)
+//               max_dist = dist;
+//           choice_dist_map(i) = dist;
+//        }
+//    });
+//    if(max_dist > 0)
+//        choice_dist_map = choice_dist_map/max_dist;
+    for(int i = 0; i < choice_dist_map.rows(); ++i){
+        double est = samples[i].second;
         if(est > .5)
             est = (1. - est) * 2.;
         else
             est = est*2.;
-        max_dist += _distance(s.second,samples[0].first) + est;
-    }
-    std::map<double,int> choice_distibution;
-    boost::random::uniform_real_distribution<> distrib(0,1);
-
-    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
-                      [&](const tbb::blocked_range<size_t>& r){
-        double dist;
-        for(int i = r.begin(); i != r.end(); ++i){
-           double est = samples[i].second;
-
-           dist = 0;
-           for(const auto& s : _samples.get()){
-               if(est > .5)
-                   est = (1. - est) * 2.;
-               else
-                   est = est*2.;
-               dist += _distance(s.second,samples[i].first) + est;
-           }
-           if(dist > max_dist)
-               max_dist = dist;
-           choice_dist_map(i) = dist;
-        }
-    });
-    if(max_dist > 0)
-        choice_dist_map = choice_dist_map/max_dist;
-    for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) = 1/(1. + exp(-40.*(choice_dist_map(i) - 0.5)));
+//        choice_dist_map(i) = 1/(1. + exp(-40.*((choice_dist_map(i) + samples.size()*est)/(1+samples.size()) - 0.5)));
+//        choice_dist_map(i) = (choice_dist_map(i) + samples.size()*est)/(1+samples.size());
+        choice_dist_map(i) = est;
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
@@ -483,6 +477,8 @@ void GMM::update_model(int ind, int lbl){
             comp->update_parameters();
 
 }
+
+
 
 std::vector<int> GMM::find_closest_components(double& min_dist, int lbl){
 
