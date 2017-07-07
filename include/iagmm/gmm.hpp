@@ -83,7 +83,9 @@ public:
 
     void update_model(int ind, int lbl);
 
-    void fit(const Eigen::VectorXd& sample, const int& lbl);
+    void fit(const Eigen::VectorXd& sample, const int& label);
+
+    void fit_batch(const std::vector<Eigen::VectorXd>& samples, const std::vector<int>& labels);
 
     std::vector<int> find_closest_components(double& min_dist, int lbl);
 

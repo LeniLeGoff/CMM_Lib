@@ -478,9 +478,14 @@ void GMM::update_model(int ind, int lbl){
 
 }
 
-void GMM::fit(const Eigen::VectorXd& sample, const int& lbl){
-    int ind = append(sample, lbl);
-    update_model(ind, lbl);
+void GMM::fit(const Eigen::VectorXd& sample, const int& label){
+    int ind = append(sample, label);
+    update_model(ind, label);
+}
+
+void GMM::fit_batch(const std::vector<Eigen::VectorXd>& samples, const std::vector<int>& labels){
+    append(samples, labels);
+    // update model ?
 }
 
 std::vector<int> GMM::find_closest_components(double& min_dist, int lbl){

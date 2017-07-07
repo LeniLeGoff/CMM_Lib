@@ -29,3 +29,9 @@ double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
 void NNMap::fit(const Eigen::VectorXd& sample, const int& label){
     add(sample, label);
 }
+
+void NNMap::fit_batch(const std::vector<Eigen::VectorXd>& samples, const std::vector<int>& labels){
+    for (size_t i = 0; i < samples.size(); i++){
+        add(samples[i], labels[i]);
+    }
+}

@@ -53,9 +53,16 @@ public:
     /**
      * @brief fit : train the model with the given sample and label
      * @param sample
-     * @param label of the class
+     * @param label of the sample
      */
-    virtual void fit(const Eigen::VectorXd& sample, const int& lbl) = 0;
+    virtual void fit(const Eigen::VectorXd& sample, const int& label) = 0;
+
+    /**
+     * @brief fit_batch : train the model with the given batch of samples and labels
+     * @param samples
+     * @param labels of samples
+     */
+    virtual void fit_batch(const std::vector<Eigen::VectorXd>& samples, const std::vector<int>& labels) = 0;
 
 
     /**
