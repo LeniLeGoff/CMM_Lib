@@ -1,6 +1,7 @@
 #ifndef CLASSIFIER_HPP
 #define CLASSIFIER_HPP
 
+#include <functional>
 #include <eigen3/Eigen/Core>
 #include "data.hpp"
 
@@ -12,6 +13,10 @@ namespace iagmm {
  */
 class Classifier{
 public:
+
+    typedef std::function<double(const Eigen::VectorXd&,const Eigen::VectorXd&)> _distance_f;
+
+
     /**
      * @brief default Constructor
      */
@@ -32,7 +37,8 @@ public:
     Classifier(const Classifier &c) :
         _nbr_class(c._nbr_class),
         _dimension(c._dimension),
-        _samples(c._samples){}
+        _samples(c._samples),
+        _distance(c._distance){}
 
     virtual ~Classifier(){}
 
@@ -69,12 +75,15 @@ public:
     void set_samples(TrainingData samples){_samples = samples;}
     int get_nbr_class(){return _nbr_class;}
 
+    void set_distance_function(_distance_f distance){
+        _distance = distance;
+    }
 
 protected:
     int _nbr_class;
     int _dimension;
     TrainingData _samples;
-
+    _distance_f _distance;
 };
 
 }

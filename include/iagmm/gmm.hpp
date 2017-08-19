@@ -30,11 +30,16 @@ public:
 
     typedef std::map<int, std::vector<Component::Ptr>> model_t;
 
-    GMM(){}
+    GMM(){
+        srand(time(NULL));
+        _gen.seed(rand());
+    }
 
     GMM(int dimension, int nbr_class) : Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
+        srand(time(NULL));
+        _gen.seed(rand());
     }
 
     GMM(const model_t& model){
@@ -46,11 +51,13 @@ public:
             for(const auto& comp : comps.second)
                 _model[comps.first].push_back(Component::Ptr(new Component(*(comp))));
         }
-
+        srand(time(NULL));
+        _gen.seed(rand());
     }
 
     GMM(const GMM& gmm) :
-        _model(gmm._model){}
+        Classifier(gmm),
+        _model(gmm._model),_gen(gmm._gen){}
 
     ~GMM(){
         for(auto& comps: _model)
@@ -61,6 +68,7 @@ public:
     void operator()(const tbb::blocked_range<size_t>& r);
 
     double compute_estimation(const Eigen::VectorXd& sample, int lbl);
+    void compute_normalisation();
     model_t& model(){return _model;}
 
 //    double get_result(int lbl){
@@ -90,7 +98,7 @@ public:
 
     Eigen::VectorXd mean_shift(const Eigen::VectorXd& X, int lbl);
 
-    int next_sample(const samples_t& samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
     /**
      * @brief k nearst neighbor
@@ -120,6 +128,8 @@ public:
     std::string print_info();
     std::string to_string();
 
+    double get_normalisation(){return _normalisation;}
+
 private:
 
     void _merge(int ind, int lbl);
@@ -131,6 +141,8 @@ private:
     model_t _model;
 
     boost::random::mt19937 _gen;
+    double _normalisation;
+
 
     class _estimator{
     public:
