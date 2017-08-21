@@ -2,6 +2,7 @@
 #define CLASSIFIER_HPP
 
 #include <functional>
+#include <boost/shared_ptr.hpp>
 #include <eigen3/Eigen/Core>
 #include "data.hpp"
 
@@ -13,6 +14,10 @@ namespace iagmm {
  */
 class Classifier{
 public:
+
+    typedef boost::shared_ptr<Classifier> Ptr;
+    typedef boost::shared_ptr<const Classifier> ConstPtr;
+
 
     typedef std::function<double(const Eigen::VectorXd&,const Eigen::VectorXd&)> _distance_f;
 
