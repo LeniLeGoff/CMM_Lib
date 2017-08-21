@@ -3,6 +3,7 @@
 
 #include <iagmm/mcs_fct.hpp>
 
+
 namespace iagmm
 {
 class MCS : public Classifier {
@@ -18,6 +19,8 @@ public:
         _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct),
         _opt_fct(mcs._opt_fct){}
 
+
+    double compute_estimation(const Eigen::VectorXd &sample, int lbl);
 
     void update();
 
