@@ -1,6 +1,14 @@
 #ifndef MCS_FCT_HPP
 #define MCS_FCT_HPP
 
+#include <iagmm/classifier.hpp>
+
+#include <functional>
+#include <vector>
+
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/IterativeLinearSolvers>
+
 namespace iagmm{
 
 typedef std::function<double(const Eigen::VectorXd&,const std::vector<double>&)> comb_fct_t;

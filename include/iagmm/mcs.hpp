@@ -1,10 +1,7 @@
 #ifndef MCS_HPP
 #define MCS_HPP
 
-#include <mcs_fct.hpp>
-#include <classifier.hpp>
-#include <functional>
-#include <vector>
+#include <iagmm/mcs_fct.hpp>
 
 namespace iagmm
 {
