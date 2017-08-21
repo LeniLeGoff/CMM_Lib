@@ -9,10 +9,10 @@ include_directories(/usr/local/include/
                     include)
 
 FILE(GLOB_RECURSE HEADFILES "include/*.hpp")
-FILE(GLOB_RECURSE SRCFILES "src/*cpp")
+FILE(GLOB_RECURSE SRCFILES "src/*cpp" "mcs_fct.hpp")
 add_custom_target(headers SOURCES ${HEADFILES})
 
-install(DIRECTORY include/iagmm/  DESTINATION /usr/local/include/${PROJECT_NAME})
+install(DIRECTORY include  DESTINATION include/${PROJECT_NAME})
 
 
 
@@ -20,8 +20,8 @@ add_library(iagmm ${SRCFILES})
 target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_system)
 
 install(TARGETS ${PROJECT_NAME}
-    ARCHIVE DESTINATION /usr/local/lib
-    LIBRARY DESTINATION /usr/local/lib)
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib)
 
 #add_executable(load_archive tools/load_archive.cpp)
 #target_link_libraries(load_archive iagmm )

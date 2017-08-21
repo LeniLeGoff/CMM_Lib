@@ -263,7 +263,7 @@ void GMM::_split(int ind, int lbl){
         if(l == lbl)
             continue;
         for(const auto& comp :  _model[l]){
-            comp->compute_eigenvalues(eigenval2,eigenvect2);
+//            comp->compute_eigenvalues(eigenval2,eigenvect2);
 
             diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
             ellipse_vect1 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
