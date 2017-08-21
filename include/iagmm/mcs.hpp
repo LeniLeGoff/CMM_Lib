@@ -1,9 +1,8 @@
 #ifndef MCS_HPP
 #define MCS_HPP
 
-#include <mcs_fct.hpp>
-#include <classifier.hpp>
-#include <functional>
+#include "mcs_fct.hpp"
+#include "classifier.hpp"
 #include <vector>
 
 namespace iagmm
@@ -21,6 +20,8 @@ public:
         _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct),
         _opt_fct(mcs._opt_fct){}
 
+
+    double compute_estimation(const Eigen::VectorXd &sample, int lbl);
 
     void update();
 

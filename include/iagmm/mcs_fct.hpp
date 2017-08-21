@@ -1,10 +1,22 @@
 #ifndef MCS_FCT_HPP
 #define MCS_FCT_HPP
 
+#include "classifier.hpp"
+
+#include <functional>
+#include <vector>
+#include <map>
+
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/IterativeLinearSolvers>
+
 namespace iagmm{
 
-typedef std::function<double(const Eigen::VectorXd&,const std::vector<double>&)> comb_fct_t;
-typedef std::function<void(Eigen::VectorXd&, std::vector<Classifier::Ptr>&, const TrainingData&)> opt_fct_t;
+typedef std::function<double(const Eigen::VectorXd&,
+                             const std::vector<double>&)> comb_fct_t;
+typedef std::function<void(Eigen::VectorXd&,
+                           const Eigen::MatrixXd&,
+                           const Eigen::VectorXd&)> opt_fct_t;
 
 struct combinatorial{
     static std::map<std::string,comb_fct_t> create_map(){
@@ -30,18 +42,22 @@ struct combinatorial{
 
 struct optimization{
     static std::map<std::string,opt_fct_t> create_map(){
-        std::map<std::string,comb_fct_t> map;
+        std::map<std::string,opt_fct_t> map;
 
         map.emplace("conjugateGrad",
                     [](Eigen::VectorXd& parameters,
-                    std::vector<Classifier::Ptr>& classifiers,
-                    const TrainingData& samples){
-
-
-
+                    const Eigen::MatrixXd &estimations,
+                    const Eigen::VectorXd &lbl){
+            Eigen::ConjugateGradient<Eigen::MatrixXd,Eigen::Lower|Eigen::Upper> cg;
+            cg.compute(estimations);
+            parameters = cg.solve(lbl);
         });
 
+        return map;
     }
+
+    static const std::map<std::string,opt_fct_t> fct_map;
+
 };
 }
 
