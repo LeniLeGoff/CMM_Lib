@@ -30,6 +30,7 @@ public:
 
 
     double compute_estimation(const Eigen::VectorXd& sample, int label = 1);
+    void update(){}
 
     //parameters
     double distance_threshold;

@@ -69,6 +69,8 @@ int main(int argc, char** argv){
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
     std::vector<sf::RectangleShape> rects_exact_est(MAX_Y*MAX_X,
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
+    std::vector<sf::RectangleShape> rects_confidence(MAX_Y*MAX_X,
+                                                    sf::RectangleShape(sf::Vector2f(4,4)));
     std::vector<sf::Vertex[2]> vect_mean_shift(MAX_Y*MAX_X);
 
     std::vector<sf::CircleShape> components_center;
@@ -105,6 +107,10 @@ int main(int argc, char** argv){
         rects_real[i].setPosition(coord[0]*4,coord[1]*4);
         rects_explored[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4);
         rects_explored[i].setFillColor(sf::Color::Transparent);
+
+        rects_confidence[i].setPosition(coord[0]*4+MAX_X*4*2,coord[1]*4+MAX_X*4);
+        rects_confidence[i].setFillColor(sf::Color::White);
+
     }
 
     int iteration = 0;
@@ -128,6 +134,8 @@ int main(int argc, char** argv){
         for(auto rect: rects_exact_est)
             window.draw(rect);
         for(auto rect: rects_explored)
+            window.draw(rect);
+        for(auto rect: rects_confidence)
             window.draw(rect);
         for(auto circle: components_center)
             window.draw(circle);
@@ -173,6 +181,11 @@ int main(int argc, char** argv){
                     if(coord[1] >= MAX_Y)
                         coord[1] = 0;
                     double est = gmm.compute_estimation(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
+                    double conf = gmm.confidence(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
+                    if(conf < 1e-03)
+                        conf = 0;
+                    rects_confidence[i].setFillColor(sf::Color(255*conf,255*conf,255*conf));
+
 //                    double dist = choice_dist_map(i);
 //                    rects_exact_est[i].setFillColor(
 //                                sf::Color(255*dist,

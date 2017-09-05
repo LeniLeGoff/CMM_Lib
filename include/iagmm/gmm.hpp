@@ -78,9 +78,11 @@ public:
 //        return _sum_map[lbl]/(sum_of_sums);
 //    }
 
+    void add(const Eigen::VectorXd &sample, int lbl);
     void append(const std::vector<Eigen::VectorXd> &samples,const std::vector<int>& lbl);
     int append(const Eigen::VectorXd &samples,const int& lbl);
 
+    void update();
     void update_model(int ind, int lbl);
 
     std::vector<int> find_closest_components(double& min_dist, int lbl);
@@ -92,11 +94,14 @@ public:
 
     double model_score(const std::vector<Eigen::VectorXd>& samples, const std::vector<int> &label);
 
+
     std::vector<double> model_scores();
 
     double entropy(int i, int sign);
 
     Eigen::VectorXd mean_shift(const Eigen::VectorXd& X, int lbl);
+
+    double confidence(const Eigen::VectorXd& X);
 
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
@@ -142,6 +147,9 @@ private:
 
     boost::random::mt19937 _gen;
     double _normalisation;
+
+    int _last_index;
+    int _last_label;
 
 
     class _estimator{
