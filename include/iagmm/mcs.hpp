@@ -11,16 +11,23 @@ namespace iagmm
 class MCS : public Classifier {
 
 public:
-    MCS(){}
+    MCS(){
+        srand(time(NULL));
+        _gen.seed(rand());
+    }
     MCS(std::map<std::string,Classifier::Ptr>& class_list,const comb_fct_t& cmb):
         _classifiers(class_list), _comb_fct(cmb){
         _dimension = _classifiers[0]->get_dimension();
         _nbr_class = _classifiers[0]->get_nbr_class();
         _parameters = Eigen::VectorXd::Constant(class_list.size(),1.);
+        srand(time(NULL));
+        _gen.seed(rand());
     }
     MCS(const MCS& mcs) :
         Classifier(mcs), _parameters(mcs._parameters),
         _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct){
+        srand(time(NULL));
+        _gen.seed(rand());
     }
 
     double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);

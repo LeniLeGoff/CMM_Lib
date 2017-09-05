@@ -56,7 +56,7 @@ public:
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
     virtual void update() = 0;
     virtual double confidence(const Eigen::VectorXd& sample) = 0;
-    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>,Eigen::VectorXd& choice_dist_map) = 0;
+    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samples,Eigen::VectorXd& choice_dist_map) = 0;
 
 
     /**
