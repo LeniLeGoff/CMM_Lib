@@ -6,49 +6,40 @@ using namespace iagmm;
 
 const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
 
-double MCS::compute_estimation(const Eigen::VectorXd& sample, int lbl){
+double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl){
     std::vector<double> estimations;
 
-    for(auto& classif : _classifiers)
-        estimations.push_back(classif->compute_estimation(sample,lbl));
+    int i = 0;
+    for(auto& classif : _classifiers){
+        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
+        _parameters[i] = classif.second->confidence(sample.at(classif.first));
+        i++;
+    }
 
     return _comb_fct(_parameters,estimations);
 }
 
-void MCS::add(const Eigen::VectorXd &sample, int lbl){
-    _samples.add(lbl,sample);
+void MCS::add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl){
     for(auto& c : _classifiers)
-        c->add(sample,lbl);
-
+        c.second->add(sample.at(c.first),lbl);
 }
 
 void MCS::update(){
-
     for(auto& c : _classifiers)
-        c->update();
+        c.second->update();
+}
 
-    int c_size = _classifiers.size();
-    int s_size = _samples.size();
+int MCS::next_sample(std::vector<std::pair<Eigen::VectorXd, double> > samples, Eigen::VectorXd& choice_dist_map){
+    std::vector<int> indexes;
+    std::vector<Eigen::VectorXd> cdms;
+    for(auto& c: _classifiers){
+        indexes.push_back(c.second->next_sample(samples,choice_dist_map));
+        cdms.push_back(choice_dist_map);
+    }
 
-    _estimations = Eigen::MatrixXd::Zero(s_size,c_size);
-    Eigen::VectorXd lbl(s_size);
+    boost::random::uniform_int_distribution<> distrib(0,indexes.size()-1);
+    int choice = distrib(_gen);
+    choice_dist_map = cdms[choice];
 
-
-    tbb::parallel_for(tbb::blocked_range2d<size_t>(0,c_size,0,s_size),
-                      [&](const tbb::blocked_range2d<size_t>& r ){
-        for(size_t i = r.rows().begin(); i != r.rows().end(); i++)
-            for(size_t j = r.cols().begin(); j != r.cols().end(); j++)
-                _estimations(j,i) = _classifiers[i]->compute_estimation(_samples[j].second,_samples[j].first);
-    });
-
-
-//    for(int i = 0; i < c_size; i++){
-//        lbl(i) = _samples[i].first;
-//    }
-
-//    _conjugate_grad.compute(_estimations);
-//    _parameters = _conjugate_grad.solve(lbl);
-//    std::cout << _parameters << std::endl;
-
-//    std::cout <<  _conjugate_grad.iterations() << " error : " << _conjugate_grad.error() << std::endl;
+    return indexes[choice];
 }
