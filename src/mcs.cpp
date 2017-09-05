@@ -29,7 +29,7 @@ void MCS::update(){
         c.second->update();
 }
 
-int MCS::next_sample(std::vector<std::pair<Eigen::VectorXd, double> > samples, Eigen::VectorXd& choice_dist_map){
+int MCS::next_sample(const std::vector<std::pair<Eigen::VectorXd, double> >& samples, Eigen::VectorXd& choice_dist_map){
     std::vector<int> indexes;
     std::vector<Eigen::VectorXd> cdms;
     for(auto& c: _classifiers){
@@ -42,4 +42,8 @@ int MCS::next_sample(std::vector<std::pair<Eigen::VectorXd, double> > samples, E
     choice_dist_map = cdms[choice];
 
     return indexes[choice];
+}
+
+void MCS::set_samples(std::string mod, TrainingData &data){
+    _classifiers[mod]->set_samples(data);
 }
