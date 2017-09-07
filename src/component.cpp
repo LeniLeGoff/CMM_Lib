@@ -7,7 +7,7 @@ using namespace iagmm;
 
 
 void Component::update_parameters(){
-    if(_samples.size() <= 10){
+    if(_samples.size() <= 4){
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
 //        _factor = _sign;
         _mu = _samples[0];

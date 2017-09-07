@@ -54,6 +54,9 @@ public:
      * @return the probability of the sample to be part of the class lbl
      */
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
+    virtual void update() = 0;
+    virtual double confidence(const Eigen::VectorXd& sample) = 0;
+    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samples,Eigen::VectorXd& choice_dist_map) = 0;
 
 
     /**
@@ -79,6 +82,7 @@ public:
     const TrainingData& get_samples() const {return _samples;}
     void set_samples(TrainingData samples){_samples = samples;}
     int get_nbr_class(){return _nbr_class;}
+    int get_dimension(){return _dimension;}
 
     void set_distance_function(_distance_f distance){
         _distance = distance;

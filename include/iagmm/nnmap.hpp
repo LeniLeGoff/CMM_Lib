@@ -30,6 +30,9 @@ public:
 
 
     double compute_estimation(const Eigen::VectorXd& sample, int label = 1);
+    void update(){}
+    double confidence(const Eigen::VectorXd& sample){return 1.;}
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd, double> >& samples, Eigen::VectorXd &choice_dist_map){}
 
     //parameters
     double distance_threshold;

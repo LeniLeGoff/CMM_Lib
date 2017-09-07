@@ -1,26 +1,49 @@
+#include <iostream>
 #include <iagmm/mcs.hpp>
 #include <tbb/tbb.h>
 
 using namespace iagmm;
 
-double MCS::compute_estimation(const Eigen::VectorXd& sample, int lbl){
+const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
+
+double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl){
     std::vector<double> estimations;
 
-    for(auto& classif : _classifiers)
-        estimations.push_back(classif.compute_estimation(sample,lbl));
+    int i = 0;
+    for(auto& classif : _classifiers){
+        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
+        _parameters[i] = classif.second->confidence(sample.at(classif.first));
+        i++;
+    }
 
     return _comb_fct(_parameters,estimations);
 }
 
+void MCS::add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl){
+    for(auto& c : _classifiers)
+        c.second->add(sample.at(c.first),lbl);
+}
+
 void MCS::update(){
-    estimations = Eigen::MatrixXd::Zero(_classifiers.size(),_samples.size());
+    for(auto& c : _classifiers)
+        c.second->update();
+}
 
-    tbb::parallel_for(tbb::blocked_range2d<size_t>(0,_classifiers.size(),0,_samples.size()),
-                      [&](const tbb::blocked_range2d<size_t>& r ){
-        for(size_t i = r.rows().begin(); i != r.rows().end(); i++){
-            for(size_t j = r.cols().begin(); j != r.cols().end(); j++){
-                estimations(i,j) = _classifiers[i].compute_estimation(_samples[j].second,_samples[j].first);
-    });
+int MCS::next_sample(const std::vector<std::pair<Eigen::VectorXd, double> >& samples, Eigen::VectorXd& choice_dist_map){
+    std::vector<int> indexes;
+    std::vector<Eigen::VectorXd> cdms;
+    for(auto& c: _classifiers){
+        indexes.push_back(c.second->next_sample(samples,choice_dist_map));
+        cdms.push_back(choice_dist_map);
+    }
 
-    _opt_fct(_parameters,_classifiers,_samples);
+    boost::random::uniform_int_distribution<> distrib(0,indexes.size()-1);
+    int choice = distrib(_gen);
+    choice_dist_map = cdms[choice];
+
+    return indexes[choice];
+}
+
+void MCS::set_samples(std::string mod, TrainingData &data){
+    _classifiers[mod]->set_samples(data);
 }
