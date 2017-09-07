@@ -28,6 +28,9 @@ namespace iagmm{
 class GMM : public Classifier {
 public:
 
+//    typedef boost::shared_ptr<GMM> Ptr;
+//    typedef boost::shared_ptr<const GMM> ConstPtr;
+
     typedef std::map<int, std::vector<Component::Ptr>> model_t;
 
     GMM(){
@@ -101,7 +104,7 @@ public:
 
     Eigen::VectorXd mean_shift(const Eigen::VectorXd& X, int lbl);
 
-    double confidence(const Eigen::VectorXd& X);
+    double confidence(const Eigen::VectorXd& X) const;
 
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
@@ -156,6 +159,7 @@ private:
     public:
         _estimator(GMM* model, const Eigen::VectorXd& X)
             : _model(model), _X(X), _current_lbl(0){
+
 
             for(int i = 0; i < _model->model().size(); i++)
                 _sum_map.emplace(i,0.);
