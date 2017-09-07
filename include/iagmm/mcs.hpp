@@ -17,8 +17,8 @@ public:
     }
     MCS(std::map<std::string,Classifier::Ptr>& class_list,const comb_fct_t& cmb):
         _classifiers(class_list), _comb_fct(cmb){
-        _dimension = _classifiers[0]->get_dimension();
-        _nbr_class = _classifiers[0]->get_nbr_class();
+        _dimension = _classifiers.begin()->second->get_dimension();
+        _nbr_class = _classifiers.begin()->second->get_nbr_class();
         _parameters = Eigen::VectorXd::Constant(class_list.size(),1.);
         srand(time(NULL));
         _gen.seed(rand());
@@ -31,13 +31,13 @@ public:
 
 
 
-    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
+    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl) const ;
 
     void add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
     void update();
 
-    int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::map<std::string, std::vector<std::pair<Eigen::VectorXd, double> > > &samples, Eigen::VectorXd& choice_dist_map);
     double confidence(const Eigen::VectorXd& sample){}
 
     std::map<std::string,Classifier::Ptr>& access_classifiers(){return _classifiers;}

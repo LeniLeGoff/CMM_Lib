@@ -35,7 +35,7 @@ double GMM::_estimator::estimation(int lbl){
 
 double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
 
-    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model[i].empty()) return false;} return true;}())
+    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
         return 0.5;
 
     _estimator estimator(this, X);
@@ -161,7 +161,7 @@ Eigen::VectorXd  GMM::mean_shift(const Eigen::VectorXd& X, int lbl){
     return numerator/estimation - X;
 }
 
-double GMM::confidence(const Eigen::VectorXd& X){
+double GMM::confidence(const Eigen::VectorXd& X) const{
     int size = _model.at(0).size();
     for(int i = 1; i < _model.size() ; i++)
         size += _model.at(i).size();
@@ -337,9 +337,13 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     std::map<double,int> choice_distibution;
     boost::random::uniform_real_distribution<> distrib(0,1);
 
-
+    double est;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) = 1./(1. + exp(-40.*(fabs(1-confidence(samples[i].first)) - .5)));
+        est = samples[i].second;
+        if(est > .5)
+            est = 2.* (1 - est);
+        else est = 2.*est;
+        choice_dist_map(i) = 1./(1. + exp(-20.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
