@@ -4,6 +4,7 @@
 #include <iagmm/mcs_fct.hpp>
 #include <eigen3/Eigen/IterativeLinearSolvers>
 #include "boost/random.hpp"
+#include <tbb/tbb.h>
 
 
 namespace iagmm
@@ -11,6 +12,9 @@ namespace iagmm
 class MCS{
 
 public:
+
+//    typedef tbb::concurrent_hash_map<std::string,Classifier::Ptr> classif_map;
+
     MCS(){
         srand(time(NULL));
         _gen.seed(rand());
@@ -48,6 +52,7 @@ private:
     int _dimension;
     int _nbr_class;
     Eigen::VectorXd _parameters;
+//    classif_map _classifiers;
     std::map<std::string,Classifier::Ptr> _classifiers;
     Eigen::MatrixXd _estimations;
     comb_fct_t _comb_fct;

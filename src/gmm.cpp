@@ -337,13 +337,19 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     std::map<double,int> choice_distibution;
     boost::random::uniform_real_distribution<> distrib(0,1);
 
-    double est;
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
+                      [&](const tbb::blocked_range<size_t>& r){
+        double est;
+        for(size_t i = r.begin(); i != r.end(); i++){
+            est = samples[i].second;
+            if(est > .5)
+                est = 2.* (1 - est);
+            else est = 2.*est;
+            choice_dist_map(i) = 1./(1. + exp(-20.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
+        }
+    });
+
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        est = samples[i].second;
-        if(est > .5)
-            est = 2.* (1 - est);
-        else est = 2.*est;
-        choice_dist_map(i) = 1./(1. + exp(-20.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
