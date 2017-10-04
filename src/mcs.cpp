@@ -11,24 +11,26 @@ double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sam
         return .5;
 
 
-    std::vector<double> estimations;
+    std::vector<double> estimations(_classifiers.size());
     Eigen::VectorXd parameters(_classifiers.size());
-    int i = 0;
 
-//    tbb::parallel_for(tbb::blocked_range<classif_map::iterator>(_classifiers.begin(),_classifiers.end()),[&](tbb::blocked_range<classif_map::iterator>& r){
-//       for(classif_map::iterator it = r.begin(); it != r.end(); it++){
-//           estimations[i] = (it->second->compute_estimation(sample.at(it->first),lbl));
-//           parameters[i] = it->second->confidence(sample.at(classif.first));
-//           i++;
-//       }
-//    });
+    std::vector<std::string> key_vct;
 
-//    _estimations.clear();
-    for(auto& classif : _classifiers){
-        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
-        parameters[i] = classif.second->confidence(sample.at(classif.first));
-        i++;
-    }
+    for(const auto& classi : _classifiers)
+        key_vct.push_back(classi.first);
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,_classifiers.size()),[&](tbb::blocked_range<size_t>& r){
+       for(int i = r.begin(); i != r.end(); i++){
+           estimations[i] = _classifiers[key_vct[i]]->compute_estimation(sample.at(key_vct[i]),lbl);
+           parameters[i] = _classifiers[key_vct[i]]->confidence(sample.at(key_vct[i]));
+       }
+    });
+
+//    for(auto& classif : _classifiers){
+//        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
+//        parameters[i] = classif.second->confidence(sample.at(classif.first));
+//        i++;
+//    }
 
     return _comb_fct(parameters,estimations);
 }
