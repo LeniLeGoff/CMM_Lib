@@ -5,7 +5,7 @@ using namespace iagmm;
 
 const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
 
-double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl) const {
+double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl) {
 
     if(_classifiers.begin()->second->get_samples().size() == 0)
         return .5;
@@ -23,6 +23,7 @@ double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sam
 //       }
 //    });
 
+//    _estimations.clear();
     for(auto& classif : _classifiers){
         estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
         parameters[i] = classif.second->confidence(sample.at(classif.first));
@@ -40,6 +41,18 @@ void MCS::add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl){
 void MCS::update(){
     for(auto& c : _classifiers)
         c.second->update();
+}
+
+void MCS::update_parameters(int label, double thres, double rate){
+
+    for(size_t i = 0; i < _estimations.size(); i++){
+        if(fabs(label - _estimations[i]) < thres)
+            _parameters(i) -= rate;
+        else
+            _parameters(i) += rate;
+    }
+
+
 }
 
 int MCS::next_sample(const std::map<std::string,std::vector<std::pair<Eigen::VectorXd,double>>>& samples, Eigen::VectorXd& choice_dist_map){

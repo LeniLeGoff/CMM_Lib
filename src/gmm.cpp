@@ -345,7 +345,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
             if(est > .5)
                 est = 2.* (1 - est);
             else est = 2.*est;
-            choice_dist_map(i) = 1./(1. + exp(-20.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
+            choice_dist_map(i) = 1./(1. + exp(-60.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
         }
     });
 

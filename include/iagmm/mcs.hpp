@@ -28,18 +28,20 @@ public:
         _gen.seed(rand());
     }
     MCS(const MCS& mcs) : _dimension(mcs._dimension), _nbr_class(mcs._nbr_class), _parameters(mcs._parameters),
-        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct){
+        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct),_estimations(mcs._estimations){
         srand(time(NULL));
         _gen.seed(rand());
     }
 
 
 
-    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl) const ;
+    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
     void add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
     void update();
+
+    void update_parameters(int label, double thres = 0.5, double rate = 0.1);
 
     int next_sample(const std::map<std::string, std::vector<std::pair<Eigen::VectorXd, double> > > &samples, Eigen::VectorXd& choice_dist_map);
     double confidence(const Eigen::VectorXd& sample){}
@@ -54,7 +56,7 @@ private:
     Eigen::VectorXd _parameters;
 //    classif_map _classifiers;
     std::map<std::string,Classifier::Ptr> _classifiers;
-    Eigen::MatrixXd _estimations;
+    std::vector<double> _estimations;
     comb_fct_t _comb_fct;
     boost::random::mt19937 _gen;
 
