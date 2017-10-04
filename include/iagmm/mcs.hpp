@@ -35,7 +35,7 @@ public:
 
 
 
-    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl) const ;
+    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
     void add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
