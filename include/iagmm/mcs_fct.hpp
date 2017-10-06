@@ -61,22 +61,22 @@ struct combinatorial{
 
         });
 
-        map.emplace("max2",
-                    [](const Eigen::VectorXd& parameters,
-                                    const std::vector<double>& estimations) -> double {
+//        map.emplace("max2",
+//                    [](const Eigen::VectorXd& parameters,
+//                                    const std::vector<double>& estimations) -> double {
 
-            Eigen::Vectpr
+//            Eigen::Vectpr
 
-            double max = 0, max_val = confidences(0);
-            for(int i = 0; i < confidences.size(); i++){
-                if(max_val < confidences[i]){
-                    max = i;
-                }
-            }
+//            double max = 0, max_val = confidences(0);
+//            for(int i = 0; i < confidences.size(); i++){
+//                if(max_val < confidences[i]){
+//                    max = i;
+//                }
+//            }
 
-            return estimations[max];
+//            return estimations[max];
 
-        });
+//        });
 
         return map;
     }

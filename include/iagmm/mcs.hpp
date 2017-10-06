@@ -49,6 +49,7 @@ public:
     std::map<std::string,Classifier::Ptr>& access_classifiers(){return _classifiers;}
 
     void set_samples(std::string mod, TrainingData& data);
+    int get_nb_samples(){return _classifiers.begin()->second->get_samples().size();}
 
 private:
     int _dimension;
