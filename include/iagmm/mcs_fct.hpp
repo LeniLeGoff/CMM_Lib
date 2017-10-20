@@ -16,6 +16,8 @@ namespace iagmm{
 typedef std::function<double(const Eigen::VectorXd&,
                              const std::vector<double>&)> comb_fct_t;
 
+typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&)> param_fct_t;
+
 
 struct combinatorial{
     static std::map<std::string,comb_fct_t> create_map(){
@@ -50,6 +52,7 @@ struct combinatorial{
                     [](const Eigen::VectorXd& confidences,
                                     const std::vector<double>& estimations) -> double {
 
+
             double max = 0, max_val = confidences(0);
             for(int i = 0; i < confidences.size(); i++){
                 if(max_val < confidences[i]){
@@ -82,6 +85,39 @@ struct combinatorial{
     }
     static const std::map<std::string,comb_fct_t> fct_map;
 
+};
+
+struct param_estimation{
+    static std::map<std::string,param_fct_t> create_map(){
+        std::map<std::string,param_fct_t> map;
+
+        map.emplace("none",
+                    [](const Eigen::VectorXd& input) -> Eigen::VectorXd {
+            return input;
+
+        });
+
+        map.emplace("confidence_weights",
+                    [](const Eigen::VectorXd& input) -> Eigen::VectorXd {
+            Eigen::VectorXd params(input.size());
+            double sum = 0;
+            for(int i = 0; i < input.size(); i++){
+                sum += input(i);
+            }
+            sum = sum/(double)input.size();
+
+            for(int i = 0; i < params.size(); i++){
+                params(i) = 0.5 + input(i) - sum;
+            }
+
+            return params;
+
+        });
+
+
+        return map;
+    }
+    static const std::map<std::string,param_fct_t> fct_map;
 };
 
 }

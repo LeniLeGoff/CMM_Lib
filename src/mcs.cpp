@@ -26,6 +26,8 @@ double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sam
        }
     });
 
+    parameters = _param_fct(parameters);
+
 //    for(auto& classif : _classifiers){
 //        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));
 //        parameters[i] = classif.second->confidence(sample.at(classif.first));

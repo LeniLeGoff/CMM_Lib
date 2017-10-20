@@ -140,9 +140,9 @@ public:
 
 private:
 
-    void _merge(int ind, int lbl);
+    bool _merge(int ind, int lbl);
     double _component_score(int i, int lbl);
-    void _split(int ind, int lbl);
+    bool _split(int ind, int lbl);
     void _new_component(const Eigen::VectorXd &samples, int label);
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
