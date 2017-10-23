@@ -97,7 +97,7 @@ struct param_estimation{
 
         });
 
-        map.emplace("confidence_weights",
+        map.emplace("linear",
                     [](const Eigen::VectorXd& input) -> Eigen::VectorXd {
             Eigen::VectorXd params(input.size());
             double sum = 0;
@@ -114,6 +114,23 @@ struct param_estimation{
 
         });
 
+        map.emplace("sigmoid",
+                    [](const Eigen::VectorXd& input) -> Eigen::VectorXd {
+            Eigen::VectorXd params(input.size());
+            double sum = 0;
+            for(int i = 0; i < input.size(); i++){
+                sum += input(i);
+            }
+            sum = sum/(double)input.size();
+            double val;
+            for(int i = 0; i < params.size(); i++){
+                val = 0.5 + input(i) - sum;
+                params(i) =  1./(1. + exp(-100.*val - .5));
+            }
+
+            return params;
+
+        });
 
         return map;
     }

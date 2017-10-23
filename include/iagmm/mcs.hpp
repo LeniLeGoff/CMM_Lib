@@ -28,7 +28,7 @@ public:
         _gen.seed(rand());
     }
     MCS(const MCS& mcs) : _dimension(mcs._dimension), _nbr_class(mcs._nbr_class), _parameters(mcs._parameters),
-        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct),_estimations(mcs._estimations){
+        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct), _param_fct(mcs._param_fct),_estimations(mcs._estimations){
         srand(time(NULL));
         _gen.seed(rand());
     }

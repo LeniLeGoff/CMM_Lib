@@ -4,6 +4,7 @@
 using namespace iagmm;
 
 const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
+const std::map<std::string,param_fct_t> param_estimation::fct_map = param_estimation::create_map();
 
 double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl) {
 

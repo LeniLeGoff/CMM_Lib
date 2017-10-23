@@ -33,8 +33,8 @@ install(TARGETS ${PROJECT_NAME}
 #add_executable(load_archive tools/load_archive.cpp)
 #target_link_libraries(load_archive iagmm )
 
-add_executable(test_1 test/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#add_executable(test_1 test/test.cpp)
+#target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(test_serial test/test_serial.cpp)
 #target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
