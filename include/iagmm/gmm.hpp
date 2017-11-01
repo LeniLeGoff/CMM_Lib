@@ -152,7 +152,7 @@ private:
 
     bool _merge(int ind, int lbl);
     double _component_score(int i, int lbl);
-    void _split(int ind, int lbl);
+    bool _split(int ind, int lbl);
     void _expectation(int lbl);
     void _maximisation(int lbl);
 
