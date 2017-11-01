@@ -19,8 +19,8 @@ public:
         srand(time(NULL));
         _gen.seed(rand());
     }
-    MCS(std::map<std::string,Classifier::Ptr>& class_list,const comb_fct_t& cmb):
-        _classifiers(class_list), _comb_fct(cmb){
+    MCS(std::map<std::string,Classifier::Ptr>& class_list,const comb_fct_t& cmb,const param_fct_t param_fct):
+        _classifiers(class_list), _comb_fct(cmb), _param_fct(param_fct){
         _dimension = _classifiers.begin()->second->get_dimension();
         _nbr_class = _classifiers.begin()->second->get_nbr_class();
         _parameters = Eigen::VectorXd::Constant(class_list.size(),1.);
@@ -28,7 +28,7 @@ public:
         _gen.seed(rand());
     }
     MCS(const MCS& mcs) : _dimension(mcs._dimension), _nbr_class(mcs._nbr_class), _parameters(mcs._parameters),
-        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct),_estimations(mcs._estimations){
+        _classifiers(mcs._classifiers), _comb_fct(mcs._comb_fct), _param_fct(mcs._param_fct),_estimations(mcs._estimations){
         srand(time(NULL));
         _gen.seed(rand());
     }
@@ -59,6 +59,7 @@ private:
     std::map<std::string,Classifier::Ptr> _classifiers;
     std::vector<double> _estimations;
     comb_fct_t _comb_fct;
+    param_fct_t _param_fct;
     boost::random::mt19937 _gen;
 
 };

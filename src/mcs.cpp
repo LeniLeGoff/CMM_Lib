@@ -4,6 +4,7 @@
 using namespace iagmm;
 
 const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
+const std::map<std::string,param_fct_t> param_estimation::fct_map = param_estimation::create_map();
 
 double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl) {
 
@@ -25,6 +26,8 @@ double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sam
            parameters[i] = _classifiers[key_vct[i]]->confidence(sample.at(key_vct[i]));
        }
     });
+
+    parameters = _param_fct(parameters);
 
 //    for(auto& classif : _classifiers){
 //        estimations.push_back(classif.second->compute_estimation(sample.at(classif.first),lbl));

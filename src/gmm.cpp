@@ -89,7 +89,7 @@ void GMM::update_factors(){
 
     for(auto& components : _model){
         for(auto& c: components.second)
-            c->set_factor((double)c->size()/(/*sum_size*/(double)_samples.size()));
+            c->set_factor((double)c->size()/((double)sum_size));
     }
 }
 
@@ -101,7 +101,7 @@ double GMM::unit_factor(){
     for(auto& components : _model)
         sum_size += components.second.size();
 
-    return 1./((double)_samples.size());
+    return 1./((double)sum_size);
 }
 
 
@@ -192,7 +192,8 @@ double GMM::log_likelihood(int i, int lbl){
 
 }
 
-void GMM::_merge(int ind, int lbl){
+
+bool GMM::_merge(int ind, int lbl){
     std::cout << "merge function" << std::endl;
     boost::chrono::system_clock::time_point timer;
     timer  = boost::chrono::system_clock::now();
@@ -244,7 +245,7 @@ void GMM::_merge(int ind, int lbl){
                 std::cout << "Merge finish, time spent : "
                           << boost::chrono::duration_cast<boost::chrono::milliseconds>(
                                  boost::chrono::system_clock::now() - timer) << std::endl;
-                return;
+                return true;
             }
         }
     }
@@ -252,6 +253,8 @@ void GMM::_merge(int ind, int lbl){
               << boost::chrono::duration_cast<boost::chrono::milliseconds>(
                      boost::chrono::system_clock::now() - timer) << std::endl;
 
+
+    return false;
 }
 
 std::pair<double,double> GMM::_coeff_intersection(int ind1, int lbl1, int ind2, int lbl2){
@@ -276,13 +279,13 @@ double GMM::_component_score(int i, int lbl){
 }
 
 
-void GMM::_split(int ind, int lbl){
+bool GMM::_split(int ind, int lbl){
     std::cout << "split function" << std::endl;
     boost::chrono::system_clock::time_point timer;
     timer  = boost::chrono::system_clock::now();
 
     if(_model[lbl][ind]->size() < 4)
-       return;
+       return false;
     GMM candidate;
 
     Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1,ellipse_vect2;
@@ -319,7 +322,7 @@ void GMM::_split(int ind, int lbl){
                         _model = candidate.model();
                         update_factors();
 
-                        return;
+                        return true;
                     }
                 }
             }
@@ -328,6 +331,7 @@ void GMM::_split(int ind, int lbl){
     std::cout << "Split finish, time spent : "
               << boost::chrono::duration_cast<boost::chrono::milliseconds>(
                      boost::chrono::system_clock::now() - timer) << std::endl;
+    return false;
 }
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
@@ -410,24 +414,49 @@ void GMM::update(){
 
 void GMM::update_model(int ind, int lbl){
 
-    int n,rand_ind;
+    int n,rand_ind,max_size,max_ind,min_ind,min_size;
     n = _model[lbl].size();
-    _split(ind,lbl);
-    if(n > 1)
+//    _split(ind,lbl);
+    if(!_split(ind,lbl) && n > 1)
         _merge(ind,lbl);
+
 
     for(int i = 0; i < _nbr_class; i++){
         n = _model[i].size();
-        if(n < 2) break;
-        do
-            rand_ind = rand()%n;
-        while(rand_ind == ind);
-        _split(rand_ind,i);
 
+        if(n < 2) break;
+
+//        max_size = _model[i][0]->size();
+//        max_ind = 0;
+//        min_size = _model[i][0]->size();
+//        min_ind = 0;
+//        for(int j = 1; j < _model[i].size(); j++){
+//            if(max_size < _model[i][j]->size()){
+//                max_size = _model[i][j]->size();
+//                max_ind = j;
+//            }
+//            if(min_ind > _model[i][j]->size()){
+//                min_ind = _model[i][j]->size();
+//                min_ind = j;
+//            }
+//        }
+
+//        if(min_ind == max_ind){
+//            if(!_split(max_ind,i))
+//                _merge(max_ind,i);
+//        }else{
+//            _split(max_ind,i);
+//            _merge(min_ind,i);
+//        }
         do
             rand_ind = rand()%n;
         while(rand_ind == ind);
-        _merge(rand_ind,i);
+        if(!_split(rand_ind,i))
+            _merge(rand_ind,i);
+//        do
+//            rand_ind = rand()%n;
+//        while(rand_ind_2 == ind);
+
     }
 
     for(auto& components : _model)
