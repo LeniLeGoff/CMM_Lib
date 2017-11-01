@@ -28,6 +28,7 @@ namespace iagmm{
 class GMM : public Classifier {
 public:
 
+    int max_component;
 //    typedef boost::shared_ptr<GMM> Ptr;
 //    typedef boost::shared_ptr<const GMM> ConstPtr;
 
@@ -41,6 +42,7 @@ public:
     GMM(int dimension, int nbr_class) : Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
+
         srand(time(NULL));
         _gen.seed(rand());
     }
@@ -84,6 +86,7 @@ public:
     void add(const Eigen::VectorXd &sample, int lbl);
     void append(const std::vector<Eigen::VectorXd> &samples,const std::vector<int>& lbl);
     int append(const Eigen::VectorXd &samples,const int& lbl);
+    void append_EM(const Eigen::VectorXd &samples,const int& lbl);
 
     void update();
     void update_model(int ind, int lbl);
@@ -107,6 +110,13 @@ public:
     double confidence(const Eigen::VectorXd& X) const;
 
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
+
+    double log_likelihood(int i, int lbl);
+
+    void EM_init();
+    void EM_step();
+    void new_component(const Eigen::VectorXd &samples, int label);
+
 
     /**
      * @brief k nearst neighbor
@@ -143,10 +153,12 @@ private:
     void _merge(int ind, int lbl);
     double _component_score(int i, int lbl);
     void _split(int ind, int lbl);
-    void _new_component(const Eigen::VectorXd &samples, int label);
+    void _expectation(int lbl);
+    void _maximisation(int lbl);
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
     model_t _model;
+    std::map<int, Eigen::MatrixXd> _membership;
 
     boost::random::mt19937 _gen;
     double _normalisation;

@@ -99,11 +99,13 @@ public:
     double get_factor() const {return _factor;}
     int get_label() const {return _label;}
     const Eigen::VectorXd& get_mu() const {return _mu;}
+    void set_mu(const Eigen::VectorXd& mu){_mu = mu;}
     const Eigen::VectorXd& get_sample(int i) const {return _samples[i];}
     const std::vector<Eigen::VectorXd>& get_samples() const {return _samples;}
     int size() const {return _samples.size();}
     int get_dimension() const {return _dimension;}
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
+    void set_covariance(const Eigen::MatrixXd& covariance){_covariance = covariance;}
 
     std::string print_parameters() const;
 

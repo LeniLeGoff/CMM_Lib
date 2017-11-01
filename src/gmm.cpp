@@ -84,8 +84,8 @@ double GMM::_score_calculator::compute(){
 void GMM::update_factors(){
 
     double sum_size = 0;
-    for(auto& components : _model)
-        sum_size += components.second.size();
+//    for(auto& components : _model)
+//        sum_size += components.second.size();
 
     for(auto& components : _model){
         for(auto& c: components.second)
@@ -105,7 +105,7 @@ double GMM::unit_factor(){
 }
 
 
-void GMM::_new_component(const Eigen::VectorXd& sample, int label){
+void GMM::new_component(const Eigen::VectorXd& sample, int label){
     Component::Ptr component(new Component(_dimension,label));
     component->add(sample);
     component->update_parameters();
@@ -186,6 +186,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
     return _model.at(lbl).at(r)->compute_multivariate_normal_dist(X)/
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
+}
+
+double GMM::log_likelihood(int i, int lbl){
+
 }
 
 void GMM::_merge(int ind, int lbl){
@@ -378,7 +382,7 @@ int GMM::append(const Eigen::VectorXd &sample,const int& lbl){
     _samples.add(lbl,sample);
 
     if(_model[lbl].empty()){
-        _new_component(sample,lbl);
+        new_component(sample,lbl);
         return 0;
     }
 
@@ -392,6 +396,12 @@ int GMM::append(const Eigen::VectorXd &sample,const int& lbl){
     _model[lbl][r]->update_parameters();
 
     return r;
+}
+
+
+void GMM::append_EM(const Eigen::VectorXd &sample,const int& lbl){
+    int r,c; //row and column indexes
+    _samples.add(lbl,sample);
 }
 
 void GMM::update(){
@@ -468,6 +478,85 @@ int GMM::find_closest(int i, double &min_dist, int lbl){
 
     if(r >= i) return r+1;
     else return r;
+}
+
+void GMM::_expectation(int lbl){
+    std::vector<Eigen::VectorXd> samples = _samples.get_data(lbl);
+
+    _membership.emplace(lbl,Eigen::MatrixXd(_model[lbl].size(),samples.size()));
+
+    Eigen::VectorXd estimations(_model[lbl].size());
+    double sum;
+    for(int k = 0; k < samples.size(); k++){
+        sum = 0;
+        for(int i = 0; i < _model[lbl].size(); i++){
+            estimations(i) = _model[lbl][i]->compute_multivariate_normal_dist(samples[k])/
+                    _model[lbl][i]->compute_multivariate_normal_dist( _model[lbl][i]->get_mu());
+            sum += _model[lbl][i]->get_factor()* estimations(i);
+            _membership[lbl](i,k) = _model[lbl][i]->get_factor()* estimations(i);
+        }
+        _membership[lbl].col(k) = _membership[lbl].col(k)/sum;
+    }
+}
+
+void GMM::_maximisation(int lbl){
+    Eigen::VectorXd normalisation = Eigen::VectorXd::Zero(_model[lbl].size());
+    Eigen::VectorXd new_mu;
+    Eigen::MatrixXd new_covariance;
+    std::vector<Eigen::VectorXd> samples = _samples.get_data(lbl);
+    for(int k = 0; k < _membership[lbl].cols(); k++){
+        normalisation += _membership[lbl].col(k).transpose();
+    }
+    for(int i = 0; i < _model[lbl].size(); i++){
+        //new factor
+        _model[lbl][i]->set_factor(normalisation(i)/samples.size());
+
+        //new mean
+        new_mu = Eigen::VectorXd::Zero(_model[lbl][i]->get_dimension());
+        for(int k = 0; k < _membership[lbl].cols(); k++)
+            new_mu += _membership[lbl](i,k)*samples[k];
+        new_mu = new_mu / normalisation(i);
+        _model[lbl][i]->set_mu(new_mu);
+
+        //new covariance
+        new_covariance = Eigen::MatrixXd::Zero(_model[lbl][i]->get_dimension(),
+                                               _model[lbl][i]->get_dimension());
+        for(int k = 0; k < _membership[lbl].cols(); k++){
+            new_covariance += _membership[lbl](i,k)*(samples[k] - new_mu)*(samples[k] - new_mu).transpose();
+        }
+        new_covariance = new_covariance / normalisation(i);
+        _model[lbl][i]->set_covariance(new_covariance);
+    }
+}
+
+void GMM::EM_init(){
+    boost::random::uniform_real_distribution<> dist(0,1);
+    for(int j = 0; j < _model.size(); j++){
+        _membership.emplace(j,Eigen::MatrixXd(max_component,max_component));
+        for(int i = 0; i < max_component; i++){
+            Eigen::VectorXd mu(_dimension);
+            Eigen::MatrixXd covariance(_dimension,_dimension);
+            for(int k = 0; k < _dimension; k++)
+                mu(k) = dist(_gen);
+
+            new_component(mu,j);
+            for(int l = 0; l < max_component; l++)
+                _membership[j](i,l) = dist(_gen);
+        }
+    }
+
+
+    for(int j = 0; j < _model.size(); j++)
+        _maximisation(j);
+
+}
+
+void GMM::EM_step(){
+    _membership.clear();
+    for(int lbl = 0; lbl < _model.size(); lbl++){
+        _expectation(lbl);
+        _maximisation(lbl);
+    }
 }
 
 std::string GMM::print_info(){
