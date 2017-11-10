@@ -41,7 +41,11 @@ int main(int argc, char** argv){
     double A;
     sf::RenderWindow window(sf::VideoMode(MAX_X*4*3,MAX_Y*4*2),"dataset");
 
-    A = rand()%100;
+    if(argc == 2)
+        A = std::stod(argv[1]);
+    else
+        A = rand()%100;
+    std::cout << "A = " << A << std::endl;
     int real_space[MAX_X][MAX_Y];
     double estimated_space[MAX_X][MAX_Y];
     std::vector<Eigen::VectorXd> samples;
@@ -52,7 +56,7 @@ int main(int argc, char** argv){
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
     });
-    Eigen::VectorXd choice_dist_map;
+    Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;
 
@@ -71,14 +75,13 @@ int main(int argc, char** argv){
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
     std::vector<sf::RectangleShape> rects_confidence(MAX_Y*MAX_X,
                                                     sf::RectangleShape(sf::Vector2f(4,4)));
-    std::vector<sf::Vertex[2]> vect_mean_shift(MAX_Y*MAX_X);
 
     std::vector<sf::CircleShape> components_center;
 
     std::vector<sf::RectangleShape> error_curve;
 
     Eigen::Vector2i coord(0,0);
-    samples_t all_sample;
+    std::vector<std::pair<Eigen::VectorXd,double>> all_sample(MAX_Y*MAX_X);
 
 
     for(int i = 0; i < MAX_X*MAX_Y; i++){
@@ -88,7 +91,7 @@ int main(int argc, char** argv){
         if(coord[1] >= MAX_Y)
             coord[1] = 0;
 
-        all_sample.push_back(Eigen::Vector2d(coord[0]/(double)MAX_X,coord[1]/(double)MAX_Y));
+//        all_sample.push_back(Eigen::Vector2d(coord[0]/(double)MAX_X,coord[1]/(double)MAX_Y));
 
         if(compute_f(A,coord[0] - MAX_X/2,coord[1] - MAX_Y/2) > 0){
             real_space[coord[0]][coord[1]] = 1;
@@ -116,7 +119,9 @@ int main(int argc, char** argv){
     int iteration = 0;
 
     error = 1.;
-
+    Eigen::VectorXd next_s;
+    coord[0] = rand()%MAX_X;
+    coord[1] = rand()%MAX_Y;
     while(window.isOpen()){
         timer  = boost::chrono::system_clock::now();
         sf::Event event;
@@ -141,19 +146,9 @@ int main(int argc, char** argv){
             window.draw(circle);
         for(auto err : error_curve)
             window.draw(err);
-//        for(auto vect: vect_mean_shift)
-//            window.draw(vect,2,sf::Lines);
 
 
 
-
-//        Eigen::VectorXd next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)];
-//        coord[0] = next_s(0)*MAX_X;
-//        coord[1] = next_s(1)*MAX_Y;
-        coord[0] = rand()%MAX_X;
-        coord[1] = rand()%MAX_Y;
-
-        //        std::cout << map << std::endl;
 
         samples.push_back(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y));
 
@@ -180,18 +175,22 @@ int main(int argc, char** argv){
                         coord[1]++;
                     if(coord[1] >= MAX_Y)
                         coord[1] = 0;
-                    double est = gmm.compute_estimation(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
-                    double conf = gmm.confidence(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
-                    if(conf < 1e-03)
-                        conf = 0;
-                    rects_confidence[i].setFillColor(sf::Color(255*conf,255*conf,255*conf));
+                    double est = gmm.compute_estimation(
+                                Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
+                    all_sample[i] =
+                                std::make_pair(
+                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),est);
+                    //                    double conf = gmm.confidence(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
+//                    if(conf < 1e-03)
+//                        conf = 0;
+//                    rects_confidence[i].setFillColor(sf::Color(255*conf,255*conf,255*conf));
 
-//                    double dist = choice_dist_map(i);
-//                    rects_exact_est[i].setFillColor(
-//                                sf::Color(255*dist,
-//                                          255*dist,
-//                                          255*dist)
-//                                );
+                    double dist = choice_dist_map(i);
+                    rects_confidence[i].setFillColor(
+                                sf::Color(255*dist,
+                                          255*dist,
+                                          255*dist)
+                                );
                     error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
 
                     rects_estimated[i].setFillColor(
@@ -199,7 +198,14 @@ int main(int argc, char** argv){
                                 );
                 }
             });
+            next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)].first;
+            coord[0] = next_s(0)*MAX_X;
+            coord[1] = next_s(1)*MAX_Y;
+        }else{
+            coord[0] = rand()%MAX_X;
+            coord[1] = rand()%MAX_Y;
         }
+
         error = error/(double)(MAX_X*MAX_Y);
         sf::RectangleShape error_point(sf::Vector2f(4,4));
         error_point.setFillColor(sf::Color(0,255,0));

@@ -1,6 +1,7 @@
 #include "iagmm/gmm.hpp"
 #include <map>
 #include <boost/chrono.hpp>
+#include <cmath>
 
 using namespace iagmm;
 
@@ -61,7 +62,7 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     double sum = _sum;
 
     for(size_t i = r.begin(); i != r.end(); ++i){
-        sum += fabs(_model->compute_estimation(_samples[i].second,_samples[i].first) - 1.);
+        sum += std::log(_model->compute_estimation(_samples[i].second,_samples[i].first));
     }
     _sum = sum;
 }
@@ -84,8 +85,8 @@ double GMM::_score_calculator::compute(){
 void GMM::update_factors(){
 
     double sum_size = 0;
-//    for(auto& components : _model)
-//        sum_size += components.second.size();
+    for(auto& components : _model)
+        sum_size += components.second.size();
 
     for(auto& components : _model){
         for(auto& c: components.second)
@@ -233,11 +234,11 @@ bool GMM::_merge(int ind, int lbl){
             candidate.model()[lbl].erase(candidate.model()[lbl].begin() + i);
             candidate.update_factors();
 
-            _score_calculator candidate_sc(&candidate,candidate.get_samples());
+            _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
             candidate_score = candidate_sc.compute();
 
 
-            if(candidate_score <= score ){
+            if(candidate_score >= score/* + score2)/2.*/ ){
                 std::cout << "-_- MERGE _-_" << std::endl;
                 _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][i]);
                 _model[lbl].erase(_model[lbl].begin() + i);
@@ -292,6 +293,8 @@ bool GMM::_split(int ind, int lbl){
     Eigen::MatrixXd eigenvect, eigenvect2;
     _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
     double cand_score1, cand_score2, score;
+    _score_calculator sc(this,_samples);
+    score = sc.compute();
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
             continue;
@@ -314,10 +317,12 @@ bool GMM::_split(int ind, int lbl){
                 if(new_component){
                     candidate.model()[lbl].push_back(new_component);
                     candidate.update_factors();
-                    cand_score1 = candidate._component_score(ind,lbl);
-                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
-                    score = _component_score(ind,lbl);
-                    if((cand_score1+cand_score2)/2. < score){
+//                    cand_score1 = candidate._component_score(ind,lbl);
+//                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
+                    _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
+                    cand_score1 = candidate_sc.compute();
+//                    score = _component_score(ind,lbl);
+                    if(cand_score1/*+cand_score2)/2.*/ > score){
                         std::cout << "-_- SPLIT _-_" << std::endl;
                         _model = candidate.model();
                         update_factors();
