@@ -4,6 +4,7 @@
 #include <functional>
 #include <boost/shared_ptr.hpp>
 #include <eigen3/Eigen/Core>
+#include <tbb/tbb.h>
 #include "data.hpp"
 
 namespace iagmm {
@@ -24,7 +25,8 @@ public:
 
     /**
      * @brief default Constructor
-     */
+     */    void estimate_training_dataset();
+
     Classifier(){}
 
     /**
@@ -59,6 +61,7 @@ public:
     virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
 
 
+
     /**
      * @brief add a sample to the training set of the classifier
      * @param sample
@@ -89,9 +92,19 @@ public:
     }
 
 protected:
+    void _estimate_training_dataset(){
+        _samples.estimations.resize(_samples.size());
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,_samples.size()),
+                          [&](const tbb::blocked_range<size_t>& r){
+            for(int i = r.begin(); i != r.end(); i++)
+                _samples.estimations[i] = compute_estimation(_samples[i].second,_samples[i].first);
+        });
+    }
+
     int _nbr_class;
     int _dimension;
     TrainingData _samples;
+
     _distance_f _distance;
 };
 

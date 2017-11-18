@@ -111,8 +111,6 @@ public:
 
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
-    double log_likelihood(int i, int lbl);
-
     void EM_init();
     void EM_step();
     void new_component(const Eigen::VectorXd &samples, int label);

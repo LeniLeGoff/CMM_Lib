@@ -1,6 +1,6 @@
 #include "iagmm/gmm.hpp"
 #include <map>
-#include <boost/chrono.hpp>
+#include <chrono>
 #include <cmath>
 
 using namespace iagmm;
@@ -62,7 +62,7 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     double sum = _sum;
 
     for(size_t i = r.begin(); i != r.end(); ++i){
-        sum += std::log(_model->compute_estimation(_samples[i].second,_samples[i].first));
+        sum += std::log(_samples.estimations[i]);
     }
     _sum = sum;
 }
@@ -189,15 +189,12 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
 }
 
-double GMM::log_likelihood(int i, int lbl){
-
-}
 
 
 bool GMM::_merge(int ind, int lbl){
     std::cout << "merge function" << std::endl;
-    boost::chrono::system_clock::time_point timer;
-    timer  = boost::chrono::system_clock::now();
+    std::chrono::system_clock::time_point timer;
+    timer  = std::chrono::system_clock::now();
 
     GMM candidate;
     double score, score2, candidate_score;
@@ -234,6 +231,7 @@ bool GMM::_merge(int ind, int lbl){
             candidate.model()[lbl].erase(candidate.model()[lbl].begin() + i);
             candidate.update_factors();
 
+            candidate._estimate_training_dataset();
             _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
             candidate_score = candidate_sc.compute();
 
@@ -244,15 +242,15 @@ bool GMM::_merge(int ind, int lbl){
                 _model[lbl].erase(_model[lbl].begin() + i);
                 update_factors();
                 std::cout << "Merge finish, time spent : "
-                          << boost::chrono::duration_cast<boost::chrono::milliseconds>(
-                                 boost::chrono::system_clock::now() - timer) << std::endl;
+                          << std::chrono::duration_cast<std::chrono::milliseconds>(
+                                 std::chrono::system_clock::now() - timer).count() << std::endl;
                 return true;
             }
         }
     }
     std::cout << "Merge finish, time spent : "
-              << boost::chrono::duration_cast<boost::chrono::milliseconds>(
-                     boost::chrono::system_clock::now() - timer) << std::endl;
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::system_clock::now() - timer).count() << std::endl;
 
 
     return false;
@@ -282,8 +280,8 @@ double GMM::_component_score(int i, int lbl){
 
 bool GMM::_split(int ind, int lbl){
     std::cout << "split function" << std::endl;
-    boost::chrono::system_clock::time_point timer;
-    timer  = boost::chrono::system_clock::now();
+    std::chrono::system_clock::time_point timer;
+    timer  = std::chrono::system_clock::now();
 
     if(_model[lbl][ind]->size() < 4)
        return false;
@@ -319,6 +317,8 @@ bool GMM::_split(int ind, int lbl){
                     candidate.update_factors();
 //                    cand_score1 = candidate._component_score(ind,lbl);
 //                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
+                    candidate._estimate_training_dataset();
+
                     _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
                     cand_score1 = candidate_sc.compute();
 //                    score = _component_score(ind,lbl);
@@ -326,7 +326,9 @@ bool GMM::_split(int ind, int lbl){
                         std::cout << "-_- SPLIT _-_" << std::endl;
                         _model = candidate.model();
                         update_factors();
-
+                        std::cout << "Split finish, time spent : "
+                                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                                         std::chrono::system_clock::now() - timer).count() << std::endl;
                         return true;
                     }
                 }
@@ -334,8 +336,8 @@ bool GMM::_split(int ind, int lbl){
         }
     }
     std::cout << "Split finish, time spent : "
-              << boost::chrono::duration_cast<boost::chrono::milliseconds>(
-                     boost::chrono::system_clock::now() - timer) << std::endl;
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::system_clock::now() - timer).count() << std::endl;
     return false;
 }
 
@@ -419,7 +421,10 @@ void GMM::update(){
 
 void GMM::update_model(int ind, int lbl){
 
-    int n,rand_ind,max_size,max_ind,min_ind,min_size;
+    int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
+
+    _estimate_training_dataset();
+
     n = _model[lbl].size();
 //    _split(ind,lbl);
     if(!_split(ind,lbl) && n > 1)

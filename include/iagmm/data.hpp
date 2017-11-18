@@ -15,8 +15,12 @@ public:
     typedef std::shared_ptr<TrainingData> Ptr;
     typedef const std::shared_ptr<TrainingData> ConstPtr;
 
+    /**
+     * @brief element_t : (label; data)
+     */
     typedef std::pair<int,Eigen::VectorXd> element_t;
     typedef std::vector<element_t> data_t;
+    typedef std::vector<double> estimation_t;
 
     /**
      * @brief default constructor
@@ -27,7 +31,9 @@ public:
      * @brief copy constructor
      * @param d
      */
-    TrainingData(const TrainingData& d) : _data(d._data){}
+    TrainingData(const TrainingData& d) :
+        _data(d._data),
+        estimations(d.estimations){}
 
     /**
      * @brief add an element in the data
@@ -95,8 +101,11 @@ public:
 
     const element_t& last(){return _data.back();}
 
+    estimation_t estimations;
+
 protected:
     data_t _data;
+
 
 };
 
