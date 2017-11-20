@@ -423,7 +423,6 @@ void GMM::update_model(int ind, int lbl){
 
     int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
 
-    _estimate_training_dataset();
 
     n = _model[lbl].size();
 //    _split(ind,lbl);
@@ -472,6 +471,7 @@ void GMM::update_model(int ind, int lbl){
     for(auto& components : _model)
         for(auto& comp : components.second)
             comp->update_parameters();
+    _estimate_training_dataset();
 
 }
 
