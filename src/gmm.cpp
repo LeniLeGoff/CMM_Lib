@@ -202,51 +202,56 @@ bool GMM::_merge(int ind, int lbl){
     _score_calculator sc(this,_samples);
     score = sc.compute();
 
-    Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1, ellipse_vect2;
-    Eigen::MatrixXd eigenvect, eigenvect2;
-    _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
-    for(int i = 0; i < _model[lbl].size(); i++){
-        if(i == ind)
+    Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
+
+
+    Eigen::VectorXd distances(_model[lbl].size());
+    int r, c;
+    for (int j = 0; j < _model[lbl].size(); j++) {
+        if(j == ind){
+            distances(j) = 1000000;
             continue;
-        _model[lbl][i]->compute_eigenvalues(eigenval2,eigenvect2);
-        diff_mu = _model[lbl][i]->get_mu() - _model[lbl][ind]->get_mu();
-        ellipse_vect1 = (_model[lbl][i]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-//        for(int i = 0; i < eigenval.rows(); i++){
-//            ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
-//            ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
-//        }
-
-        if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
-//            score = _component_score(ind,lbl);
-//            score2 = _component_score(i,lbl);
-
-            candidate = GMM(_model);
-            candidate.set_samples(_samples);
-            candidate.model()[lbl][ind] =
-                    candidate.model()[lbl][ind]->merge(candidate.model()[lbl][i]);
-//            TrainingData knn_output;
-//            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
-
-            candidate.model()[lbl].erase(candidate.model()[lbl].begin() + i);
-            candidate.update_factors();
-
-            candidate._estimate_training_dataset();
-            _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
-            candidate_score = candidate_sc.compute();
-
-
-            if(candidate_score >= score/* + score2)/2.*/ ){
-                std::cout << "-_- MERGE _-_" << std::endl;
-                _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][i]);
-                _model[lbl].erase(_model[lbl].begin() + i);
-                update_factors();
-                std::cout << "Merge finish, time spent : "
-                          << std::chrono::duration_cast<std::chrono::milliseconds>(
-                                 std::chrono::system_clock::now() - timer).count() << std::endl;
-                return true;
-            }
         }
+        distances(j) = _model[lbl][ind]->distance(_model[lbl][j]->get_mu());
+    }
+    distances.minCoeff(&r,&c);
+
+
+    diff_mu = _model[lbl][r]->get_mu() - _model[lbl][ind]->get_mu();
+    ellipse_vect1 = (_model[lbl][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+    ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+
+
+    if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
+        //            score = _component_score(ind,lbl);
+        //            score2 = _component_score(i,lbl);
+
+        candidate = GMM(_model);
+        candidate.set_samples(_samples);
+        candidate.model()[lbl][ind] =
+                candidate.model()[lbl][ind]->merge(candidate.model()[lbl][r]);
+        //            TrainingData knn_output;
+        //            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
+
+        candidate.model()[lbl].erase(candidate.model()[lbl].begin() + r);
+        candidate.update_factors();
+
+        candidate._estimate_training_dataset();
+        _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
+        candidate_score = candidate_sc.compute();
+
+
+        if(candidate_score >= score/* + score2)/2.*/ ){
+            std::cout << "-_- MERGE _-_" << std::endl;
+            _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][r]);
+            _model[lbl].erase(_model[lbl].begin() + r);
+            update_factors();
+            std::cout << "Merge finish, time spent : "
+                      << std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::system_clock::now() - timer).count() << std::endl;
+            return true;
+        }
+
     }
     std::cout << "Merge finish, time spent : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -287,52 +292,54 @@ bool GMM::_split(int ind, int lbl){
        return false;
     GMM candidate;
 
-    Eigen::VectorXd eigenval, eigenval2, diff_mu, ellipse_vect1,ellipse_vect2;
-    Eigen::MatrixXd eigenvect, eigenvect2;
-    _model[lbl][ind]->compute_eigenvalues(eigenval,eigenvect);
+    Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
     double cand_score1, cand_score2, score;
     _score_calculator sc(this,_samples);
     score = sc.compute();
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
             continue;
-        for(const auto& comp :  _model[l]){
-//            comp->compute_eigenvalues(eigenval2,eigenvect2);
 
-            diff_mu = (comp->get_mu()-_model[lbl][ind]->get_mu());
-            ellipse_vect1 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-            ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-//            for(int i = 0; i < eigenval.rows(); i++){
-//                ellipse_vect1(i) = ellipse_vect1(i)*eigenval(i);
-//                ellipse_vect2(i) = ellipse_vect2(i)*eigenval2(i);
-//            }
+        Eigen::VectorXd distances(_model[l].size());
+        int r, c;
+        for (int j = 0; j < _model[l].size(); j++) {
+            distances(j) = _model[lbl][ind]->distance(_model[l][j]->get_mu());
+        }
+        distances.minCoeff(&r,&c);
 
-            if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
-                candidate = GMM(_model);
-                candidate.set_samples(_samples);
-                Component::Ptr new_component = candidate.model()[lbl][ind]->split();
 
-                if(new_component){
-                    candidate.model()[lbl].push_back(new_component);
-                    candidate.update_factors();
-//                    cand_score1 = candidate._component_score(ind,lbl);
-//                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
-                    candidate._estimate_training_dataset();
 
-                    _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
-                    cand_score1 = candidate_sc.compute();
-//                    score = _component_score(ind,lbl);
-                    if(cand_score1/*+cand_score2)/2.*/ > score){
-                        std::cout << "-_- SPLIT _-_" << std::endl;
-                        _model = candidate.model();
-                        update_factors();
-                        std::cout << "Split finish, time spent : "
-                                  << std::chrono::duration_cast<std::chrono::milliseconds>(
-                                         std::chrono::system_clock::now() - timer).count() << std::endl;
-                        return true;
-                    }
+        diff_mu = (_model[l][r]->get_mu()-_model[lbl][ind]->get_mu());
+        ellipse_vect1 = (_model[l][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+
+
+        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
+            candidate = GMM(_model);
+            candidate.set_samples(_samples);
+            Component::Ptr new_component = candidate.model()[lbl][ind]->split();
+
+            if(new_component){
+                candidate.model()[lbl].push_back(new_component);
+                candidate.update_factors();
+                //                    cand_score1 = candidate._component_score(ind,lbl);
+                //                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
+                candidate._estimate_training_dataset();
+
+                _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
+                cand_score1 = candidate_sc.compute();
+                //                    score = _component_score(ind,lbl);
+                if(cand_score1/*+cand_score2)/2.*/ > score){
+                    std::cout << "-_- SPLIT _-_" << std::endl;
+                    _model = candidate.model();
+                    update_factors();
+                    std::cout << "Split finish, time spent : "
+                              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                                     std::chrono::system_clock::now() - timer).count() << std::endl;
+                    return true;
                 }
             }
+
         }
     }
     std::cout << "Split finish, time spent : "
@@ -422,6 +429,7 @@ void GMM::update(){
 void GMM::update_model(int ind, int lbl){
 
     int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
+    _estimate_training_dataset();
 
 
     n = _model[lbl].size();
@@ -430,10 +438,12 @@ void GMM::update_model(int ind, int lbl){
         _merge(ind,lbl);
 
 
+
     for(int i = 0; i < _nbr_class; i++){
         n = _model[i].size();
 
         if(n < 2) break;
+        _estimate_training_dataset();
 
 //        max_size = _model[i][0]->size();
 //        max_ind = 0;
@@ -471,8 +481,6 @@ void GMM::update_model(int ind, int lbl){
     for(auto& components : _model)
         for(auto& comp : components.second)
             comp->update_parameters();
-    _estimate_training_dataset();
-
 }
 
 
