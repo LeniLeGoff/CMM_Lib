@@ -192,6 +192,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
 
 bool GMM::_merge(int ind, int lbl){
+
+    if(_model[lbl].empty())
+        return false;
+
     std::cout << "merge function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
@@ -284,12 +288,27 @@ double GMM::_component_score(int i, int lbl){
 
 
 bool GMM::_split(int ind, int lbl){
+
+    if(_model[lbl][ind]->size() < 4)
+       return false;
+
+    bool keep_going = false;
+    for(int l = 0; l < _nbr_class; l++){
+        if(l == lbl)
+            continue;
+        if(_model[l].empty())
+            continue;
+        keep_going = true;
+        break;
+    }
+
+    if(!keep_going)
+        return false;
+
     std::cout << "split function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
 
-    if(_model[lbl][ind]->size() < 4)
-       return false;
     GMM candidate;
 
     Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
@@ -298,6 +317,9 @@ bool GMM::_split(int ind, int lbl){
     score = sc.compute();
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
+            continue;
+
+        if(_model[l].empty())
             continue;
 
         Eigen::VectorXd distances(_model[l].size());
