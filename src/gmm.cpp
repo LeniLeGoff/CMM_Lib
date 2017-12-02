@@ -284,12 +284,13 @@ double GMM::_component_score(int i, int lbl){
 
 
 bool GMM::_split(int ind, int lbl){
+    if(_model[lbl][ind]->size() < 4)
+       return false;
+
     std::cout << "split function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
 
-    if(_model[lbl][ind]->size() < 4)
-       return false;
     GMM candidate;
 
     Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
@@ -307,12 +308,9 @@ bool GMM::_split(int ind, int lbl){
         }
         distances.minCoeff(&r,&c);
 
-
-
         diff_mu = (_model[l][r]->get_mu()-_model[lbl][ind]->get_mu());
         ellipse_vect1 = (_model[l][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
         ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-
 
         if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
             candidate = GMM(_model);
