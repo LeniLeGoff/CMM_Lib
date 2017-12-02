@@ -192,6 +192,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
 
 bool GMM::_merge(int ind, int lbl){
+
+    if(_model[lbl].empty())
+        return false;
+
     std::cout << "merge function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
@@ -284,8 +288,22 @@ double GMM::_component_score(int i, int lbl){
 
 
 bool GMM::_split(int ind, int lbl){
+
     if(_model[lbl][ind]->size() < 4)
        return false;
+
+    bool keep_going = false;
+    for(int l = 0; l < _nbr_class; l++){
+        if(l == lbl)
+            continue;
+        if(_model[l].empty())
+            continue;
+        keep_going = true;
+        break;
+    }
+
+    if(!keep_going)
+        return false;
 
     std::cout << "split function" << std::endl;
     std::chrono::system_clock::time_point timer;
@@ -299,6 +317,9 @@ bool GMM::_split(int ind, int lbl){
     score = sc.compute();
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
+            continue;
+
+        if(_model[l].empty())
             continue;
 
         Eigen::VectorXd distances(_model[l].size());
@@ -352,9 +373,10 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     if(_samples.size() == 0)
         return rand()%samples.size();
 
-    double total = 0,cumul = 0;
+    double total = 0,cumul = 0, avg = 0;
 
     std::map<double,int> choice_distibution;
+    std::vector<double> w(samples.size());
     boost::random::uniform_real_distribution<> distrib(0,1);
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
@@ -365,11 +387,16 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
             if(est > .5)
                 est = 2.* (1 - est);
             else est = 2.*est;
-            choice_dist_map(i) = 1./(1. + exp(-60.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
+            w[i] = 1./(1. + exp(-60.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
         }
     });
+    for(int i = 0; i < choice_dist_map.rows(); ++i){
+        avg += w[i];
+    }
+    avg = avg/(double)w.size();
 
     for(int i = 0; i < choice_dist_map.rows(); ++i){
+        choice_dist_map(i) =  w[i] >= avg ? 1 : 0;
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
