@@ -7,6 +7,12 @@ int main(int argc, char** argv){
         std::cerr << "usage: dimension nbr_repl" << std::endl;
         return 1;
     }
+
+    Eigen::initParallel();
+    Eigen::setNbThreads(4);
+
+    std::cerr << Eigen::nbThreads() << std::endl;
+
     int dimension = atoi(argv[1]);
     iagmm::Component comp(dimension,2);
 
