@@ -113,7 +113,7 @@ Component::Ptr Component::merge(const Component::Ptr c){
 Component::Ptr Component::split(){
 //    std::cout << "split" << std::endl;
 
-    //compute distance matrix.
+    //* compute distance matrix between the samples of the components
     Eigen::MatrixXd m_dist(_samples.size(),_samples.size());
     for(int i = 0; i < _samples.size(); i++){
         for(int j = 0; j < _samples.size(); j++){
@@ -124,22 +124,23 @@ Component::Ptr Component::split(){
             m_dist(i,j) = (_samples[i] - _samples[j]).squaredNorm();
         }
     }
+    //*/
 
+    //* create a graph of minimal distances of the samples
     Eigen::VectorXd minIndexes(_samples.size());
-
     std::multimap<int,int> graph;
     int r,c;
     for(int i = 0; i < _samples.size(); i++){
-       m_dist.row(i).minCoeff(&r,&c);
+       m_dist.row(i).minCoeff(&r,&c); //search the closest sample from the iest sample
        if([&]()-> bool{auto range = graph.equal_range(i);
                for(auto& it = range.first; it != range.second; it++)
-               if(c == it->second) return false; return true;}()){
+               if(c == it->second) return false; return true;}()){ //search if this edge already exist  in the graph
            graph.emplace(i,c);
            graph.emplace(c,i);
        }
        minIndexes(i) = c;
     }
-
+    //*/
 
     std::vector<std::vector<int>> indexes;
     while(!graph.empty())
@@ -161,10 +162,6 @@ Component::Ptr Component::split(){
 
         indexes.push_back(tmp_ind);
     }
-
-//    std::cout << indexes.size() << std::endl;
-//    for(auto i : indexes)
-//        std::cout << i << std::endl;
 
     if(indexes.size() == 1)
         return NULL;

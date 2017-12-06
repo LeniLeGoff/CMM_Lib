@@ -289,9 +289,12 @@ double GMM::_component_score(int i, int lbl){
 
 bool GMM::_split(int ind, int lbl){
 
+    //*If the component have less than 4 element abort
     if(_model[lbl][ind]->size() < 4)
        return false;
+    //*/
 
+    //*/verify the model of other classes are empty. If all the model of other classes are empty abort
     bool keep_going = false;
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
@@ -301,72 +304,93 @@ bool GMM::_split(int ind, int lbl){
         keep_going = true;
         break;
     }
-
     if(!keep_going)
         return false;
+    //*/
 
+    //* Capture time. TO DO put an option at compilation
     std::cout << "split function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
+    //*/
 
+
+    //* Local variables needed for the algorithm
     GMM candidate;
-
     Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
-    double cand_score1, cand_score2, score;
+    double cand_score, score;
+    //*/
+
+    //* compute of the score of the current model
     _score_calculator sc(this,_samples);
     score = sc.compute();
+    //*/
+
+
     for(int l = 0; l < _nbr_class; l++){
-        if(l == lbl)
+        if(l == lbl) // only consider models of other classes
             continue;
 
-        if(_model[l].empty())
+        if(_model[l].empty()) // if the model of classes l is empty
             continue;
 
+        //* compute the distances the component candidate for splitting and the components of the model of class l
         Eigen::VectorXd distances(_model[l].size());
-        int r, c;
+        int closest_comp_ind, c;
         for (int j = 0; j < _model[l].size(); j++) {
             distances(j) = _model[lbl][ind]->distance(_model[l][j]->get_mu());
         }
-        distances.minCoeff(&r,&c);
+        distances.minCoeff(&closest_comp_ind,&c); // take the indice of the closest component
+        //*/
 
-
-
-        diff_mu = (_model[l][r]->get_mu()-_model[lbl][ind]->get_mu());
-        ellipse_vect1 = (_model[l][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        //* compute the vectors for intersection criterion
+        diff_mu = (_model[l][closest_comp_ind]->get_mu()-_model[lbl][ind]->get_mu());
+        ellipse_vect1 = (_model[l][closest_comp_ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
         ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        //*/
 
+        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){ //if the components intersect
 
-        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){
-            candidate = GMM(_model);
+            candidate = GMM(_model); //Create a model candidate
             candidate.set_samples(_samples);
-            Component::Ptr new_component = candidate.model()[lbl][ind]->split();
+            Component::Ptr new_component = candidate.model()[lbl][ind]->split(); //split the component
 
-            if(new_component){
+            if(new_component){ //if the component is splitted
                 candidate.model()[lbl].push_back(new_component);
                 candidate.update_factors();
-                //                    cand_score1 = candidate._component_score(ind,lbl);
-                //                    cand_score2 = candidate._component_score(candidate.model()[lbl].size()-1,lbl);
-                candidate._estimate_training_dataset();
 
-                _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
-                cand_score1 = candidate_sc.compute();
-                //                    score = _component_score(ind,lbl);
-                if(cand_score1/*+cand_score2)/2.*/ > score){
+                candidate._estimate_training_dataset();//estimation for dataset
+
+                //* compute the score of the model candidate
+                _score_calculator candidate_sc(&candidate,candidate.get_samples());
+                cand_score = candidate_sc.compute();
+                //*/
+
+
+                if(cand_score > score){ //if the candidate model score is greater than the score of the current model
                     std::cout << "-_- SPLIT _-_" << std::endl;
-                    _model = candidate.model();
+                    _model = candidate.model(); // replace the current model by the candidate model
                     update_factors();
+
+                    //* Display time spent for the algorithm. TO DO put an option at compilation
                     std::cout << "Split finish, time spent : "
                               << std::chrono::duration_cast<std::chrono::milliseconds>(
                                      std::chrono::system_clock::now() - timer).count() << std::endl;
+                    //*/
+
                     return true;
                 }
             }
 
         }
     }
+
+    //* Display time spent for the algorithm. TO DO put an option at compilation
     std::cout << "Split finish, time spent : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
                      std::chrono::system_clock::now() - timer).count() << std::endl;
+    //*/
+
     return false;
 }
 
