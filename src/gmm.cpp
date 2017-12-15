@@ -415,6 +415,8 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
                 est = 2.* (1 - est);
             else est = 2.*est;
             w[i] = 1./(1. + exp(-60.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
+            if(w[i] != w[i])
+                w[i] = 0;
         }
     });
     for(int i = 0; i < choice_dist_map.rows(); ++i){
