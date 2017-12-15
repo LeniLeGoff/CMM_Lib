@@ -84,8 +84,8 @@ public:
      */
     const TrainingData& get_samples() const {return _samples;}
     void set_samples(TrainingData samples){_samples = samples;}
-    int get_nbr_class(){return _nbr_class;}
-    int get_dimension(){return _dimension;}
+    int get_nbr_class() const {return _nbr_class;}
+    int get_dimension() const {return _dimension;}
 
     void set_distance_function(_distance_f distance){
         _distance = distance;
