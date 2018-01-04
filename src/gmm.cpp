@@ -397,7 +397,7 @@ bool GMM::_split(int ind, int lbl){
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Zero(samples.size());
 
-    if(_samples.size() == 0)
+    if(_samples.size() <= 5)
         return rand()%samples.size();
 
     double total = 0,cumul = 0, avg = 0;
@@ -425,7 +425,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     avg = avg/(double)w.size();
 
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) =  w[i] >= avg ? 1 : 0;
+        choice_dist_map(i) =  w[i] >= avg ? w[i] : 0;
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
