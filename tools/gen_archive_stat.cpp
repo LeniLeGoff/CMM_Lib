@@ -12,7 +12,7 @@ using namespace iagmm;
 
 void write_file(GMM& gmm, const std::string file){
     std::ofstream ofs(file);
-    if(ofs.is_open()){
+    if(!ofs.is_open()){
         std::cerr << "impossible d'ouvrir le fichier : " << file << std::endl;
         return;
     }
@@ -38,7 +38,7 @@ void write_file(GMM& gmm, const std::string file){
                     << YAML::Key << "nb_samples" << YAML::Value << comp->get_samples().size()
                     << YAML::Key << "mean" << YAML::Value
                         << YAML::BeginSeq;
-            for(int k = 0; k < comp->get_mu().cols(); k++){
+            for(int k = 0; k < comp->get_mu().rows(); k++){
                 emitter << comp->get_mu()(k);
             }
             emitter << YAML::EndSeq;

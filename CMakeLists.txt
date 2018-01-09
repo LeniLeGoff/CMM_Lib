@@ -19,7 +19,7 @@ install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
 
 
-add_library(iagmm ${SRCFILES})
+add_library(iagmm SHARED ${SRCFILES})
 target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_system)
 
 install(TARGETS ${PROJECT_NAME}
@@ -38,18 +38,18 @@ add_executable(gen_archive_stat tools/gen_archive_stat.cpp)
 target_link_libraries(gen_archive_stat iagmm yaml-cpp boost_serialization )
 
 
-add_executable(test_1 test/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#add_executable(test_1 test/test.cpp)
+#target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 
-add_executable(test_mvn test/test_mvn.cpp)
-target_link_libraries(test_mvn iagmm tbb)
+#add_executable(test_mvn test/test_mvn.cpp)
+#target_link_libraries(test_mvn iagmm tbb)
 
 #add_executable(test_em test/test_em.cpp)
 #target_link_libraries(test_em iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
-add_executable(test_serial test/test_serial.cpp)
-target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
+#add_executable(test_serial test/test_serial.cpp)
+#target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
 
 
 
