@@ -25,8 +25,7 @@ public:
 
     /**
      * @brief default Constructor
-     */    void estimate_training_dataset();
-
+     */
     Classifier(){}
 
     /**

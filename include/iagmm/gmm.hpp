@@ -62,7 +62,9 @@ public:
 
     GMM(const GMM& gmm) :
         Classifier(gmm),
-        _model(gmm._model),_gen(gmm._gen){}
+        _model(gmm._model),_gen(gmm._gen),
+    _last_index(gmm._last_index), _last_label(gmm._last_label),
+    _membership(gmm._membership){}
 
     ~GMM(){
         for(auto& comps: _model)

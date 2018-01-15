@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <eigen3/Eigen/Core>
+#include <yaml-cpp/yaml.h>
 
 namespace iagmm{
 
@@ -102,6 +103,32 @@ public:
     const element_t& last(){return _data.back();}
 
     estimation_t estimations;
+
+    bool load_yml(const std::string& filename){
+        std::cout << "load dataset : " << filename << std::endl;
+
+
+        YAML::Node fileNode = YAML::LoadFile(filename);
+        if (fileNode.IsNull()) {
+            std::cerr << "File not found." << std::endl;
+            return false;
+        }
+
+        YAML::Node features = fileNode["frame_0"]["features"];
+
+        for (unsigned int i = 0; i < features.size(); ++i) {
+            std::stringstream stream;
+            stream << "feature_" << i;
+            YAML::Node tmp_node = features[stream.str()];
+
+            Eigen::VectorXd feature(tmp_node["value"].size());
+            for(size_t i = 0; i < tmp_node["value"].size(); ++i)
+                feature(i) = tmp_node["value"][i].as<double>();
+
+            add(tmp_node["label"].as<int>(),feature);
+        }
+        return true;
+    }
 
 protected:
     data_t _data;
