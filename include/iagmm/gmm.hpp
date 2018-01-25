@@ -28,6 +28,8 @@ namespace iagmm{
 class GMM : public Classifier {
 public:
 
+    typedef enum update{BATCH,STOCHASTIC} update_mode_t;
+
     int max_component;
 //    typedef boost::shared_ptr<GMM> Ptr;
 //    typedef boost::shared_ptr<const GMM> ConstPtr;
@@ -37,14 +39,21 @@ public:
     GMM(){
         srand(time(NULL));
         _gen.seed(rand());
+        _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+            return (s1 - s2).squaredNorm();
+        };
     }
 
-    GMM(int dimension, int nbr_class) : Classifier(dimension,nbr_class){
+    GMM(int dimension, int nbr_class) :
+        Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
 
         srand(time(NULL));
         _gen.seed(rand());
+        _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+            return (s1 - s2).squaredNorm();
+        };
     }
 
     GMM(const model_t& model){
@@ -58,13 +67,16 @@ public:
         }
         srand(time(NULL));
         _gen.seed(rand());
+        _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+            return (s1 - s2).squaredNorm();
+        };
     }
 
     GMM(const GMM& gmm) :
         Classifier(gmm),
         _model(gmm._model),_gen(gmm._gen),
-    _last_index(gmm._last_index), _last_label(gmm._last_label),
-    _membership(gmm._membership){}
+        _last_index(gmm._last_index), _last_label(gmm._last_label),
+        _membership(gmm._membership), _update_mode(gmm._update_mode){}
 
     ~GMM(){
         for(auto& comps: _model)
@@ -91,6 +103,7 @@ public:
     void append_EM(const Eigen::VectorXd &samples,const int& lbl);
 
     void update();
+    void update_model();
     void update_model(int ind, int lbl);
 
     std::vector<int> find_closest_components(double& min_dist, int lbl);
@@ -148,11 +161,19 @@ public:
 
     double get_normalisation(){return _normalisation;}
 
+    double compute_quality(const Eigen::VectorXd&,int lbl);
+    void update_dataset();
+
+    void set_dataset_size_max(int dsm){_dataset_size_max = dsm;}
+    int get_dataset_size_max(){return _dataset_size_max;}
+
+    void set_update_mode(update_mode_t um){_update_mode = um;}
+
 private:
 
-    bool _merge(int ind, int lbl);
+    bool _merge(const Component::Ptr& comp);
     double _component_score(int i, int lbl);
-    bool _split(int ind, int lbl);
+    bool _split(const Component::Ptr& comp);
     void _expectation(int lbl);
     void _maximisation(int lbl);
 
@@ -161,12 +182,15 @@ private:
     model_t _model;
     std::map<int, Eigen::MatrixXd> _membership;
 
+    update_mode_t _update_mode = STOCHASTIC;
+
     boost::random::mt19937 _gen;
     double _normalisation;
 
     int _last_index;
     int _last_label;
 
+    int _dataset_size_max = 1000;
 
     class _estimator{
     public:

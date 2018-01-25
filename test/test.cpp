@@ -48,10 +48,10 @@ int main(int argc, char** argv){
     std::cout << "A = " << A << std::endl;
     int real_space[MAX_X][MAX_Y];
     double estimated_space[MAX_X][MAX_Y];
-    std::vector<Eigen::VectorXd> samples;
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
     GMM gmm(2,2);
+    gmm.set_dataset_size_max(200);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
@@ -150,22 +150,21 @@ int main(int argc, char** argv){
 
 
 
-        samples.push_back(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y));
-
         label.push_back(real_space[coord[0]][coord[1]]);
 
         int ind = gmm.append(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y),
               real_space[coord[0]][coord[1]]);
 
-        rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
-                    sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
-                );
+
 
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
+        gmm.update_dataset();
 //        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
-        if(samples.size() > NBR_CLUSTER){
+
+
+        if(gmm.get_samples().size() > NBR_CLUSTER){
             cumul_est = 0;
             choice_distribution.clear();
             tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
@@ -204,6 +203,19 @@ int main(int argc, char** argv){
         }else{
             coord[0] = rand()%MAX_X;
             coord[1] = rand()%MAX_Y;
+        }
+
+
+        for(int i = 0; i < MAX_X*MAX_Y; i++)
+            rects_explored[i].setFillColor(sf::Color::Transparent);
+
+        int x,y;
+        for(int i = 0; i < gmm.get_samples().size(); i++){
+            x = gmm.get_samples()[i].second[0]*MAX_X;
+            y = gmm.get_samples()[i].second[1]*MAX_Y;
+            rects_explored[x + y*MAX_Y].setFillColor(
+                        sf::Color(255*real_space[x][y],0,255*(1-real_space[x][y]))
+                    );
         }
 
         error = error/(double)(MAX_X*MAX_Y);

@@ -17,12 +17,13 @@ public:
         _gen.seed(rand());
         _batch_size = 10;
     }
-    Trainer(const std::string data_file, int dimension, int nbr_class, int batch_size = 10, float test_set = 0.2) :
+    Trainer(const std::string data_file, int batch_size = 10, float test_set = 0.2) :
         _batch_size(batch_size), _test_set(test_set){
         srand(time(NULL));
         _gen.seed(rand());
 
-        _data.load_yml(data_file);
+        int dimension, nbr_class;
+        _data.load_yml(data_file,dimension,nbr_class);
         _classifier = Classifier(dimension, nbr_class);
     }
 
@@ -40,14 +41,24 @@ public:
 
     void initialize(){
         //*build the training and test data set
-        int i;
-        _train_data = TrainingData(_data);
-        do{
-            boost::random::uniform_int_distribution<> dist(0,_train_data.size());
-            i = dist(_gen);
-            _test_data.add(_train_data[i]);
-            _train_data.erase(i);
-        }while((float)_test_data.size()/(float)_train_data.size() < _test_set);
+        int index;
+        std::vector<Eigen::VectorXd> train_data, test_data;
+        int size;
+        for(int i = 0 ; i < _classifier.get_nbr_class(); i++){
+            train_data = _data.get_data(i);
+            test_data.clear();
+            size = train_data.size();
+            while((float)test_data.size()/(float)size < _test_set){
+                boost::random::uniform_int_distribution<> dist(0,train_data.size());
+                index = dist(_gen);
+                test_data.push_back(train_data[index]);
+                train_data.erase(train_data.begin() + index);
+            }
+            for(int j = 0; j < train_data.size(); j++)
+                _train_data.add(i,train_data[j]);
+            for(int j = 0; j <test_data.size(); j++)
+                _test_data.add(i,test_data[j]);
+        }
         //*/
     }
 
@@ -59,6 +70,15 @@ public:
             _classifier.add(_train_data[n].second,_train_data[n].first);
         }
         _classifier.update();
+    }
+
+    double test(){
+        double error = 0;
+        for(int i = 0; i < _test_data.size(); i++){
+            error += 1 - _classifier.compute_estimation(_test_data[i].second,_test_data[i].first);
+        }
+        error = error/(double) _test_data.size();
+        return error;
     }
 
     Classifier& access_classifier(){return _classifier;}
@@ -74,9 +94,6 @@ private:
 
     boost::random::mt19937 _gen;
 
-    void _split_data(const TrainingData& data){
-
-    }
 };
 } // iagmm
 
