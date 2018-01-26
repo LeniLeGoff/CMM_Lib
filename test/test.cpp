@@ -158,7 +158,7 @@ int main(int argc, char** argv){
 
 
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-        gmm.update_dataset();
+//        gmm.update_dataset();
 //        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
