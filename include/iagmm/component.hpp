@@ -107,6 +107,11 @@ public:
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
     void set_covariance(const Eigen::MatrixXd& covariance){_covariance = covariance;}
 
+    void remove_sample(int i){
+        _samples.erase(_samples.begin() + i);
+        _samples.shrink_to_fit();
+    }
+
     std::string print_parameters() const;
 
 

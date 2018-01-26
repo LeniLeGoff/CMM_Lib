@@ -90,6 +90,7 @@ public:
         _distance = distance;
     }
 
+
 protected:
     void _estimate_training_dataset(){
         _samples.estimations.resize(_samples.size());

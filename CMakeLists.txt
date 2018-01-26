@@ -20,7 +20,7 @@ install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
 
 add_library(iagmm SHARED ${SRCFILES})
-target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_system)
+target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
 
 install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib
@@ -37,6 +37,11 @@ install(TARGETS ${PROJECT_NAME}
 add_executable(gen_archive_stat tools/gen_archive_stat.cpp)
 target_link_libraries(gen_archive_stat iagmm yaml-cpp boost_serialization )
 
+add_executable(batch_train_gmm tools/batch_train_gmm.cpp)
+target_link_libraries(batch_train_gmm iagmm yaml-cpp boost_serialization boost_system)
+
+add_executable(online_train_gmm tools/online_train_gmm.cpp)
+target_link_libraries(online_train_gmm iagmm yaml-cpp boost_serialization boost_system)
 
 add_executable(test_1 test/test.cpp)
 target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)

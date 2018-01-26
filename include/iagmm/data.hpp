@@ -45,11 +45,26 @@ public:
         _data.push_back(std::make_pair(label,d));
     }
 
+    void add(int label,const Eigen::VectorXd& d,double quality){
+        _data.push_back(std::make_pair(label,d));
+        _qualities.push_back(quality);
+    }
+
     void add(const element_t& elt){
         _data.push_back(elt);
     }
 
+    void add(const element_t &elt, double quality){
+        _data.push_back(elt);
+        _qualities.push_back(quality);
+    }
+
     void erase(int i){
+
+        if(_qualities.size() == _data.size()){
+            _qualities.erase(_qualities.begin() + i);
+            _qualities.shrink_to_fit();
+        }
         _data.erase(_data.begin() + i);
         _data.shrink_to_fit();
     }
@@ -104,7 +119,7 @@ public:
 
     estimation_t estimations;
 
-    bool load_yml(const std::string& filename){
+    bool load_yml(const std::string& filename, int& dimension, int& nbr_class){
         std::cout << "load dataset : " << filename << std::endl;
 
 
@@ -116,6 +131,9 @@ public:
 
         YAML::Node features = fileNode["frame_0"]["features"];
 
+        dimension = features["feature_0"]["value"].size();
+        nbr_class = 0;
+
         for (unsigned int i = 0; i < features.size(); ++i) {
             std::stringstream stream;
             stream << "feature_" << i;
@@ -126,14 +144,20 @@ public:
                 feature(i) = tmp_node["value"][i].as<double>();
 
             add(tmp_node["label"].as<int>(),feature);
+            if(tmp_node["label"].as<int>() > nbr_class)
+                nbr_class = tmp_node["label"].as<int>();
         }
+        nbr_class++;
+
         return true;
     }
 
+
+    const estimation_t& get_qualities(){return _qualities;}
+
 protected:
     data_t _data;
-
-
+    estimation_t _qualities;
 };
 
 template <typename Data>

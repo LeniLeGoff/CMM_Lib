@@ -191,10 +191,7 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
 
 
-bool GMM::_merge(int ind, int lbl){
-
-    if(_model[lbl].empty())
-        return false;
+bool GMM::_merge(const Component::Ptr& comp){
 
     std::cout << "merge function" << std::endl;
     std::chrono::system_clock::time_point timer;
@@ -203,6 +200,8 @@ bool GMM::_merge(int ind, int lbl){
     GMM candidate;
     double score, score2, candidate_score;
 
+    int lbl = comp->get_label();
+
     _score_calculator sc(this,_samples);
     score = sc.compute();
 
@@ -210,25 +209,32 @@ bool GMM::_merge(int ind, int lbl){
 
 
     Eigen::VectorXd distances(_model[lbl].size());
+
     int r, c;
     for (int j = 0; j < _model[lbl].size(); j++) {
-        if(j == ind){
+        if(_model[lbl][j] == comp){
             distances(j) = 1000000;
             continue;
         }
-        distances(j) = _model[lbl][ind]->distance(_model[lbl][j]->get_mu());
+        distances(j) = comp->distance(_model[lbl][j]->get_mu());
     }
     distances.minCoeff(&r,&c);
 
+    int ind;
+    for(ind = 0; ind < _model[lbl].size(); ind++)
+        if(_model[lbl][ind] == comp)
+            break;
 
-    diff_mu = _model[lbl][r]->get_mu() - _model[lbl][ind]->get_mu();
+
+    diff_mu = _model[lbl][r]->get_mu() - comp->get_mu();
     ellipse_vect1 = (_model[lbl][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-    ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+    ellipse_vect2 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
 
 
     if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
         //            score = _component_score(ind,lbl);
         //            score2 = _component_score(i,lbl);
+
 
         candidate = GMM(_model);
         candidate.set_samples(_samples);
@@ -287,12 +293,14 @@ double GMM::_component_score(int i, int lbl){
 }
 
 
-bool GMM::_split(int ind, int lbl){
+bool GMM::_split(const Component::Ptr& comp){
 
     //*If the component have less than 4 element abort
-    if(_model[lbl][ind]->size() < 4)
+    if(comp->size() < 4)
        return false;
     //*/
+
+    int lbl = comp->get_label();
 
     //*/verify the model of other classes are empty. If all the model of other classes are empty abort
     bool keep_going = false;
@@ -307,6 +315,11 @@ bool GMM::_split(int ind, int lbl){
     if(!keep_going)
         return false;
     //*/
+
+    int ind;
+    for(ind = 0; ind < _model[lbl].size(); ind++)
+        if(_model[lbl][ind] == comp)
+            break;
 
     //* Capture time. TO DO put an option at compilation
     std::cout << "split function" << std::endl;
@@ -331,22 +344,22 @@ bool GMM::_split(int ind, int lbl){
         if(l == lbl) // only consider models of other classes
             continue;
 
-        if(_model[l].empty()) // if the model of classes l is empty
-            continue;
+//        if(_model[l].empty()) // if the model of classes l is empty
+//            continue;
 
         //* compute the distances the component candidate for splitting and the components of the model of class l
         Eigen::VectorXd distances(_model[l].size());
         int closest_comp_ind, c;
         for (int j = 0; j < _model[l].size(); j++) {
-            distances(j) = _model[lbl][ind]->distance(_model[l][j]->get_mu());
+            distances(j) = comp->distance(_model[l][j]->get_mu());
         }
         distances.minCoeff(&closest_comp_ind,&c); // take the indice of the closest component
         //*/
 
         //* compute the vectors for intersection criterion
-        diff_mu = (_model[l][closest_comp_ind]->get_mu()-_model[lbl][ind]->get_mu());
+        diff_mu = (_model[l][closest_comp_ind]->get_mu()-comp->get_mu());
         ellipse_vect1 = (_model[l][closest_comp_ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = (_model[lbl][ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect2 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
         //*/
 
         if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){ //if the components intersect
@@ -369,7 +382,8 @@ bool GMM::_split(int ind, int lbl){
 
                 if(cand_score > score){ //if the candidate model score is greater than the score of the current model
                     std::cout << "-_- SPLIT _-_" << std::endl;
-                    _model = candidate.model(); // replace the current model by the candidate model
+                    new_component = _model[lbl][ind]->split();
+                    _model[lbl].push_back(new_component);
                     update_factors();
 
                     //* Display time spent for the algorithm. TO DO put an option at compilation
@@ -451,13 +465,14 @@ void GMM::add(const Eigen::VectorXd &sample, int lbl){
 
 int GMM::append(const Eigen::VectorXd &sample,const int& lbl){
     int r,c; //row and column indexes
-    _samples.add(lbl,sample);
+    double q = compute_quality(sample,lbl);
+
+    _samples.add(lbl,sample,q);
 
     if(_model[lbl].empty()){
         new_component(sample,lbl);
         return 0;
     }
-
     Eigen::VectorXd distances(_model[lbl].size());
 
     for (int j = 0; j < _model[lbl].size(); j++) {
@@ -477,7 +492,26 @@ void GMM::append_EM(const Eigen::VectorXd &sample,const int& lbl){
 }
 
 void GMM::update(){
-    update_model(_last_index,_last_label);
+    if(_update_mode == STOCHASTIC)
+        update_model(_last_index,_last_label);
+    else update_model();
+}
+
+void GMM::update_model(){
+    _estimate_training_dataset();
+    std::vector<Component::Ptr> comp;
+    for(int i = 0; i < _nbr_class; i++){
+        for(int j = 0; j < _model[i].size(); j++){
+            comp.push_back(_model[i][j]);
+        }
+    }
+    for(int i = 0; i < comp.size(); i++){
+        if(!_split(comp[i]))
+            _merge(comp[i]);
+    }
+    for(auto& components : _model)
+        for(auto& comp : components.second)
+            comp->update_parameters();
 }
 
 void GMM::update_model(int ind, int lbl){
@@ -488,8 +522,8 @@ void GMM::update_model(int ind, int lbl){
 
     n = _model[lbl].size();
 //    _split(ind,lbl);
-    if(!_split(ind,lbl) && n > 1)
-        _merge(ind,lbl);
+    if(!_split(_model[lbl][ind]) && n > 1)
+        _merge(_model[lbl][ind]);
 
 
 
@@ -524,8 +558,8 @@ void GMM::update_model(int ind, int lbl){
         do
             rand_ind = rand()%n;
         while(rand_ind == ind);
-        if(!_split(rand_ind,i))
-            _merge(rand_ind,i);
+        if(!_split(_model[i][rand_ind]))
+            _merge(_model[i][rand_ind]);
 //        do
 //            rand_ind = rand()%n;
 //        while(rand_ind_2 == ind);
@@ -579,6 +613,66 @@ int GMM::find_closest(int i, double &min_dist, int lbl){
 
     if(r >= i) return r+1;
     else return r;
+}
+
+double GMM::compute_quality(const Eigen::VectorXd& sample,int lbl)
+{
+    double score;
+    score = 0;
+    for(int k = 0; k < _nbr_class ; k++){
+        for(int j = 0; j < _model[k].size(); j++){
+            if(k == lbl)
+                score += 1/_distance(sample,_model[k][j]->get_mu());
+            else score -= 1/_distance(sample,_model[k][j]->get_mu());
+        }
+    }
+    return score;
+}
+
+void GMM::update_dataset(){
+    if(_samples.size() < _dataset_size_max)
+        return;
+    double min_q = _samples.get_qualities()[0];
+    int min_lbl = 0, min_ind_comp = 0, min_ind_comp_s = 0, min_ind_s = 0;
+
+    for(auto& model : _model){
+        for(int k = 0; k < model.second.size(); k++){
+            for(int i = 0; i < model.second[k]->get_samples().size(); i++){
+                if(_samples[0].second == model.second[k]->get_samples()[i]){
+                    min_q = _samples.get_qualities()[0];
+                    min_lbl = model.first;
+                    min_ind_comp = k;
+                    min_ind_comp_s = i;
+                    min_ind_s = 0;
+                }
+            }
+        }
+    }
+    while(_samples.size() > _dataset_size_max){
+
+        for(auto& model : _model){
+            for(int k = 0; k < model.second.size(); k++){
+                for(int i = 0; i < model.second[k]->get_samples().size(); i++){
+                    for(int j = 1; j < _samples.size();j++){
+                        if(_samples[j].second == model.second[k]->get_samples()[i]
+                                && _samples.get_qualities()[j] < min_q){
+                            min_q = _samples.get_qualities()[j];
+                            min_lbl = model.first;
+                            min_ind_comp = k;
+                            min_ind_comp_s = i;
+                            min_ind_s = j;
+                        }
+                    }
+                }
+            }
+        }
+        _model[min_lbl][min_ind_comp]->remove_sample(min_ind_comp_s);
+        if(_model[min_lbl][min_ind_comp]->size() == 0){
+            _model[min_lbl].erase(_model[min_lbl].begin()+min_ind_comp);
+            _model[min_lbl].shrink_to_fit();
+        }
+        _samples.erase(min_ind_s);
+    }
 }
 
 void GMM::_expectation(int lbl){

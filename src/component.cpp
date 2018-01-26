@@ -142,6 +142,7 @@ Component::Ptr Component::split(){
     }
     //*/
 
+    //* Go through each connected nodes
     std::vector<std::vector<int>> indexes;
     while(!graph.empty())
     {
@@ -162,10 +163,12 @@ Component::Ptr Component::split(){
 
         indexes.push_back(tmp_ind);
     }
+    //*/
 
-    if(indexes.size() == 1)
+    if(indexes.size() == 1)//if there only one list of indexes split is aborted
         return NULL;
 
+    //*reduce the indexes into list
     Eigen::MatrixXd means = Eigen::MatrixXd::Zero(_dimension,indexes.size());
     Eigen::MatrixXd dist(indexes.size(),indexes.size());
 
@@ -178,6 +181,7 @@ Component::Ptr Component::split(){
             }
             means.col(k) = means.col(k)/(double)indexes[k].size();
         }
+
         dist.resize(indexes.size(),indexes.size());
         for(size_t k = 0; k < indexes.size(); k++){
             for(size_t j = 0; j < indexes.size(); j++){
@@ -193,6 +197,7 @@ Component::Ptr Component::split(){
         indexes.erase(indexes.begin() + r);
         indexes.shrink_to_fit();
     }
+    //*/
 
     Component::Ptr new_c(new Component(_dimension,_label));
     //    std::cout << "samples size : " << _samples.size() << std::endl;
