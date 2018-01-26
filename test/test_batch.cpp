@@ -196,8 +196,6 @@ int main(int argc, char** argv){
         error_point.setPosition(sf::Vector2f(iteration,(1-error)*400+400));
         error_curve.push_back(error_point);
 
-        //        Eigen::VectorXd eigenval;
-        //        Eigen::MatrixXd eigenvect;
         components_center.clear();
         for(const auto& components : trainer.access_classifier().model()){
             for(const auto& c : components.second){
@@ -206,9 +204,6 @@ int main(int argc, char** argv){
 
                 components_center.back().setFillColor(sf::Color(components.first*255,100,(components.first-1)*255));
                 components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
-
-                //            c->compute_eigenvalues(eigenval,eigenvect);
-                //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
             }
         }
 
@@ -224,9 +219,6 @@ int main(int argc, char** argv){
 
         window.display();
 
-
-
-        //        std::cin.ignore();
     }
 
     std::ofstream of("archive_gmm");
