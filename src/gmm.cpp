@@ -254,6 +254,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         if(candidate_score >= score/* + score2)/2.*/ ){
             std::cout << "-_- MERGE _-_" << std::endl;
             _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][r]);
+            _model[lbl].erase(_model[lbl].begin() + r);
             update_factors();
             std::cout << "Merge finish, time spent : "
                       << std::chrono::duration_cast<std::chrono::milliseconds>(
