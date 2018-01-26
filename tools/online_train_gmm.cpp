@@ -36,6 +36,7 @@ int main(int argc, char** argv){
 //        index = dist(gen);
         std::cout << "_____________________________________" << std::endl;
         std::cout << "iteration number : " << i << std::endl;
+        std::cout << "total number of samples : " << gmm.number_of_samples() << std::endl;
         std::cout << std::endl;
         gmm.add(dataset[i].second,dataset[i].first);
         gmm.update();

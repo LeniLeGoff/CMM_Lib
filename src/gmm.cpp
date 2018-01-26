@@ -301,7 +301,7 @@ bool GMM::_split(const Component::Ptr& comp){
 
     int lbl = comp->get_label();
 
-    //*/verify the model of other classes are empty. If all the model of other classes are empty abort
+    //*verify the model of other classes are empty. If all the model of other classes are empty abort
     bool keep_going = false;
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl)
@@ -764,6 +764,4 @@ std::string GMM::print_info(){
     return infos;
 }
 
-std::string GMM::to_string(){
 
-}

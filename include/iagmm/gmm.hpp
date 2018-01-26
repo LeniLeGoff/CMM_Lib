@@ -157,7 +157,6 @@ public:
     }
 
     std::string print_info();
-    std::string to_string();
 
     double get_normalisation(){return _normalisation;}
 
