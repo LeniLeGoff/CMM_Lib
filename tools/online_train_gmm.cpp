@@ -12,16 +12,16 @@
 
 int main(int argc, char** argv){
 
-//    if(argc =! 3){
-//        std::cerr << "Usage : yaml file with dataset, dataset_max_size" << std::endl;
-//        return 1;
-//    }
+    if(argc =! 3){
+        std::cerr << "Usage : yaml file with dataset, dataset_max_size" << std::endl;
+        return 1;
+    }
 //    srand(std::time(NULL));
 
     int dimension, nbr_class;
     iagmm::TrainingData dataset;
     dataset.load_yml(argv[1],dimension,nbr_class);
-//    int dataset_max_size = std::stoi(argv[2]);
+    int dataset_max_size = std::stoi(argv[2]);
 
     iagmm::GMM gmm(dimension,nbr_class);
 //    gmm.set_dataset_size_max(dataset_max_size);
@@ -40,7 +40,7 @@ int main(int argc, char** argv){
         std::cout << std::endl;
         gmm.add(dataset[i].second,dataset[i].first);
         gmm.update();
-//        gmm.update_dataset();
+        gmm.update_dataset();
         std::cout << gmm.print_info() << std::endl;
     }
 
