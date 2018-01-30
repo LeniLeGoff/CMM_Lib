@@ -193,6 +193,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
 bool GMM::_merge(const Component::Ptr& comp){
 
+    if(comp->size() < 5)
+        return false;
+
+
     std::cout << "merge function" << std::endl;
     std::chrono::system_clock::time_point timer;
     timer  = std::chrono::system_clock::now();
@@ -219,6 +223,9 @@ bool GMM::_merge(const Component::Ptr& comp){
         distances(j) = comp->distance(_model[lbl][j]->get_mu());
     }
     distances.minCoeff(&r,&c);
+    if(_model[lbl][r]->get_samples().size() < 4)
+        return false;
+
 
     int ind;
     for(ind = 0; ind < _model[lbl].size(); ind++)
@@ -227,11 +234,13 @@ bool GMM::_merge(const Component::Ptr& comp){
 
 
     diff_mu = _model[lbl][r]->get_mu() - comp->get_mu();
-    ellipse_vect1 = (_model[lbl][r]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-    ellipse_vect2 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+    ellipse_vect1 = (_model[lbl][r]->get_covariance().transpose()*diff_mu/diff_mu.norm());
+    ellipse_vect2 = (comp->get_covariance().transpose()*diff_mu/diff_mu.norm());
+    double dist_mu = diff_mu.norm();
+    double dist_e1 = ellipse_vect1.norm();
+    double dist_e2 = ellipse_vect2.norm();
 
-
-    if(diff_mu.squaredNorm() < (ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm())){
+    if(diff_mu.squaredNorm() < ellipse_vect1.norm() + ellipse_vect2.norm()){
         //            score = _component_score(ind,lbl);
         //            score2 = _component_score(i,lbl);
 
@@ -251,7 +260,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         candidate_score = candidate_sc.compute();
 
 
-        if(candidate_score >= score/* + score2)/2.*/ ){
+        if(candidate_score > score){
             std::cout << "-_- MERGE _-_" << std::endl;
             _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][r]);
             _model[lbl].erase(_model[lbl].begin() + r);
@@ -296,7 +305,7 @@ double GMM::_component_score(int i, int lbl){
 bool GMM::_split(const Component::Ptr& comp){
 
     //*If the component have less than 4 element abort
-    if(comp->size() < 4)
+    if(comp->size() < 5)
        return false;
     //*/
 
@@ -339,7 +348,6 @@ bool GMM::_split(const Component::Ptr& comp){
     score = sc.compute();
     //*/
 
-
     for(int l = 0; l < _nbr_class; l++){
         if(l == lbl) // only consider models of other classes
             continue;
@@ -358,11 +366,11 @@ bool GMM::_split(const Component::Ptr& comp){
 
         //* compute the vectors for intersection criterion
         diff_mu = (_model[l][closest_comp_ind]->get_mu()-comp->get_mu());
-        ellipse_vect1 = (_model[l][closest_comp_ind]->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
-        ellipse_vect2 = (comp->covariance_pseudoinverse().transpose()*diff_mu/diff_mu.squaredNorm());
+        ellipse_vect1 = (_model[l][closest_comp_ind]->get_covariance().transpose()*diff_mu/diff_mu.norm());
+        ellipse_vect2 = (comp->get_covariance().transpose()*diff_mu/diff_mu.norm());
         //*/
 
-        if(diff_mu.squaredNorm() < ellipse_vect1.squaredNorm() + ellipse_vect2.squaredNorm()){ //if the components intersect
+        if(diff_mu.squaredNorm() < ellipse_vect1.norm() + ellipse_vect2.norm()){ //if the components intersect
 
             candidate = GMM(_model); //Create a model candidate
             candidate.set_samples(_samples);
@@ -629,6 +637,36 @@ double GMM::compute_quality(const Eigen::VectorXd& sample,int lbl)
     return score;
 }
 
+void GMM::update_dataset_thres(double threshold){
+    std::vector<int> indexes_sample, indexes_model, indexes_model_s, lbls;
+    for(int i = 0; i < _samples.size(); i++){
+        for(auto& model : _model){
+            for(int k = 0; k < model.second.size(); k++){
+                for(int j = 0; j < model.second[k]->get_samples().size(); j++){
+                    if(_samples[i].second == model.second[k]->get_samples()[j]){
+                        if(_samples.get_qualities()[i] < threshold){
+                            indexes_sample.push_back(i);
+                            indexes_model.push_back(k);
+                            indexes_model_s.push_back(j);
+                            lbls.push_back(model.first);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for(int& i : indexes_sample)
+        _samples.erase(i);
+    for(int i = 0; i < indexes_model.size(); i++){
+        _model[lbls[i]][indexes_model[i]]->remove_sample(indexes_model_s[i]);
+        if(_model[lbls[i]][indexes_model[i]]->size() == 0){
+            _model[lbls[i]].erase(_model[lbls[i]].begin() + indexes_model[i]);
+            _model[lbls[i]].shrink_to_fit();
+        }
+    }
+}
+
 void GMM::update_dataset(){
     if(_samples.size() < _dataset_size_max)
         return;
@@ -666,6 +704,7 @@ void GMM::update_dataset(){
                 }
             }
         }
+        std::cout << "----- minimum quality :  " << min_q << std::endl;
         _model[min_lbl][min_ind_comp]->remove_sample(min_ind_comp_s);
         if(_model[min_lbl][min_ind_comp]->size() == 0){
             _model[min_lbl].erase(_model[min_lbl].begin()+min_ind_comp);

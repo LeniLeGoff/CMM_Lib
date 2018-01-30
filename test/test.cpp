@@ -51,7 +51,7 @@ int main(int argc, char** argv){
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
     GMM gmm(2,2);
-    gmm.set_dataset_size_max(200);
+    gmm.set_dataset_size_max(400);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
@@ -158,7 +158,7 @@ int main(int argc, char** argv){
 
 
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-//        gmm.update_dataset();
+//        gmm.update_dataset_thres();
 //        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
@@ -229,7 +229,7 @@ int main(int argc, char** argv){
         components_center.clear();
         for(const auto& components : gmm.model()){
             for(const auto& c : components.second){
-                std::cout << c->print_parameters();
+//                std::cout << c->print_parameters();
                 components_center.push_back(sf::CircleShape(5.));
 
                 components_center.back().setFillColor(sf::Color(components.first*255,100,(components.first-1)*255));

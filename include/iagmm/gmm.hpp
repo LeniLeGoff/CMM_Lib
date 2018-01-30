@@ -162,6 +162,7 @@ public:
 
     double compute_quality(const Eigen::VectorXd&,int lbl);
     void update_dataset();
+    void update_dataset_thres(double);
 
     void set_dataset_size_max(int dsm){_dataset_size_max = dsm;}
     int get_dataset_size_max(){return _dataset_size_max;}

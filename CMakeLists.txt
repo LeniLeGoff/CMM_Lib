@@ -49,6 +49,10 @@ target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boo
 add_executable(test_batch test/test_batch.cpp)
 target_link_libraries(test_batch iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
+add_executable(test_false_samples test/test_false_samples.cpp)
+target_link_libraries(test_false_samples iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+
+
 #add_executable(test_mvn test/test_mvn.cpp)
 #target_link_libraries(test_mvn iagmm tbb)
 
