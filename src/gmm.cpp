@@ -395,7 +395,7 @@ bool GMM::_split(int ind, int lbl){
 }
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
-    choice_dist_map = Eigen::VectorXd::Zero(samples.size());
+    choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
 
     if(_samples.size() <= 5)
         return rand()%samples.size();
