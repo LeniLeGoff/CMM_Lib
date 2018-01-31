@@ -14,6 +14,7 @@
 
 #include <iagmm/gmm.hpp>
 #include <iagmm/component.hpp>
+#include <iagmm/trainer.hpp>
 
 #include <boost/archive/binary_oarchive.hpp>
 
@@ -39,29 +40,29 @@ int main(int argc, char** argv){
     tbb::task_scheduler_init init;
 
     double A;
+
     sf::RenderWindow window(sf::VideoMode(MAX_X*4*3,MAX_Y*4*2),"dataset");
 
-    if(argc == 2)
-        A = std::stod(argv[1]);
+    if(argc < 4){
+        std::cerr << "usage : data set size, nbr epoch, batch size, (optional) A" << std::endl;
+        return 1;
+    }
+    else if(argc == 5)
+        A = std::stod(argv[4]);
     else
         A = rand()%100;
+
+    int data_set_size = std::stoi(argv[1]);
+    int nbr_epoch = std::stoi(argv[2]);
+    int batch_size = std::stoi(argv[3]);
+
     std::cout << "A = " << A << std::endl;
     int real_space[MAX_X][MAX_Y];
     double estimated_space[MAX_X][MAX_Y];
-    std::vector<int> label;
-    //    std::vector<Cluster::Ptr> model;
-    GMM gmm(2,2);
-    gmm.set_dataset_size_max(400);
-    gmm.set_distance_function(
-        [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
-        return (s1 - s2).squaredNorm();
-    });
-    Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;
 
 
-    std::multimap<double,Eigen::Vector2i> choice_distribution;
     double cumul_est;
 
 
@@ -116,12 +117,30 @@ int main(int argc, char** argv){
 
     }
 
+    boost::random::uniform_real_distribution<> dist(0,1);
+    float x,y;
+    int k,l;
+    TrainingData data_set;
+    for(int i = 0; i < data_set_size; i++){
+        x = dist(gen); y = dist(gen);
+        k = x*MAX_X; l = y*MAX_Y;
+        data_set.add(real_space[k][l],Eigen::Vector2d(x,y));
+        rects_explored[k + (l)*MAX_Y].setFillColor(
+                    sf::Color(255*real_space[k][l],0,255*(1-real_space[k][l]))
+                );
+    }
+
+    Trainer<GMM> trainer(data_set,2,2,batch_size,0);
+    trainer.access_classifier().set_distance_function(
+        [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
+        return (s1 - s2).squaredNorm();
+    });
+    trainer.initialize();
+    trainer.access_classifier().set_update_mode(GMM::BATCH);
+
     int iteration = 0;
 
     error = 1.;
-    Eigen::VectorXd next_s;
-    coord[0] = rand()%MAX_X;
-    coord[1] = rand()%MAX_Y;
     while(window.isOpen()){
         timer  = boost::chrono::system_clock::now();
         sf::Event event;
@@ -149,74 +168,28 @@ int main(int argc, char** argv){
 
 
 
-
-        label.push_back(real_space[coord[0]][coord[1]]);
-
-        int ind = gmm.append(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y),
-              real_space[coord[0]][coord[1]]);
-
-
-
-        gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-//        gmm.update_dataset_thres();
-//        gmm.compute_normalisation();
-        std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
-        error = 0;
-
-
-        if(gmm.get_samples().size() > NBR_CLUSTER){
-            cumul_est = 0;
-            choice_distribution.clear();
-            tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
-                              [&](const tbb::blocked_range<size_t>& r){
-                for(int i = r.begin(); i != r.end(); ++i){
-                    if(i%MAX_X == MAX_X - 1)
-                        coord[1]++;
-                    if(coord[1] >= MAX_Y)
-                        coord[1] = 0;
-                    double est = gmm.compute_estimation(
-                                Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
-                    all_sample[i] =
-                                std::make_pair(
-                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),est);
-                    //                    double conf = gmm.confidence(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
-//                    if(conf < 1e-03)
-//                        conf = 0;
-//                    rects_confidence[i].setFillColor(sf::Color(255*conf,255*conf,255*conf));
-
-                    double dist = choice_dist_map(i);
-                    rects_confidence[i].setFillColor(
-                                sf::Color(255*dist,
-                                          255*dist,
-                                          255*dist)
-                                );
-                    error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
-
-                    rects_estimated[i].setFillColor(
-                                sf::Color(255*est,0,255*(1-est))
-                                );
-                }
-            });
-            next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)].first;
-            coord[0] = next_s(0)*MAX_X;
-            coord[1] = next_s(1)*MAX_Y;
-        }else{
-            coord[0] = rand()%MAX_X;
-            coord[1] = rand()%MAX_Y;
+        if(iteration <= nbr_epoch){
+            trainer.epoch();
         }
 
+        cumul_est = 0;
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
+                          [&](const tbb::blocked_range<size_t>& r){
+            for(int i = r.begin(); i != r.end(); ++i){
+                if(i%MAX_X == MAX_X - 1)
+                    coord[1]++;
+                if(coord[1] >= MAX_Y)
+                    coord[1] = 0;
+                double est = trainer.access_classifier().compute_estimation(
+                            Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
 
-        for(int i = 0; i < MAX_X*MAX_Y; i++)
-            rects_explored[i].setFillColor(sf::Color::Transparent);
+                error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
 
-        int x,y;
-        for(int i = 0; i < gmm.get_samples().size(); i++){
-            x = gmm.get_samples()[i].second[0]*MAX_X;
-            y = gmm.get_samples()[i].second[1]*MAX_Y;
-            rects_explored[x + y*MAX_Y].setFillColor(
-                        sf::Color(255*real_space[x][y],0,255*(1-real_space[x][y]))
-                    );
-        }
+                rects_estimated[i].setFillColor(
+                            sf::Color(255*est,0,255*(1-est))
+                            );
+            }
+        });
 
         error = error/(double)(MAX_X*MAX_Y);
         sf::RectangleShape error_point(sf::Vector2f(4,4));
@@ -224,26 +197,21 @@ int main(int argc, char** argv){
         error_point.setPosition(sf::Vector2f(iteration,(1-error)*400+400));
         error_curve.push_back(error_point);
 
-        //        Eigen::VectorXd eigenval;
-        //        Eigen::MatrixXd eigenvect;
         components_center.clear();
-        for(const auto& components : gmm.model()){
+        for(const auto& components : trainer.access_classifier().model()){
             for(const auto& c : components.second){
 //                std::cout << c->print_parameters();
                 components_center.push_back(sf::CircleShape(5.));
 
                 components_center.back().setFillColor(sf::Color(components.first*255,100,(components.first-1)*255));
                 components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
-
-                //            c->compute_eigenvalues(eigenval,eigenvect);
-                //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
             }
         }
 
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
-        std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
+        std::cout << "total number of samples in the model : " << trainer.access_classifier().number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
         std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;
         std::cout << "_________________________________________________________________" << std::endl;
@@ -252,14 +220,11 @@ int main(int argc, char** argv){
 
         window.display();
 
-
-
-        //        std::cin.ignore();
     }
 
     std::ofstream of("archive_gmm");
     boost::archive::binary_oarchive oarch(of);
-    oarch << gmm;
+    oarch << trainer.access_classifier();
 
     return 0;
 }

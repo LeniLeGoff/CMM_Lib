@@ -69,7 +69,7 @@ public:
 //     */
 //    void update_parameters();
     double compute_multivariate_normal_dist(Eigen::VectorXd X) const;
-    Component::Ptr merge(const Component::Ptr c);
+    void merge(const Component::Ptr c);
     Component::Ptr split();
 
 
@@ -106,6 +106,11 @@ public:
     int get_dimension() const {return _dimension;}
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
     void set_covariance(const Eigen::MatrixXd& covariance){_covariance = covariance;}
+
+    void remove_sample(int i){
+        _samples.erase(_samples.begin() + i);
+        _samples.shrink_to_fit();
+    }
 
     std::string print_parameters() const;
 

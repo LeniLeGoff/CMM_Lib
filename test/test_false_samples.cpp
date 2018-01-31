@@ -39,23 +39,34 @@ int main(int argc, char** argv){
     tbb::task_scheduler_init init;
 
     double A;
+    float p_false;
     sf::RenderWindow window(sf::VideoMode(MAX_X*4*3,MAX_Y*4*2),"dataset");
 
-    if(argc == 2)
-        A = std::stod(argv[1]);
+    if(argc < 2){
+        std::cerr << "usage : proba false samples" << std::endl;
+        return 1;
+    }
+    if(argc == 3)
+        A = std::stod(argv[2]);
     else
         A = rand()%100;
+
+    p_false = std::stod(argv[1]);
+
+
     std::cout << "A = " << A << std::endl;
     int real_space[MAX_X][MAX_Y];
     double estimated_space[MAX_X][MAX_Y];
+    std::vector<Eigen::VectorXd> samples;
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
     GMM gmm(2,2);
-    gmm.set_dataset_size_max(400);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
     });
+    gmm.set_dataset_size_max(400);
+
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;
@@ -118,6 +129,7 @@ int main(int argc, char** argv){
 
     int iteration = 0;
 
+    boost::random::uniform_real_distribution<> dist_false(0,1);
     error = 1.;
     Eigen::VectorXd next_s;
     coord[0] = rand()%MAX_X;
@@ -147,24 +159,33 @@ int main(int argc, char** argv){
         for(auto err : error_curve)
             window.draw(err);
 
-
-
+        samples.push_back(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y));
 
         label.push_back(real_space[coord[0]][coord[1]]);
 
+        int lbl = real_space[coord[0]][coord[1]];
+        if(dist_false(gen) < p_false){
+            lbl = 1 - lbl;
+//            rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
+//                        sf::Color(255*real_space[coord[0]][coord[1]],200,255*(1-real_space[coord[0]][coord[1]]))
+//                    );
+        }else{
+//            rects_explored[coord[0] + (coord[1])*MAX_Y].setFillColor(
+//                        sf::Color(255*real_space[coord[0]][coord[1]],0,255*(1-real_space[coord[0]][coord[1]]))
+//                    );
+        }
+
         int ind = gmm.append(Eigen::Vector2d((double)coord[0]/(double)MAX_X,(double)coord[1]/(double)MAX_Y),
-              real_space[coord[0]][coord[1]]);
+              lbl);
 
 
 
-        gmm.update_model(ind,real_space[coord[0]][coord[1]]);
-//        gmm.update_dataset_thres();
+        gmm.update_model(ind,lbl);
+        gmm.update_dataset();
 //        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
-
-
-        if(gmm.get_samples().size() > NBR_CLUSTER){
+        if(samples.size() > NBR_CLUSTER){
             cumul_est = 0;
             choice_distribution.clear();
             tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
@@ -205,7 +226,6 @@ int main(int argc, char** argv){
             coord[1] = rand()%MAX_Y;
         }
 
-
         for(int i = 0; i < MAX_X*MAX_Y; i++)
             rects_explored[i].setFillColor(sf::Color::Transparent);
 
@@ -214,7 +234,7 @@ int main(int argc, char** argv){
             x = gmm.get_samples()[i].second[0]*MAX_X;
             y = gmm.get_samples()[i].second[1]*MAX_Y;
             rects_explored[x + y*MAX_Y].setFillColor(
-                        sf::Color(255*real_space[x][y],0,255*(1-real_space[x][y]))
+                        sf::Color(255*gmm.get_samples()[i].first,0,255*(1-gmm.get_samples()[i].first))
                     );
         }
 
@@ -229,14 +249,11 @@ int main(int argc, char** argv){
         components_center.clear();
         for(const auto& components : gmm.model()){
             for(const auto& c : components.second){
-//                std::cout << c->print_parameters();
+                std::cout << c->print_parameters();
                 components_center.push_back(sf::CircleShape(5.));
 
                 components_center.back().setFillColor(sf::Color(components.first*255,100,(components.first-1)*255));
                 components_center.back().setPosition(c->get_mu()(0)*MAX_X*4+MAX_X*4,c->get_mu()(1)*MAX_Y*4);
-
-                //            c->compute_eigenvalues(eigenval,eigenvect);
-                //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
             }
         }
 
@@ -251,10 +268,6 @@ int main(int argc, char** argv){
         iteration++;
 
         window.display();
-
-
-
-        //        std::cin.ignore();
     }
 
     std::ofstream of("archive_gmm");

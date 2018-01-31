@@ -98,15 +98,15 @@ double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
 }
 
 
-Component::Ptr Component::merge(const Component::Ptr c){
-    Component::Ptr new_c(new Component(*this));
+void Component::merge(const Component::Ptr c){
+//    Component::Ptr new_c(new Component(*this));
 
     for(int i = 0; i < c->size(); i++)
-        new_c->add(c->get_sample(i));
+        add(c->get_sample(i));
 
-    new_c->update_parameters();
+    update_parameters();
 
-    return new_c;
+    return ;
 }
 
 
@@ -142,6 +142,7 @@ Component::Ptr Component::split(){
     }
     //*/
 
+    //* Go through each connected nodes
     std::vector<std::vector<int>> indexes;
     while(!graph.empty())
     {
@@ -162,10 +163,12 @@ Component::Ptr Component::split(){
 
         indexes.push_back(tmp_ind);
     }
+    //*/
 
-    if(indexes.size() == 1)
+    if(indexes.size() == 1)//if there only one list of indexes split is aborted
         return NULL;
 
+    //*reduce the indexes into list
     Eigen::MatrixXd means = Eigen::MatrixXd::Zero(_dimension,indexes.size());
     Eigen::MatrixXd dist(indexes.size(),indexes.size());
 
@@ -178,6 +181,7 @@ Component::Ptr Component::split(){
             }
             means.col(k) = means.col(k)/(double)indexes[k].size();
         }
+
         dist.resize(indexes.size(),indexes.size());
         for(size_t k = 0; k < indexes.size(); k++){
             for(size_t j = 0; j < indexes.size(); j++){
@@ -193,6 +197,7 @@ Component::Ptr Component::split(){
         indexes.erase(indexes.begin() + r);
         indexes.shrink_to_fit();
     }
+    //*/
 
     Component::Ptr new_c(new Component(_dimension,_label));
     //    std::cout << "samples size : " << _samples.size() << std::endl;
@@ -270,7 +275,7 @@ std::string Component::print_parameters() const {
     stream << "----------------------" << std::endl;
     stream << "lbl : " << _label << std::endl;
 //    stream << "covariance : \n" << _covariance << std::endl;
-    stream << "mu : \n" << _mu << std::endl;
+//    stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;
     stream << "score : " << component_score() << std::endl;

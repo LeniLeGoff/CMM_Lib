@@ -25,8 +25,7 @@ public:
 
     /**
      * @brief default Constructor
-     */    void estimate_training_dataset();
-
+     */
     Classifier(){}
 
     /**
@@ -90,6 +89,7 @@ public:
     void set_distance_function(_distance_f distance){
         _distance = distance;
     }
+
 
 protected:
     void _estimate_training_dataset(){
