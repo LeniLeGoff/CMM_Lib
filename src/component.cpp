@@ -98,15 +98,15 @@ double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
 }
 
 
-Component::Ptr Component::merge(const Component::Ptr c){
-    Component::Ptr new_c(new Component(*this));
+void Component::merge(const Component::Ptr c){
+//    Component::Ptr new_c(new Component(*this));
 
     for(int i = 0; i < c->size(); i++)
-        new_c->add(c->get_sample(i));
+        add(c->get_sample(i));
 
-    new_c->update_parameters();
+    update_parameters();
 
-    return new_c;
+    return ;
 }
 
 

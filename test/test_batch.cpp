@@ -136,6 +136,7 @@ int main(int argc, char** argv){
         return (s1 - s2).squaredNorm();
     });
     trainer.initialize();
+    trainer.access_classifier().set_update_mode(GMM::BATCH);
 
     int iteration = 0;
 
