@@ -83,18 +83,20 @@ double GMM::_score_calculator::compute(){
 //--DISTRIBUTION_CONSTRUCTOR
 
 void GMM::update_factors(){
-
-    double sum_size = 0;
-    for(auto& components : _model)
-        sum_size += components.second.size();
-
-    for(auto& components : _model){
-        for(auto& c: components.second)
-            c->set_factor((double)c->size()/((double)sum_size));
-    }
+    for(int i = 0; i < _nbr_class; i++)
+        _update_factors(i);
 }
 
 
+void GMM::_update_factors(int lbl){
+    double sum_size = 0;
+    for(auto& components : _model[lbl])
+        sum_size += components->size();
+
+    for(auto& c : _model[lbl]){
+            c->set_factor((double)c->size()/((double)sum_size));
+    }
+}
 
 double GMM::unit_factor(){
 
@@ -193,9 +195,16 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
 
 bool GMM::_merge(const Component::Ptr& comp){
 
-    if(comp->size() < 5)
+    if(comp->size() < 5 || _model[ comp->get_label()].size() == 1)
         return false;
 
+    int lbl = comp->get_label();
+    int ind;
+    for(ind = 0; ind < _model[lbl].size(); ind++)
+        if(_model[lbl][ind].get() == comp.get())
+            break;
+    if(ind == _model[lbl].size())
+        return false;
 
     std::cout << "merge function" << std::endl;
     std::chrono::system_clock::time_point timer;
@@ -204,13 +213,11 @@ bool GMM::_merge(const Component::Ptr& comp){
     GMM candidate;
     double score, score2, candidate_score;
 
-    int lbl = comp->get_label();
 
     _score_calculator sc(this,_samples);
     score = sc.compute();
 
     Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
-
 
     Eigen::VectorXd distances(_model[lbl].size());
 
@@ -223,14 +230,8 @@ bool GMM::_merge(const Component::Ptr& comp){
         distances(j) = comp->distance(_model[lbl][j]->get_mu());
     }
     distances.minCoeff(&r,&c);
-    if(_model[lbl][r]->get_samples().size() < 4)
+    if(_model[lbl][r]->get_samples().size() < 5)
         return false;
-
-
-    int ind;
-    for(ind = 0; ind < _model[lbl].size(); ind++)
-        if(_model[lbl][ind] == comp)
-            break;
 
 
     diff_mu = _model[lbl][r]->get_mu() - comp->get_mu();
@@ -247,8 +248,7 @@ bool GMM::_merge(const Component::Ptr& comp){
 
         candidate = GMM(_model);
         candidate.set_samples(_samples);
-        candidate.model()[lbl][ind] =
-                candidate.model()[lbl][ind]->merge(candidate.model()[lbl][r]);
+        candidate.model()[lbl][ind]->merge(candidate.model()[lbl][r]);
         //            TrainingData knn_output;
         //            candidate.knn(candidate.model()[lbl][ind]->get_mu(),knn_output,candidate.model()[lbl][ind]->size());
 
@@ -262,7 +262,7 @@ bool GMM::_merge(const Component::Ptr& comp){
 
         if(candidate_score > score){
             std::cout << "-_- MERGE _-_" << std::endl;
-            _model[lbl][ind] = _model[lbl][ind]->merge(_model[lbl][r]);
+            _model[lbl][ind]->merge(_model[lbl][r]);
             _model[lbl].erase(_model[lbl].begin() + r);
             update_factors();
             std::cout << "Merge finish, time spent : "
@@ -311,6 +311,14 @@ bool GMM::_split(const Component::Ptr& comp){
 
     int lbl = comp->get_label();
 
+    int ind;
+    for(ind = 0; ind < _model[lbl].size(); ind++)
+        if(_model[lbl][ind].get() == comp.get())
+            break;
+    if(ind == _model[lbl].size())
+        return false;
+
+
     //*/verify the model of other classes are empty. If all the model of other classes are empty abort
     bool keep_going = false;
     for(int l = 0; l < _nbr_class; l++){
@@ -325,10 +333,6 @@ bool GMM::_split(const Component::Ptr& comp){
         return false;
     //*/
 
-    int ind;
-    for(ind = 0; ind < _model[lbl].size(); ind++)
-        if(_model[lbl][ind] == comp)
-            break;
 
     //* Capture time. TO DO put an option at compilation
     std::cout << "split function" << std::endl;
@@ -506,7 +510,6 @@ void GMM::update(){
 }
 
 void GMM::update_model(){
-    _estimate_training_dataset();
     std::vector<Component::Ptr> comp;
     for(int i = 0; i < _nbr_class; i++){
         for(int j = 0; j < _model[i].size(); j++){
@@ -514,6 +517,8 @@ void GMM::update_model(){
         }
     }
     for(int i = 0; i < comp.size(); i++){
+        _estimate_training_dataset();
+
         if(!_split(comp[i]))
             _merge(comp[i]);
     }

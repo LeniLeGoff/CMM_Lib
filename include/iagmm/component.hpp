@@ -69,7 +69,7 @@ public:
 //     */
 //    void update_parameters();
     double compute_multivariate_normal_dist(Eigen::VectorXd X) const;
-    Component::Ptr merge(const Component::Ptr c);
+    void merge(const Component::Ptr c);
     Component::Ptr split();
 
 

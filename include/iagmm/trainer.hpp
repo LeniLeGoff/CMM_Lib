@@ -59,17 +59,31 @@ public:
             for(int j = 0; j <test_data.size(); j++)
                 _test_data.add(i,test_data[j]);
         }
+//        std::vector<int> subst(_train_data.size());
+//        for(int i = 0; i < _train_data.size()/2; i++){
+//            boost::random::uniform_int_distribution<> dist(_train_data.size()/2+1,_train_data.size());
+//            int index = dist(_gen);
+//            subst[i] = index;
+//            subst[index] = i;
+//        }
+//        for(int i = 0; i < _train_data.size(); i++){
+
+//        }
+
         //*/
     }
 
     void epoch(){
         int n;
-        boost::random::uniform_int_distribution<> dist(0,_train_data.size()-1);
-        for(int i = 0; i < _batch_size; i++){
-            n = dist(_gen);
-            _classifier.add(_train_data[n].second,_train_data[n].first);
+//        boost::random::uniform_int_distribution<> dist(0,_train_data.size()-1);
+        for(int i = _g_count; i < _batch_size+_g_count && i < _train_data.size(); i++){
+//            n = dist(_gen);
+            _classifier.add(_train_data[i].second,_train_data[i].first);
         }
         _classifier.update();
+        _g_count += _batch_size;
+        if(_g_count > _train_data.size() - _batch_size)
+            _g_count = 0;
     }
 
     double test(){
@@ -91,6 +105,7 @@ private:
 
     int _batch_size;
     float _test_set;
+    int _g_count = 0;
 
     boost::random::mt19937 _gen;
 

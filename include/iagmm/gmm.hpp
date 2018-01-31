@@ -177,6 +177,7 @@ private:
     bool _split(const Component::Ptr& comp);
     void _expectation(int lbl);
     void _maximisation(int lbl);
+    void _update_factors(int lbl);
 
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
