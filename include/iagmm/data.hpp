@@ -2,6 +2,7 @@
 #define TRAINING_DATA_HPP
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <memory>
 #include <eigen3/Eigen/Core>
@@ -152,6 +153,45 @@ public:
         return true;
     }
 
+    bool save_yml(const std::string& filename) const{
+
+        std::ofstream ofs(filename,std::ofstream::out);
+        if(!ofs.is_open())
+            return false;
+
+        std::string frame_id, feat_id;
+        YAML::Emitter emitter;
+        frame_id = "frame_0";
+
+        emitter << YAML::BeginMap //BEGIN MAP_0
+                    << YAML::Key << frame_id << YAML::Value
+                    << YAML::BeginMap //BEGIN MAP_1
+                        << YAML::Key << "features" << YAML::Value
+                        << YAML::BeginMap; //BEGIN MAP_3
+
+        for (unsigned int i = 0; i < _data.size(); ++i) {
+            feat_id = "feature_" + std::to_string(i);
+
+            emitter << YAML::Key << feat_id << YAML::Value
+                    << YAML::BeginMap //BEGIN MAP_4
+                        << YAML::Key << "label" << YAML::Value << _data[i].first
+                        << YAML::Key << "value" << YAML::Value
+                        << YAML::BeginSeq;
+            for (unsigned int j = 0; j < _data[i].second.size(); ++j) {
+                emitter  << _data[i].second[j];
+            }
+            emitter << YAML::EndSeq
+                    << YAML::EndMap; //END MAP_4
+        }
+        emitter << YAML::EndMap //END MAP_3
+                << YAML::EndMap //END MAP_1
+                << YAML::EndMap //END MAP_0
+                << YAML::Newline;
+
+        ofs << emitter.c_str();
+        ofs.close();
+        return true;
+    }
 
     const estimation_t& get_qualities(){return _qualities;}
 

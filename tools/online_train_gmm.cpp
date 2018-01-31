@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <sstream>
 #include <fstream>
 #include <random>
@@ -28,10 +29,15 @@ int main(int argc, char** argv){
     if(with_update_dataset)
         gmm.set_dataset_size_max(std::stoi(argv[3]));
 
+    std::stringstream ss;
+    boost::filesystem::path file_path(argv[1]);
+    ss << file_path.parent_path().c_str()
+            << "/" << argv[2];
+    if(!boost::filesystem::exists(ss.str()))
+        boost::filesystem::create_directory(ss.str());
 
-
-
-    for(int i = 0; i < dataset.size(); i++){
+    int i;
+    for(i = 0; i < dataset.size(); i++){
 
         std::cout << "_____________________________________" << std::endl;
         std::cout << "iteration number : " << i << std::endl;
@@ -42,15 +48,23 @@ int main(int argc, char** argv){
         if(with_update_dataset)
             gmm.update_dataset();
         std::cout << gmm.print_info() << std::endl;
+        std::stringstream stream_iter;
+        stream_iter << ss.str() << "/iteration_" << i;
+
+        if(!boost::filesystem::exists(stream_iter.str()))
+            boost::filesystem::create_directory(stream_iter.str());
+
+        std::stringstream stream_dataset,stream_gmm;
+        stream_dataset << stream_iter.str() << "/dataset_meanFPFHLabHist.yml";
+        gmm.get_samples().save_yml(stream_dataset.str());
+        stream_gmm << stream_iter.str() << "/gmm_dataset_meanFPFHLabHist";
+        std::ofstream ofs(stream_gmm.str());
+        boost::archive::text_oarchive toa(ofs);
+        toa << gmm;
+        ofs.close();
     }
 
-    boost::filesystem::path file_path(argv[1]);
-    std::stringstream ss;
-    ss << file_path.parent_path().c_str() << argv[2];
-    std::ofstream ofs(ss.str());
-    boost::archive::text_oarchive toa(ofs);
-    toa << gmm;
-    ofs.close();
+
 
     return 0;
 }
