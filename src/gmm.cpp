@@ -422,7 +422,7 @@ bool GMM::_split(const Component::Ptr& comp){
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Zero(samples.size());
 
-    if(_samples.size() <= 5)
+    if(_samples.size() <= 50)
         return rand()%samples.size();
 
     double total = 0,cumul = 0, avg = 0;
