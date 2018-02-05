@@ -420,7 +420,7 @@ bool GMM::_split(const Component::Ptr& comp){
 }
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
-    choice_dist_map = Eigen::VectorXd::Zero(samples.size());
+    choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
 
     if(_samples.size() <= 50)
         return rand()%samples.size();
@@ -439,18 +439,30 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
             if(est > .5)
                 est = 2.* (1 - est);
             else est = 2.*est;
-            w[i] = 1./(1. + exp(-60.*((fabs(1-confidence(samples[i].first)) + est)/2. - .5)));
+            double c = confidence(samples[i].first);
+//            std::cout << "c : " << c << " -- u : " << est << std::endl;
+            w[i] = (fabs(1-c) + est)/2.;
+
+
+//            w[i] = 1./(1. + exp(-60.*((fabs(1-c) + est)/2. - .5)));
             if(w[i] != w[i])
                 w[i] = 0;
+            else if(w[i] > 1)
+                w[i] = 1;
         }
     });
     for(int i = 0; i < choice_dist_map.rows(); ++i){
         avg += w[i];
     }
     avg = avg/(double)w.size();
+    for(int i = 0; i < w.size(); i++){
+        w[i] = 1./(1. + exp(-50.*(w[i] - avg)));
+
+    }
 
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-        choice_dist_map(i) =  w[i] >= avg ? w[i] : 0;
+//        std::cout << "w : " << w[i] << std::endl;
+        choice_dist_map(i) =  w[i]; /*10e-3 < fabs(avg-w[i]) || w[i] > avg ? w[i] : 0;*/
         total += choice_dist_map(i);
     }
     for(int i = 0; i < choice_dist_map.rows(); ++i){
