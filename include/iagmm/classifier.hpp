@@ -90,8 +90,6 @@ public:
         _distance = distance;
     }
 
-
-protected:
     void _estimate_training_dataset(){
         _samples.estimations.resize(_samples.size());
         tbb::parallel_for(tbb::blocked_range<size_t>(0,_samples.size()),
@@ -100,6 +98,8 @@ protected:
                 _samples.estimations[i] = compute_estimation(_samples[i].second,_samples[i].first);
         });
     }
+protected:
+
 
     int _nbr_class;
     int _dimension;

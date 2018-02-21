@@ -20,10 +20,13 @@ void write_file(GMM& gmm, const std::string file){
     Eigen::VectorXd eigenvalues;
     Eigen::MatrixXd eigenvectors;
 
+    gmm._estimate_training_dataset();
+
     YAML::Emitter emitter;
     emitter << YAML::BeginMap; //GLOBAL MAP
     emitter << YAML::Key << "stat" << YAML::Value
-            << YAML::BeginMap; //MAP STAT
+            << YAML::BeginMap //MAP STAT
+            << YAML::Key << "nbr_samples" << YAML::Value << gmm.get_samples().size();
     for(int c = 0; c < gmm.get_nbr_class(); c++){
         std::stringstream class_name;
         class_name << "class_" << c;
@@ -60,6 +63,7 @@ void write_file(GMM& gmm, const std::string file){
         }
         emitter << YAML::EndMap; //END MAP CLASS
     }
+    emitter << YAML::Key << "loglikelihood" << YAML::Value << gmm.loglikelihood();
     emitter << YAML::EndMap //END MAP STAT
             << YAML::EndMap; //END GLOBAL MAP
 
@@ -69,8 +73,8 @@ void write_file(GMM& gmm, const std::string file){
 
 int main(int argc, char** argv){
 
-    if(argc != 2){
-        std::cout << "usage : file name containing gmm archive" << std::endl;
+    if(argc != 3){
+        std::cout << "usage : file name containing gmm archive and file name containing dataset" << std::endl;
         return 1;
     }
 
@@ -86,8 +90,14 @@ int main(int argc, char** argv){
     boost::archive::text_iarchive iarch(ifs);
     GMM gmm;
     iarch >> gmm;
-
     ifs.close();
+
+    TrainingData data;
+    int dim, nbr_class;
+    data.load_yml(argv[2],dim,nbr_class);
+
+    gmm.set_samples(data);
+
 
     write_file(gmm,output_file);
 

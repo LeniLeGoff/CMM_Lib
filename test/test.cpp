@@ -243,6 +243,7 @@ int main(int argc, char** argv){
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
+        std::cout << "loglikelihood : " << gmm.loglikelihood() << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
         std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;

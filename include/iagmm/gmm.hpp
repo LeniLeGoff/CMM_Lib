@@ -169,6 +169,8 @@ public:
 
     void set_update_mode(update_mode_t um){_update_mode = um;}
 
+    double loglikelihood();
+
 private:
 
     bool _merge(const Component::Ptr& comp);
