@@ -427,9 +427,10 @@ bool GMM::_split(const Component::Ptr& comp){
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
+    boost::random::uniform_int_distribution<> dist_uni(0,samples.size());
 
     if(_samples.size() <= 50)
-        return rand()%samples.size();
+        return dist_uni(_gen);
 
     double total = 0,cumul = 0, avg = 0;
 
@@ -440,36 +441,55 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
                       [&](const tbb::blocked_range<size_t>& r){
         double est;
+        bool pos = _samples.get_data(1).size() <= _samples.get_data(0).size();
         for(size_t i = r.begin(); i != r.end(); i++){
             est = samples[i].second;
-            if(est > .5)
-                est = 2.* (1 - est);
-            else est = 2.*est;
-            double c = confidence(samples[i].first);
-//            std::cout << "c : " << c << " -- u : " << est << std::endl;
-//            w[i] = (fabs(1-c) + est)/2.;
+            if(pos){
+                if(est < .5)
+                    est = 0;
+            }
+            else {
+                if(est <= .5)
+                    est = (1-est);
+                else
+                    est = 0.;
+            }
 
+//            if(est > .5)
+//                est = 2.* (1 - est);
+//            else est = 2.*est;
+////            double c = confidence(samples[i].first);
+////            std::cout << "c : " << c << " -- u : " << est << std::endl;
+////            w[i] = (fabs(1-c) + est)/2.;
 
-            w[i] = 1./(1. + exp(-60.*((fabs(1-c) + est)/2. - .5)));
-            if(w[i] != w[i])
-                w[i] = 0;
-            else if(w[i] > 1)
-                w[i] = 1;
+            w[i] = est;
+//            w[i] = 1./(1. + exp(-60.*((/*fabs(1-c)*/ + est)/*/2.*/ - .5)));
+//            if(w[i] != w[i])
+//                w[i] = 0;
+//            else if(w[i] > 1)
+//                w[i] = 1;
         }
     });
+
 //    for(int i = 0; i < choice_dist_map.rows(); ++i){
 //        avg += w[i];
 //    }
 //    avg = avg/(double)w.size();
 //    for(int i = 0; i < w.size(); i++){
 //        w[i] = 1./(1. + exp(-50.*(w[i] - avg)));
-//    }
 
+
+//    }
+    bool all_zero = true;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
 //        std::cout << "w : " << w[i] << std::endl;
-        choice_dist_map(i) = w[i] >= avg ? w[i] : 0;
+
+        choice_dist_map(i) =  w[i] /*>= avg ? w[i] : 0*/;
+        all_zero = all_zero && choice_dist_map(i) == 0;
         total += choice_dist_map(i);
     }
+    if(all_zero)
+        return dist_uni(_gen);
     for(int i = 0; i < choice_dist_map.rows(); ++i){
         cumul += choice_dist_map(i);
         choice_distibution.emplace(cumul/total,i);
