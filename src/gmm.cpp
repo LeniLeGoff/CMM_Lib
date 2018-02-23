@@ -191,7 +191,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
 }
 
-
+double GMM::loglikelihood(){
+    _score_calculator sc(this,_samples);
+    return sc.compute();
+}
 
 bool GMM::_merge(const Component::Ptr& comp){
 
@@ -214,8 +217,9 @@ bool GMM::_merge(const Component::Ptr& comp){
     double score, score2, candidate_score;
 
 
+    score = loglikelihood();/*
     _score_calculator sc(this,_samples);
-    score = sc.compute();
+    score = sc.compute();*/
 
     Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
 
@@ -256,9 +260,9 @@ bool GMM::_merge(const Component::Ptr& comp){
         candidate.update_factors();
 
         candidate._estimate_training_dataset();
-        _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
-        candidate_score = candidate_sc.compute();
-
+//        _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
+//        candidate_score = candidate_sc.compute();
+        candidate_score = candidate.loglikelihood();
 
         if(candidate_score > score){
             std::cout << "-_- MERGE _-_" << std::endl;
@@ -347,8 +351,9 @@ bool GMM::_split(const Component::Ptr& comp){
     //*/
 
     //* compute of the score of the current model
-    _score_calculator sc(this,_samples);
-    score = sc.compute();
+    score = loglikelihood();
+//    _score_calculator sc(this,_samples);
+//    score = sc.compute();
     //*/
 
     for(int l = 0; l < _nbr_class; l++){
@@ -386,8 +391,9 @@ bool GMM::_split(const Component::Ptr& comp){
                 candidate._estimate_training_dataset();//estimation for dataset
 
                 //* compute the score of the model candidate
-                _score_calculator candidate_sc(&candidate,candidate.get_samples());
-                cand_score = candidate_sc.compute();
+//                _score_calculator candidate_sc(&candidate,candidate.get_samples());
+//                cand_score = candidate_sc.compute();
+                cand_score = candidate.loglikelihood();
                 //*/
 
 
@@ -475,10 +481,12 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //    for(int i = 0; i < w.size(); i++){
 //        w[i] = 1./(1. + exp(-50.*(w[i] - avg)));
 
+
 //    }
     bool all_zero = true;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
 //        std::cout << "w : " << w[i] << std::endl;
+
         choice_dist_map(i) =  w[i] /*>= avg ? w[i] : 0*/;
         all_zero = all_zero && choice_dist_map(i) == 0;
         total += choice_dist_map(i);

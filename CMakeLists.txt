@@ -37,6 +37,9 @@ install(TARGETS ${PROJECT_NAME}
 add_executable(gen_archive_stat tools/gen_archive_stat.cpp)
 target_link_libraries(gen_archive_stat iagmm yaml-cpp boost_serialization )
 
+add_executable(gmm_loglikelihood tools/gmm_loglikelihood.cpp)
+target_link_libraries(gmm_loglikelihood iagmm yaml-cpp boost_serialization boost_system boost_filesystem)
+
 add_executable(batch_train_gmm tools/batch_train_gmm.cpp)
 target_link_libraries(batch_train_gmm iagmm yaml-cpp boost_serialization boost_system)
 
