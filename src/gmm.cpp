@@ -439,14 +439,17 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
         for(size_t i = r.begin(); i != r.end(); i++){
             est = samples[i].second;
             if(pos){
-                if(est < .5)
-                    est = 0;
+                est = -(2*est*log(2*est)-2*est);
+//                if(est < .5)
+//                    est = 0;
             }
             else {
-                if(est <= .5)
-                    est = (1-est);
-                else
-                    est = 0.;
+                est = 1-est;
+                est = -(2*est*log(2*est)-2*est);
+//                if(est <= .5)
+//                    est = (1-est);
+//                else
+//                    est = 0.;
             }
 
 //            if(est > .5)
