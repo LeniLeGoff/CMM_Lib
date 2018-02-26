@@ -170,6 +170,7 @@ public:
     void set_update_mode(update_mode_t um){_update_mode = um;}
 
     double loglikelihood();
+    double loglikelihood(int label);
 
 private:
 
@@ -224,10 +225,10 @@ private:
 
     class _score_calculator{
     public:
-        _score_calculator(GMM* model, TrainingData samples) :
-            _model(model), _samples(samples), _sum(0){}
+        _score_calculator(GMM* model, TrainingData samples, bool all_samples = true, int lbl = 0) :
+            _model(model), _samples(samples), _sum(0), _label(lbl), _all_samples(all_samples){}
         _score_calculator(const _score_calculator &sc, tbb::split) :
-            _model(sc._model), _samples(sc._samples), _sum(0){}
+            _model(sc._model), _samples(sc._samples), _sum(0), _label(sc._label), _all_samples(sc._all_samples){}
 
         void operator ()(const tbb::blocked_range<size_t>& r);
         void join(const _score_calculator& sc){
@@ -238,6 +239,8 @@ private:
     private:
         GMM* _model;
         double _sum;
+        int _label;
+        bool _all_samples;
         TrainingData _samples;
     };
 

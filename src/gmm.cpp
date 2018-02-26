@@ -62,7 +62,8 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     double sum = _sum;
 
     for(size_t i = r.begin(); i != r.end(); ++i){
-        sum += std::log(_samples.estimations[i]);
+        if(_samples[i].first == _label || _all_samples)
+            sum += std::log(_samples.estimations[i]);
     }
     _sum = sum;
 }
@@ -70,7 +71,7 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
 double GMM::_score_calculator::compute(){
 //    _model->compute_normalisation();
     tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_samples.size()),*this);
-    return _sum/((double)_samples.size());
+    return _sum/((double)_samples.get_data(_label).size());
 }
 //--SCORE_CALCULATOR
 
@@ -191,8 +192,14 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
 }
 
+
 double GMM::loglikelihood(){
     _score_calculator sc(this,_samples);
+    return sc.compute();
+}
+
+double GMM::loglikelihood(int label){
+    _score_calculator sc(this,_samples,false,label);
     return sc.compute();
 }
 
@@ -217,7 +224,7 @@ bool GMM::_merge(const Component::Ptr& comp){
     double score, score2, candidate_score;
 
 
-    score = loglikelihood();/*
+    score = loglikelihood(comp->get_label());/*
     _score_calculator sc(this,_samples);
     score = sc.compute();*/
 
@@ -262,7 +269,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         candidate._estimate_training_dataset();
 //        _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
 //        candidate_score = candidate_sc.compute();
-        candidate_score = candidate.loglikelihood();
+        candidate_score = candidate.loglikelihood(comp->get_label());
 
         if(candidate_score > score){
             std::cout << "-_- MERGE _-_" << std::endl;
@@ -301,7 +308,7 @@ std::pair<double,double> GMM::_coeff_intersection(int ind1, int lbl1, int ind2, 
 double GMM::_component_score(int i, int lbl){
     TrainingData knn_output;
     knn(_model[lbl][i]->get_mu(), knn_output,_model[lbl][i]->size());
-    _score_calculator sc(this,knn_output);
+    _score_calculator sc(this,knn_output,lbl);
     return sc.compute();
 }
 
@@ -351,7 +358,7 @@ bool GMM::_split(const Component::Ptr& comp){
     //*/
 
     //* compute of the score of the current model
-    score = loglikelihood();
+    score = loglikelihood(comp->get_label());
 //    _score_calculator sc(this,_samples);
 //    score = sc.compute();
     //*/
@@ -393,7 +400,7 @@ bool GMM::_split(const Component::Ptr& comp){
                 //* compute the score of the model candidate
 //                _score_calculator candidate_sc(&candidate,candidate.get_samples());
 //                cand_score = candidate_sc.compute();
-                cand_score = candidate.loglikelihood();
+                cand_score = candidate.loglikelihood(comp->get_label());
                 //*/
 
 
