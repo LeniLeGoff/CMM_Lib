@@ -468,11 +468,11 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //            if(est > .5)
 //                est = 2.* (1 - est);
 //            else est = 2.*est;
-////            double c = confidence(samples[i].first);
+            double c = confidence(samples[i].first);
 ////            std::cout << "c : " << c << " -- u : " << est << std::endl;
 ////            w[i] = (fabs(1-c) + est)/2.;
 
-            w[i] = est;
+            w[i] = (est*(1-c));
 //            w[i] = 1./(1. + exp(-60.*((/*fabs(1-c)*/ + est)/*/2.*/ - .5)));
 //            if(w[i] != w[i])
 //                w[i] = 0;
