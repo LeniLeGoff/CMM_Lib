@@ -228,7 +228,6 @@ bool GMM::_merge(const Component::Ptr& comp){
     _score_calculator sc(this,_samples);
     score = sc.compute();*/
 
-    Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
 
     Eigen::VectorXd distances(_model[lbl].size());
 
@@ -245,14 +244,8 @@ bool GMM::_merge(const Component::Ptr& comp){
         return false;
 
 
-    diff_mu = _model[lbl][r]->get_mu() - comp->get_mu();
-    ellipse_vect1 = (_model[lbl][r]->get_covariance().transpose()*diff_mu/diff_mu.norm());
-    ellipse_vect2 = (comp->get_covariance().transpose()*diff_mu/diff_mu.norm());
-    double dist_mu = diff_mu.norm();
-    double dist_e1 = ellipse_vect1.norm();
-    double dist_e2 = ellipse_vect2.norm();
 
-    if(diff_mu.squaredNorm() < ellipse_vect1.norm() + ellipse_vect2.norm()){
+    if(comp->intersect(_model[lbl][r])){
         //            score = _component_score(ind,lbl);
         //            score2 = _component_score(i,lbl);
 
@@ -271,6 +264,7 @@ bool GMM::_merge(const Component::Ptr& comp){
 //        candidate_score = candidate_sc.compute();
         candidate_score = candidate.loglikelihood(comp->get_label());
 
+        std::cout << candidate_score << " >? " << score << std::endl;
         if(candidate_score > score){
             std::cout << "-_- MERGE _-_" << std::endl;
             _model[lbl][ind]->merge(_model[lbl][r]);
@@ -353,7 +347,6 @@ bool GMM::_split(const Component::Ptr& comp){
 
     //* Local variables needed for the algorithm
     GMM candidate;
-    Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
     double cand_score, score;
     //*/
 
@@ -379,13 +372,8 @@ bool GMM::_split(const Component::Ptr& comp){
         distances.minCoeff(&closest_comp_ind,&c); // take the indice of the closest component
         //*/
 
-        //* compute the vectors for intersection criterion
-        diff_mu = (_model[l][closest_comp_ind]->get_mu()-comp->get_mu());
-        ellipse_vect1 = (_model[l][closest_comp_ind]->get_covariance().transpose()*diff_mu/diff_mu.norm());
-        ellipse_vect2 = (comp->get_covariance().transpose()*diff_mu/diff_mu.norm());
-        //*/
 
-        if(diff_mu.squaredNorm() < ellipse_vect1.norm() + ellipse_vect2.norm()){ //if the components intersect
+        if(comp->intersect(_model[l][closest_comp_ind])){ //if the components intersect
 
             candidate = GMM(_model); //Create a model candidate
             candidate.set_samples(_samples);
@@ -403,7 +391,7 @@ bool GMM::_split(const Component::Ptr& comp){
                 cand_score = candidate.loglikelihood(comp->get_label());
                 //*/
 
-
+                std::cout << cand_score << " >? " << score << std::endl;
                 if(cand_score > score){ //if the candidate model score is greater than the score of the current model
                     std::cout << "-_- SPLIT _-_" << std::endl;
                     new_component = _model[lbl][ind]->split();
