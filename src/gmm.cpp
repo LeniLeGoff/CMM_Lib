@@ -224,11 +224,10 @@ bool GMM::_merge(const Component::Ptr& comp){
     double score, score2, candidate_score;
 
 
-    score = loglikelihood(comp->get_label());/*
+    score = loglikelihood();/*
     _score_calculator sc(this,_samples);
     score = sc.compute();*/
 
-    Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
 
     Eigen::VectorXd distances(_model[lbl].size());
 
@@ -245,16 +244,8 @@ bool GMM::_merge(const Component::Ptr& comp){
         return false;
 
 
-    diff_mu = _model[lbl][r]->get_mu() - comp->get_mu();
-    double dist_mu = diff_mu.squaredNorm();//diff_mu.transpose()*comp->get_covariance()*diff_mu;//
 
-    ellipse_vect1 = (_model[lbl][r]->get_covariance().transpose()*diff_mu/dist_mu);
-    ellipse_vect2 = (comp->get_covariance().transpose()*diff_mu/dist_mu);
-    double dist_e1 = ellipse_vect1.squaredNorm();
-    double dist_e2 = ellipse_vect2.squaredNorm();
-
-    std::cout << dist_mu << " <? " << dist_e1 <<  " + " <<  dist_e2 << std::endl;
-    if(dist_mu < dist_e1 + dist_e2){
+    if(comp->intersect(_model[lbl][r])){
         //            score = _component_score(ind,lbl);
         //            score2 = _component_score(i,lbl);
 
@@ -271,7 +262,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         candidate._estimate_training_dataset();
 //        _score_calculator candidate_sc(&candidate,/*knn_output*/candidate.get_samples());
 //        candidate_score = candidate_sc.compute();
-        candidate_score = candidate.loglikelihood(comp->get_label());
+        candidate_score = candidate.loglikelihood();
 
         std::cout << candidate_score << " >? " << score << std::endl;
         if(candidate_score > score){
@@ -356,12 +347,11 @@ bool GMM::_split(const Component::Ptr& comp){
 
     //* Local variables needed for the algorithm
     GMM candidate;
-    Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
     double cand_score, score;
     //*/
 
     //* compute of the score of the current model
-    score = loglikelihood(comp->get_label());
+    score = loglikelihood();
 //    _score_calculator sc(this,_samples);
 //    score = sc.compute();
     //*/
@@ -382,18 +372,7 @@ bool GMM::_split(const Component::Ptr& comp){
         distances.minCoeff(&closest_comp_ind,&c); // take the indice of the closest component
         //*/
 
-        //* compute the vectors for intersection criterion
-        diff_mu = (_model[l][closest_comp_ind]->get_mu()-comp->get_mu());
-        double dist_mu =  diff_mu.squaredNorm();//diff_mu.transpose()*comp->get_covariance()*diff_mu;
-
-        ellipse_vect1 = (_model[l][closest_comp_ind]->get_covariance()*diff_mu/dist_mu);
-        ellipse_vect2 = (comp->get_covariance()*diff_mu/dist_mu);
-        //*/
-        double dist_e1 = ellipse_vect1.squaredNorm();
-        double dist_e2 = ellipse_vect2.squaredNorm();
-
-        std::cout << dist_mu << " <? " << dist_e1 <<  " + " <<  dist_e2 << std::endl;
-        if(dist_mu < dist_e1 + dist_e2){ //if the components intersect
+        if(comp->intersect(_model[l][closest_comp_ind])){ //if the components intersect
 
             candidate = GMM(_model); //Create a model candidate
             candidate.set_samples(_samples);
@@ -408,7 +387,7 @@ bool GMM::_split(const Component::Ptr& comp){
                 //* compute the score of the model candidate
 //                _score_calculator candidate_sc(&candidate,candidate.get_samples());
 //                cand_score = candidate_sc.compute();
-                cand_score = candidate.loglikelihood(comp->get_label());
+                cand_score = candidate.loglikelihood();
                 //*/
 
                 std::cout << cand_score << " >? " << score << std::endl;

@@ -1,6 +1,7 @@
 #include <iagmm/component.hpp>
 #include <map>
 #include <iostream>
+#include <boost/math/distributions/fisher_f.hpp>
 #define COEF 1.
 
 using namespace iagmm;
@@ -156,7 +157,8 @@ Component::Ptr Component::split(){
             for(auto it = range.first; it != range.second; it++)
                 rec(it->second);
         };
-        rec(graph.begin()->first);
+        rec(graph.begin()->first);    Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
+
 
         for(const auto& i : tmp_ind)
             graph.erase(i);
@@ -218,6 +220,34 @@ Component::Ptr Component::split(){
 
     return new_c;
 
+}
+
+bool Component::intersect(const Component::Ptr comp) const {
+    Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
+    double n1 = _samples.size(), n2 = comp->get_samples().size(), p = _dimension;
+    double nminusp;
+    if(n1 <= p /*|| n2 <= p*/)
+        return nminusp = 1;
+    else nminusp = n1-p;
+    boost::math::fisher_f_distribution<double> F1(p,nminusp);
+//    boost::math::fisher_f_distribution<double> F2(p,n2-p);
+    double q1 = boost::math::quantile(F1,0.75);
+//    double q2 = boost::math::quantile(F2,0.95);
+    double factor1 = (n1-1)*p*(n1+1)/((nminusp)*n1)*q1;
+//    double factor2 = (n2-1)*p*(n2+1)/((n2-p)*n2)*q2;
+//    std::cout << factor1 << " " << factor2 << std::endl;
+//    double dist_mu;
+    //* compute the vectors for intersection criterion
+    diff_mu = (comp->get_mu()-_mu);
+//    dist_mu = diff_mu.norm();
+//    ellipse_vect1 = 1/factor1*(comp->covariance_pseudoinverse()*diff_mu/diff_mu.norm());
+//    ellipse_vect1 = factor1*(_covariance*diff_mu/diff_mu.norm());
+    //*/
+    double val = distance(comp->get_mu());
+
+    std::cout << val << " <=? " << factor1 << std::endl;
+
+    return val <= factor1;
 }
 
 double Component::distance(const Eigen::VectorXd& X) const {

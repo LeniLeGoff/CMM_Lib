@@ -94,6 +94,8 @@ public:
      */
     double distance(const Eigen::VectorXd& X) const;
 
+    bool intersect(const Component::Ptr comp) const;
+
     //Getters & Setters
     void set_factor(double f){_factor = f;}
     double get_factor() const {return _factor;}
