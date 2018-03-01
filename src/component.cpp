@@ -227,7 +227,7 @@ bool Component::intersect(const Component::Ptr comp) const {
     double n1 = _samples.size(), n2 = comp->get_samples().size(), p = _dimension;
     double nminusp;
     if(n1 <= p /*|| n2 <= p*/)
-        return nminusp = 1;
+        nminusp = 1;
     else nminusp = n1-p;
     boost::math::fisher_f_distribution<double> F1(p,nminusp);
 //    boost::math::fisher_f_distribution<double> F2(p,n2-p);
