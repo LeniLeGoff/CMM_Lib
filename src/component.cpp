@@ -225,15 +225,13 @@ Component::Ptr Component::split(){
 bool Component::intersect(const Component::Ptr comp) const {
     Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
     double n1 = _samples.size(), n2 = comp->get_samples().size(), p = _dimension;
-    double nminusp;
     if(n1 <= p /*|| n2 <= p*/)
-        nminusp = 1;
-    else nminusp = n1-p;
-    boost::math::fisher_f_distribution<double> F1(p,nminusp);
+        return false;
+    boost::math::fisher_f_distribution<double> F1(p,n1 - p);
 //    boost::math::fisher_f_distribution<double> F2(p,n2-p);
     double q1 = boost::math::quantile(F1,0.75);
 //    double q2 = boost::math::quantile(F2,0.95);
-    double factor1 = (n1-1)*p*(n1+1)/((nminusp)*n1)*q1;
+    double factor1 = (n1-1)*p*(n1+1)/((n1 - p)*n1)*q1;
 //    double factor2 = (n2-1)*p*(n2+1)/((n2-p)*n2)*q2;
 //    std::cout << factor1 << " " << factor2 << std::endl;
 //    double dist_mu;

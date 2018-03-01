@@ -451,6 +451,8 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //                else
 //                    est = 0.;
             }
+            if(est < 10e-4)
+                est = 0;
 
 //            if(est > .5)
 //                est = 2.* (1 - est);
