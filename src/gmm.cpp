@@ -442,16 +442,16 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
                 if(est < 0.5)
                     est = -4*est*est*(log(4*est*est)-1);
                 else
-                    est = -(2*est*log(2*est)-2*est);
+                    est = -2*est*(log(2*est)-1);
 //                if(est < .5)
 //                    est = 0;
             }
             else {
                 est = 1-est;
-                if(est > 0.5)
+                if(est < 0.5)
                     est = -4*est*est*(log(4*est*est)-1);
                 else
-                    est = -(2*est*log(2*est)-2*est);
+                    est = -2*est*(log(2*est)-1);
                 //                if(est <= .5)
 //                    est = (1-est);
 //                else
