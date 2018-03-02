@@ -429,6 +429,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     double total = 0,cumul = 0, avg = 0;
 
     std::map<double,int> choice_distibution;
+    std::vector<double> choice_distri;
     std::vector<double> w(samples.size());
     boost::random::uniform_real_distribution<> distrib(0,1);
 
@@ -442,16 +443,16 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
                 if(est < 0.5)
                     est = -4*est*est*(log(4*est*est)-1);
                 else
-                    est = -(2*est*log(2*est)-2*est);
+                    est = -2*est*(log(2*est)-1);
 //                if(est < .5)
 //                    est = 0;
             }
             else {
                 est = 1-est;
-                if(est > 0.5)
+                if(est < 0.5)
                     est = -4*est*est*(log(4*est*est)-1);
                 else
-                    est = -(2*est*log(2*est)-2*est);
+                    est = -2*est*(log(2*est)-1);
                 //                if(est <= .5)
 //                    est = (1-est);
 //                else
@@ -463,13 +464,13 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //            if(est > .5)
 //                est = 2.* (1 - est);
 //            else est = 2.*est;
-//            double c = confidence(samples[i].first);
+            double c = confidence(samples[i].first);
 //            if(c > 1) c = 1;
 //            else if (c < 10e-4) c = 0;
 ////            std::cout << "c : " << c << " -- u : " << est << std::endl;
 ////            w[i] = (fabs(1-c) + est)/2.;
 
-            w[i] = est;//*(1-c);
+            w[i] = est*(1-c);
 //            w[i] = 1./(1. + exp(-60.*((/*fabs(1-c)*/ + est)/*/2.*/ - .5)));
 //            if(w[i] != w[i])
 //                w[i] = 0;
@@ -497,11 +498,16 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     }
     if(all_zero)
         return dist_uni(_gen);
+    double rand_nb = distrib(_gen);
     for(int i = 0; i < choice_dist_map.rows(); ++i){
         cumul += choice_dist_map(i);
-        choice_distibution.emplace(cumul/total,i);
+        if(rand_nb < cumul/total)
+            return i;
+//        choice_distibution.emplace(cumul/total,i);
+
+//        choice_distri.push_back(cumul/total);
     }
-    return choice_distibution.lower_bound(distrib(_gen))->second;
+//    return choice_distibution.lower_bound(distrib(_gen))->second;
 }
 
 
