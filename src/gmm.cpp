@@ -472,10 +472,10 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 
             w[i] = est*(1-c);
 //            w[i] = 1./(1. + exp(-60.*((/*fabs(1-c)*/ + est)/*/2.*/ - .5)));
-//            if(w[i] != w[i])
-//                w[i] = 0;
-//            else if(w[i] > 1)
-//                w[i] = 1;
+            if(w[i] != w[i] || w[i] < 10e-4)
+                w[i] = 0;
+            else if(w[i] > 1)
+                w[i] = 1;
         }
     });
 
@@ -507,6 +507,8 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 
 //        choice_distri.push_back(cumul/total);
     }
+    return dist_uni(_gen);
+
 //    return choice_distibution.lower_bound(distrib(_gen))->second;
 }
 
