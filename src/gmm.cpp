@@ -458,13 +458,15 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
 //                else
 //                    est = 0.;
             }
+            if(est < 10e-4)
+                est = 0;
 
 //            if(est > .5)
 //                est = 2.* (1 - est);
 //            else est = 2.*est;
             double c = confidence(samples[i].first);
-//            if(c > 1) c = 1;
-//            else if (c < 10e-4) c = 0;
+            if(c > 1) c = 1;
+            else if (c < 10e-4) c = 0;
 ////            std::cout << "c : " << c << " -- u : " << est << std::endl;
 ////            w[i] = (fabs(1-c) + est)/2.;
 

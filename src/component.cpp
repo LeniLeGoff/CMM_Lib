@@ -242,6 +242,9 @@ bool Component::intersect(const Component::Ptr comp) const {
 //    ellipse_vect1 = factor1*(_covariance*diff_mu/diff_mu.norm());
     //*/
     double val = distance(comp->get_mu());
+    if(val != val){
+        val = 0;
+    }
 
     std::cout << val << " <=? " << factor1 << std::endl;
 
@@ -292,10 +295,22 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXd singularVal = svd.singularValues();
     Eigen::MatrixXd singularValInv = Eigen::MatrixXd::Zero(_dimension,_dimension);
-    for(int i = 0; i < _dimension; i++)
+    for(int i = 0; i < _dimension; i++){
         if(singularVal(i) > 1e-4)
             singularValInv(i,i) = 1./singularVal(i);
-    return svd.matrixV() * singularValInv * svd.matrixU().adjoint();
+    }
+    Eigen::MatrixXd V = svd.matrixV();
+    Eigen::MatrixXd U = svd.matrixU();
+    for(int i = 0; i < V.rows(); i++){
+        for(int j = 0; j < V.cols(); j++){
+            if(V(i,j) != V(i,j))
+                V(i,j) = 0;
+            if(U(j,i) != U(j,i))
+                U(j,i) = 0;
+        }
+    }
+
+    return V*singularValInv*U.transpose();
 }
 
 std::string Component::print_parameters() const {
