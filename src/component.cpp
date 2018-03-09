@@ -24,6 +24,12 @@ void Component::update_parameters(){
 
     _mu = 1./_samples.size()*v_sum;
 
+    for(int i = 0; i < _mu.rows(); i++)
+        if(_mu(i) != _mu(i))
+            _mu(i) = 0;
+
+
+
     for(const auto& sample : _samples)
         m_sum += (sample - _mu)*(sample - _mu).transpose();
 
@@ -83,6 +89,8 @@ double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
 
     double cm_determinant = 1.;
     for(int i = 0; i < singularVal.rows(); ++i){
+        if(singularVal(i) != singularVal(i))
+            singularVal(i) = 0;
         if(singularVal(i) > 1e-4)
             cm_determinant = cm_determinant*singularVal(i);
     }
@@ -298,6 +306,8 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
     for(int i = 0; i < _dimension; i++){
         if(singularVal(i) > 1e-4)
             singularValInv(i,i) = 1./singularVal(i);
+        if(singularValInv(i,i) != singularValInv(i,i))
+            singularValInv(i,i) = 0;
     }
     Eigen::MatrixXd V = svd.matrixV();
     Eigen::MatrixXd U = svd.matrixU();
@@ -310,6 +320,7 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
         }
     }
 
+
     return V*singularValInv*U.transpose();
 }
 
@@ -317,8 +328,8 @@ std::string Component::print_parameters() const {
     std::stringstream stream;
     stream << "----------------------" << std::endl;
     stream << "lbl : " << _label << std::endl;
-//    stream << "covariance : \n" << _covariance << std::endl;
-//    stream << "mu : \n" << _mu << std::endl;
+    stream << "pseudoinverse covariance : \n" << covariance_pseudoinverse() << std::endl;
+    stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;
     stream << "score : " << component_score() << std::endl;
