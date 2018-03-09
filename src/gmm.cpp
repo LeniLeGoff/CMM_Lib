@@ -423,7 +423,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &sampl
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
     boost::random::uniform_int_distribution<> dist_uni(0,samples.size());
 
-    if(_samples.size() <= 50)
+    if(_samples.size() <= 10)
         return dist_uni(_gen);
 
     double total = 0,cumul = 0, avg = 0;

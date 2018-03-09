@@ -6,9 +6,9 @@ import subprocess as sp
 
 if len(sys.argv) != 2:
 	print("Usage : folder of archive experiments")
-	print("dataset file")
   	sys.exit(1)
 
 for folder in os.listdir(sys.argv[1]) :
 	path = sys.argv[1] + "/" + folder
-  	sp.call(["../build/gmm_loglikelihood",path,sys.argv[2]])
+	dataset_path = path + "/iteration_399/dataset_meanFPFHLabHist.yml" 
+  	sp.call(["../build/gmm_loglikelihood",path,dataset_path])
