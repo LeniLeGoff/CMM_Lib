@@ -143,7 +143,7 @@ public:
 
 private:
     void _incr_parameters(const Eigen::VectorXd& X);
-
+    void _check_samples();
 
     Eigen::MatrixXd _covariance;
     Eigen::VectorXd _mu;
