@@ -14,13 +14,17 @@ void Component::update_parameters(){
         _mu = _samples[0];
         return;
     }
+    _check_samples();
+
 
     Eigen::MatrixXd m_sum = Eigen::MatrixXd::Zero(_dimension,_dimension);
     Eigen::VectorXd v_sum = Eigen::VectorXd::Zero(_dimension);
 
-    for(const auto& sample : _samples){
-        v_sum += sample;
+    for(int i = 0 ; i < _samples.size(); i++){
+        v_sum += _samples[i];
     }
+
+
 
     _mu = 1./_samples.size()*v_sum;
 
@@ -30,8 +34,9 @@ void Component::update_parameters(){
 
 
 
-    for(const auto& sample : _samples)
+    for(const auto& sample : _samples){
         m_sum += (sample - _mu)*(sample - _mu).transpose();
+    }
 
     if((m_sum-Eigen::MatrixXd::Zero(_dimension,_dimension)).squaredNorm() < 1e-4)
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
@@ -48,7 +53,7 @@ void Component::update_parameters(){
     double exp_arg = -1./2.*((_mu - _mu).transpose()*covariance_pseudoinverse()).dot(_mu - _mu);
     _max = 1/cm_determinant*exp(exp_arg);
 //    _factor = _sign*_samples.size()/(2*nbr_samples*nbr_Components)
-            //_sign*get_standard_deviation()*_samples.size();
+//            _sign*get_standard_deviation()*_samples.size();
 //            _sign*_samples.size()/nbr_samples;
 
 
@@ -121,6 +126,7 @@ void Component::merge(const Component::Ptr c){
 
 Component::Ptr Component::split(){
 //    std::cout << "split" << std::endl;
+    _check_samples();
 
     //* compute distance matrix between the samples of the components
     Eigen::MatrixXd m_dist(_samples.size(),_samples.size());
@@ -130,6 +136,7 @@ Component::Ptr Component::split(){
                 m_dist(i,j) = 1000.;
                 continue;
             }
+
             m_dist(i,j) = (_samples[i] - _samples[j]).squaredNorm();
         }
     }
@@ -324,6 +331,21 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
     return V*singularValInv*U.transpose();
 }
 
+void Component::_check_samples(){
+    for(int i = 0; i < _samples.size(); i++){
+        if(_samples[i].rows() == 0){
+            _samples.erase(_samples.begin() + i);
+            i--;
+            continue;
+        }
+        for(int j = 0; j < _samples[i].rows(); j++){
+            if(_samples[i](j) != _samples[i](j))
+                _samples[i](j) = 0;
+        }
+    }
+    _samples.shrink_to_fit();
+}
+
 std::string Component::print_parameters() const {
     std::stringstream stream;
     stream << "----------------------" << std::endl;
@@ -332,9 +354,9 @@ std::string Component::print_parameters() const {
     stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;
-    stream << "score : " << component_score() << std::endl;
+//    stream << "score : " << component_score() << std::endl;
     stream << "standard deviation : " << get_standard_deviation() << std::endl;
-    stream << "maximum value : " << _max << std::endl;
+//    stream << "maximum value : " << _max << std::endl;
     stream << "----------------------" << std::endl;
     return stream.str();
 }
