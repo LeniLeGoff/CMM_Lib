@@ -57,9 +57,22 @@ public:
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
     virtual void update() = 0;
     virtual double confidence(const Eigen::VectorXd& sample) const = 0;
-    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
+    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
 
 
+    virtual double predict(const TrainingData& data, std::vector<double>& results){
+        results.resize(data.size());
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,data.size()),
+                          [&](const tbb::blocked_range<size_t>& r){
+            for(int i = r.begin(); i != r.end(); i++)
+                results[i] = compute_estimation(data[i].second,data[i].first);
+        });
+        double error = 0;
+        for(int i = 0; i < data.size(); i++){
+            error = error + 1 - results[i];
+        }
+        return error/(double)data.size();
+    }
 
     /**
      * @brief add a sample to the training set of the classifier
@@ -94,8 +107,12 @@ public:
         _samples.estimations.resize(_samples.size());
         tbb::parallel_for(tbb::blocked_range<size_t>(0,_samples.size()),
                           [&](const tbb::blocked_range<size_t>& r){
-            for(int i = r.begin(); i != r.end(); i++)
-                _samples.estimations[i] = compute_estimation(_samples[i].second,_samples[i].first);
+            std::vector<double> estimates(_nbr_class);
+            for(int i = r.begin(); i != r.end(); i++){
+                for(int k = 0; k < _nbr_class; k++)
+                    estimates[k] = compute_estimation(_samples[i].second,k);
+                _samples.estimations[i] = estimates;
+            }
         });
     }
 protected:

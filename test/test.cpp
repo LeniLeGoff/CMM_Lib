@@ -156,7 +156,7 @@ int main(int argc, char** argv){
               real_space[coord[0]][coord[1]]);
 
 
-
+//        gmm._estimate_training_dataset();
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
 //        gmm.update_dataset_thres();
 //        gmm.compute_normalisation();
@@ -244,6 +244,7 @@ int main(int argc, char** argv){
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
         std::cout << "loglikelihood : " << gmm.loglikelihood() << std::endl;
+        std::cout << gmm.print_info() << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
         std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;

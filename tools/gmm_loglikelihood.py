@@ -10,5 +10,5 @@ if len(sys.argv) != 2:
 
 for folder in os.listdir(sys.argv[1]) :
 	path = sys.argv[1] + "/" + folder
-	dataset_path = path + "/iteration_399/dataset_meanFPFHLabHist.yml" 
+	dataset_path = path + "/iteration_499/dataset_meanFPFHLabHist.yml" 
   	sp.call(["../build/gmm_loglikelihood",path,dataset_path])

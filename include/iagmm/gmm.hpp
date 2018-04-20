@@ -76,7 +76,8 @@ public:
         Classifier(gmm),
         _model(gmm._model),_gen(gmm._gen),
         _last_index(gmm._last_index), _last_label(gmm._last_label),
-        _membership(gmm._membership), _update_mode(gmm._update_mode){}
+        _membership(gmm._membership), _update_mode(gmm._update_mode),
+    _llhood_drive(gmm._llhood_drive){}
 
     ~GMM(){
         for(auto& comps: _model)
@@ -124,7 +125,7 @@ public:
 
     double confidence(const Eigen::VectorXd& X) const;
 
-    int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd& choice_dist_map);
 
     void EM_init();
     void EM_step();
@@ -161,8 +162,8 @@ public:
     double get_normalisation(){return _normalisation;}
 
     double compute_quality(const Eigen::VectorXd&,int lbl);
-    void update_dataset();
-    void update_dataset_thres(double);
+//    void update_dataset();
+//    void update_dataset_thres(double);
 
     void set_dataset_size_max(int dsm){_dataset_size_max = dsm;}
     int get_dataset_size_max(){return _dataset_size_max;}
@@ -171,6 +172,7 @@ public:
 
     double loglikelihood();
     double loglikelihood(int label);
+    double set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
 
 private:
 
@@ -190,6 +192,8 @@ private:
 
     boost::random::mt19937 _gen;
     double _normalisation;
+
+    bool _llhood_drive = false;
 
     int _last_index;
     int _last_label;
@@ -244,31 +248,6 @@ private:
         TrainingData _samples;
     };
 
-    class _distribution_constructor{
-    public:
-        _distribution_constructor(Eigen::VectorXd proba_map) :
-            _proba_map(proba_map), _cumul(0), _total(0){
-            _distribution = std::map<double,int>();
-        }
-        _distribution_constructor(const _distribution_constructor &dc, tbb::split) :
-            _proba_map(dc._proba_map), _cumul(0), _total(dc._total){
-            _distribution = std::map<double,int>();
-        }
-
-        void operator()(const tbb::blocked_range<size_t>& r);
-        void join(const _distribution_constructor& dc){
-            _cumul += dc._cumul;
-            for(auto it = dc._distribution.begin(); it != dc._distribution.end(); ++it)
-                _distribution.emplace(it->first,it->second);
-        }
-        std::map<double,int> compute();
-
-    private:
-        Eigen::VectorXd _proba_map;
-        std::map<double,int> _distribution;
-        double _cumul;
-        double _total;
-    };
 
 };
 }

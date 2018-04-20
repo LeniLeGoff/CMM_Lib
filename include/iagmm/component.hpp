@@ -45,7 +45,7 @@ public:
      * @param label of the class
      */
     Component(int dimension, int lbl)
-        : _dimension(dimension), _label(lbl), _factor(0),_max(1){}
+        : _dimension(dimension), _label(lbl), _factor(0){}
 
     /**
      * @brief Copy constructor
@@ -53,7 +53,7 @@ public:
      */
     Component(const Component& c) :
         _covariance(c._covariance), _mu(c._mu), _label(c._label),
-        _samples(c._samples), _dimension(c._dimension), _factor(c._factor),_max(c._max){}
+        _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
 
     /**
      * @brief update_parameters
@@ -81,9 +81,7 @@ public:
     void clear(){_samples.clear();}
 
     //Statistics
-    double component_score() const;
     double get_standard_deviation() const;
-    std::vector<double> get_intern_estimation() const;
     void compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixXd& eigenvectors) const;
     double entropy();
 
@@ -139,7 +137,6 @@ public:
         arch & _label;
     }
 
-    double get_max(){return _max;}
 
 private:
     void _incr_parameters(const Eigen::VectorXd& X);
@@ -151,7 +148,6 @@ private:
     int _dimension;
     double _factor;
     int _label;
-    double _max;
 };
 
 }

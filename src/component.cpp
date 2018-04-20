@@ -10,7 +10,6 @@ using namespace iagmm;
 void Component::update_parameters(){
     if(_samples.size() <= 4){
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
-//        _factor = _sign;
         _mu = _samples[0];
         return;
     }
@@ -43,34 +42,8 @@ void Component::update_parameters(){
     else
         _covariance = 1./(_samples.size()-1)*m_sum*COEF;
 
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(2*PI*_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    Eigen::VectorXd singularVal = svd.singularValues();
-    double cm_determinant = 1.;
-    for(int i = 0; i < singularVal.rows(); ++i){
-        if(singularVal(i) > 1e-4)
-            cm_determinant = cm_determinant*singularVal(i);
-    }
-    double exp_arg = -1./2.*((_mu - _mu).transpose()*covariance_pseudoinverse()).dot(_mu - _mu);
-    _max = 1/cm_determinant*exp(exp_arg);
-//    _factor = _sign*_samples.size()/(2*nbr_samples*nbr_Components)
-//            _sign*get_standard_deviation()*_samples.size();
-//            _sign*_samples.size()/nbr_samples;
-
-
 }
 
-//void Component::update_parameters(){
-//    if(_size <= 1){
-//        _mu = _samples.back();
-//        _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension);
-//        return;
-//    }
-//    double f_size = _size;
-//    _mu = (f_size-1)/f_size*_mu + 1/f_size*_samples.back();
-//    _covariance = (f_size-2)/(f_size-1)*_covariance
-//            + (f_size)/((f_size-1)*(f_size-1))*
-//            (_samples.back()-_mu)*(_samples.back()-_mu).transpose();
-//}
 
 void Component::_incr_parameters(const Eigen::VectorXd& X){
     if(_samples.size() <= 1){
@@ -81,13 +54,11 @@ void Component::_incr_parameters(const Eigen::VectorXd& X){
     double f_size = _samples.size();
     _mu = (f_size-1)/f_size*_mu + 1/f_size*X;
     _covariance = (f_size-2)/(f_size-1)*_covariance
-            + f_size/((f_size-1)*(f_size-1))*(X - _mu)*(X-_mu).transpose();
+            + 1/(f_size-1)*(X - _mu)*(X - _mu).transpose();
 
 }
 
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
-    if((_covariance - Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF).squaredNorm() == 0)
-        return (X-_mu).squaredNorm() < 1e-4 ? _max : 0;
 
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(2*PI*_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXd singularVal = svd.singularValues();
@@ -117,6 +88,7 @@ void Component::merge(const Component::Ptr c){
 
     for(int i = 0; i < c->size(); i++)
         add(c->get_sample(i));
+
 
     update_parameters();
 
@@ -172,7 +144,7 @@ Component::Ptr Component::split(){
             for(auto it = range.first; it != range.second; it++)
                 rec(it->second);
         };
-        rec(graph.begin()->first);    Eigen::VectorXd diff_mu, ellipse_vect1,ellipse_vect2;
+        rec(graph.begin()->first);
 
 
         for(const auto& i : tmp_ind)
@@ -261,7 +233,9 @@ bool Component::intersect(const Component::Ptr comp) const {
         val = 0;
     }
 
+#ifdef VERBOSE
     std::cout << val << " <=? " << factor1 << std::endl;
+#endif
 
     return val <= factor1;
 }
@@ -275,19 +249,6 @@ double Component::get_standard_deviation() const{
     return sqrt(_covariance.diagonal().dot(_covariance.diagonal()));
 }
 
-std::vector<double> Component::get_intern_estimation() const {
-    std::vector<double> res;
-    for(auto s : _samples)
-        res.push_back(compute_multivariate_normal_dist(s));
-    return res;
-}
-
-double Component::component_score() const {
-    double sum = 0;
-    for(auto s : _samples)
-        sum += fabs(compute_multivariate_normal_dist(s)/compute_multivariate_normal_dist(_mu)-1.);
-    return sum/(double)_samples.size();
-}
 
 double Component::entropy(){
     return _factor*(-std::log(_factor) + 1./2.*std::log((2.*PI*std::exp(1.)*_covariance).determinant()));

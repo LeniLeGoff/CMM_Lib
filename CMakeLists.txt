@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3  ${CMAKE_CXX_FLAGS}")
+
+
+if(VERBOSE)
+    set(CMAKE_CXX_FLAGS "-std=c++11 -O3  -DVERBOSE ${CMAKE_CXX_FLAGS}")
+else()
+    set(CMAKE_CXX_FLAGS "-std=c++11 -O3 ${CMAKE_CXX_FLAGS}")
+endif()
 
 include_directories(/usr/local/include/
                     /usr/include/eigen3
@@ -47,19 +53,24 @@ target_link_libraries(online_train_gmm iagmm yaml-cpp boost_serialization boost_
 add_executable(yml_to_libsvm tools/yml_to_libsvm.cpp)
 target_link_libraries(yml_to_libsvm iagmm yaml-cpp boost_serialization boost_system)
 
+add_executable(yml_to_data_labels tools/yml_to_data_labels.cpp)
+target_link_libraries(yml_to_data_labels iagmm yaml-cpp boost_serialization boost_system)
+
 ####
 
 #test
 
-add_executable(test_1 test/test.cpp)
-target_link_libraries(test_1 iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#add_executable(test_1 test/test.cpp)
+#target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
-add_executable(test_batch test/test_batch.cpp)
-target_link_libraries(test_batch iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#add_executable(test_batch test/test_batch.cpp)
+#target_link_libraries(test_batch iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
-add_executable(test_false_samples test/test_false_samples.cpp)
-target_link_libraries(test_false_samples iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#add_executable(test_false_samples test/test_false_samples.cpp)
+#target_link_libraries(test_false_samples iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
+add_executable(multiclass_test test/multiclass_test.cpp)
+target_link_libraries(multiclass_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(mcs_test test/mcs_test.cpp)
 #target_link_libraries(mcs_test iagmm  yaml-cpp.so)
