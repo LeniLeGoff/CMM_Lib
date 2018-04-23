@@ -59,7 +59,7 @@ target_link_libraries(yml_to_data_labels iagmm yaml-cpp boost_serialization boos
 ####
 
 #test
-
+if(TEST)
 #add_executable(test_1 test/test.cpp)
 #target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
@@ -83,6 +83,6 @@ target_link_libraries(multiclass_test iagmm yaml-cpp tbb sfml-window sfml-system
 
 #add_executable(test_serial test/test_serial.cpp)
 #target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
-
+endif()
 ####
 

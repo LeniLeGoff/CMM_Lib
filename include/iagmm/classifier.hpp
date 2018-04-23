@@ -49,17 +49,40 @@ public:
     virtual ~Classifier(){}
 
     /**
-     * @brief compute_estimation : Compute a probability for a "sample" to be of the class "lbl"
+     * @brief compute_estimation : Compute a probability for a "sample" to be part of the class "lbl"
      * @param sample
      * @param label of the class
      * @return the probability of the sample to be part of the class lbl
      */
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
+
+    /**
+     * @brief update the classifier according the dataset
+     */
     virtual void update() = 0;
+
+    /**
+     * @brief compute the classication confidence of sample
+     * @param a sample
+     * @return a value between 1 and 0
+     */
     virtual double confidence(const Eigen::VectorXd& sample) const = 0;
-    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
+
+    /**
+     * @brief compute a choice distribution map over the input samples which give the probability do be chosen
+     * @param list of samples with their classification probability
+     * @param choice distribution map
+     * @return the index of the next sample to add in the dataset from the list samples
+     */
+    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>& samples,Eigen::VectorXd& choice_dist_map) = 0;
 
 
+    /**
+     * @brief predict the label of the training dataset
+     * @param training dataset
+     * @param results the prediction of label
+     * @return error of prediction
+     */
     virtual double predict(const TrainingData& data, std::vector<double>& results){
         results.resize(data.size());
         tbb::parallel_for(tbb::blocked_range<size_t>(0,data.size()),
@@ -79,7 +102,6 @@ public:
      * @param sample
      * @param the label of the classifier
      */
-
     virtual void add(const Eigen::VectorXd& sample, int lbl){
         _samples.add(lbl,sample);
     }
@@ -115,9 +137,8 @@ public:
             }
         });
     }
+
 protected:
-
-
     int _nbr_class;
     int _dimension;
     TrainingData _samples;

@@ -162,29 +162,33 @@ Eigen::VectorXd  GMM::mean_shift(const Eigen::VectorXd& X, int lbl){
 }
 
 double GMM::confidence(const Eigen::VectorXd& X) const{
-    int size = _model.at(0).size();
-    for(int i = 1; i < _model.size() ; i++){
-//        if(_model.at(i).size() < 5)
-//            continue;
+    int size = 0;
+    for(int i = 0; i < _model.size() ; i++){
+        if(_model.at(i).size() < 5)
+            continue;
         size += _model.at(i).size();
     }
+
+    if(size == 0)
+        return 0;
 
     Eigen::VectorXd distances(size);
     int k = 0;
     for(int i = 0 ; i < _model.size(); i++){
         for (int j = 0; j < _model.at(i).size(); j++) {
-//            if(_model.at(i).size() < 5)
-//                continue;
+            if(_model.at(i).size() < 5)
+                continue;
             distances(k) = _model.at(i).at(j)->distance(X);
             k++;
         }
     }
-    int r,c;
+    int r=0,c=0;
     distances.minCoeff(&r,&c);
 
     int lbl = 0, s = _model.at(lbl).size();
-    while(r - s >= 0){
-        r = r - s;
+    while(r >= s){
+        if(s >= 5)
+            r = r - s;
         lbl++;
         s = _model.at(lbl).size();
     }
@@ -470,6 +474,8 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
                       [&](const tbb::blocked_range<size_t>& r){
+
+        //* Search for the class with the less samples in the dataset
         double est;
         int min_size = _samples.get_data(0).size(), min_ind = 0;
         for(int i = 1; i < _nbr_class; i++){
@@ -478,6 +484,9 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
                 min_ind = i;
             }
         }
+        //*/
+
+//        for(size_t i = 0; i < choice_dist_map.rows(); i++){
         for(size_t i = r.begin(); i != r.end(); i++){
             est = samples[i].second[min_ind];
             if(est < 1./(double)_nbr_class)
@@ -499,6 +508,14 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
                 w[i] = 1;
         }
     });
+
+    double max_w = w[0];
+    for(const double& v : w){
+        if(v > max_w)
+            max_w = v;
+    }
+    for(int i = 0 ; i < w.size(); i++)
+        w[i] = w[i]/max_w;
 
     bool all_zero = true;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
