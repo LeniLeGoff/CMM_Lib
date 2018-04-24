@@ -89,7 +89,7 @@ public:
     double test(){
         double error = 0;
         for(int i = 0; i < _test_data.size(); i++){
-            error += 1 - _classifier.compute_estimation(_test_data[i].second,_test_data[i].first);
+            error += 1 - _classifier.compute_estimation(_test_data[i].second)[_test_data[i].first];
         }
         error = error/(double) _test_data.size();
         return error;

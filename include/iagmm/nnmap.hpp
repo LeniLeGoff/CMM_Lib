@@ -15,8 +15,8 @@ class NNMap : public Classifier{
 
 public:
     NNMap(){}
-    NNMap(int dimension, int nbr_class, double dist_thre, double incr) :
-        Classifier(dimension, nbr_class),
+    NNMap(int dimension, double dist_thre, double incr) :
+        Classifier(dimension, 2),
         distance_threshold(dist_thre),
         increment_factor(incr){
         _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
@@ -29,10 +29,10 @@ public:
         increment_factor(nnmap.increment_factor){}
 
 
-    double compute_estimation(const Eigen::VectorXd& sample, int label = 1);
+    std::vector<double> compute_estimation(const Eigen::VectorXd& sample);
     void update(){}
     double confidence(const Eigen::VectorXd& sample) const {return 1.;}
-    int next_sample(const std::vector<std::pair<Eigen::VectorXd, double> >& samples, Eigen::VectorXd &choice_dist_map) {}
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double>> >& samples, Eigen::VectorXd &choice_dist_map) {}
 
     //parameters
     double distance_threshold;

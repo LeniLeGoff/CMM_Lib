@@ -54,7 +54,7 @@ public:
      * @param label of the class
      * @return the probability of the sample to be part of the class lbl
      */
-    virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
+    virtual std::vector<double> compute_estimation (const Eigen::VectorXd& sample) = 0;
 
     /**
      * @brief update the classifier according the dataset
@@ -83,16 +83,16 @@ public:
      * @param results the prediction of label
      * @return error of prediction
      */
-    virtual double predict(const TrainingData& data, std::vector<double>& results){
+    virtual double predict(const TrainingData& data, std::vector<std::vector<double>>& results){
         results.resize(data.size());
         tbb::parallel_for(tbb::blocked_range<size_t>(0,data.size()),
                           [&](const tbb::blocked_range<size_t>& r){
             for(int i = r.begin(); i != r.end(); i++)
-                results[i] = compute_estimation(data[i].second,data[i].first);
+                results[i] = compute_estimation(data[i].second);
         });
         double error = 0;
         for(int i = 0; i < data.size(); i++){
-            error = error + 1 - results[i];
+            error = error + 1 - results[i][data[i].first];
         }
         return error/(double)data.size();
     }
@@ -131,8 +131,7 @@ public:
                           [&](const tbb::blocked_range<size_t>& r){
             std::vector<double> estimates(_nbr_class);
             for(int i = r.begin(); i != r.end(); i++){
-                for(int k = 0; k < _nbr_class; k++)
-                    estimates[k] = compute_estimation(_samples[i].second,k);
+                estimates = compute_estimation(_samples[i].second);
                 _samples.estimations[i] = estimates;
             }
         });

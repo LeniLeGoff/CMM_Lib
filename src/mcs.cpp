@@ -6,13 +6,13 @@ using namespace iagmm;
 const std::map<std::string,comb_fct_t> combinatorial::fct_map = combinatorial::create_map();
 const std::map<std::string,param_fct_t> param_estimation::fct_map = param_estimation::create_map();
 
-double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample, int lbl) {
+std::vector<double> MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sample) {
 
     if(_classifiers.begin()->second->get_samples().size() == 0)
-        return .5;
+        return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
 
-    std::vector<double> estimations(_classifiers.size());
+    std::vector<std::vector<double>> estimations(_classifiers.size());
     Eigen::VectorXd parameters(_classifiers.size());
 
     std::vector<std::string> key_vct;
@@ -22,7 +22,7 @@ double MCS::compute_estimation(const std::map<std::string, Eigen::VectorXd> &sam
 
     tbb::parallel_for(tbb::blocked_range<size_t>(0,_classifiers.size()),[&](tbb::blocked_range<size_t>& r){
        for(int i = r.begin(); i != r.end(); i++){
-           estimations[i] = _classifiers[key_vct[i]]->compute_estimation(sample.at(key_vct[i]),lbl);
+           estimations[i] = _classifiers[key_vct[i]]->compute_estimation(sample.at(key_vct[i]));
            parameters[i] = _classifiers[key_vct[i]]->confidence(sample.at(key_vct[i]));
        }
     });

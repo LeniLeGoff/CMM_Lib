@@ -194,7 +194,7 @@ int main(int argc, char** argv){
               real_space[coord[0]][coord[1]]);
 
 
-//        gmm._estimate_training_dataset();
+
         gmm.update_model(ind,real_space[coord[0]][coord[1]]);
 //        gmm.update_model();
 //        gmm.update_dataset_thres();
@@ -215,10 +215,10 @@ int main(int argc, char** argv){
                         coord[1]++;
                     if(coord[1] >= MAX_Y)
                         coord[1] = 0;
-                    for(int k = 0; k < nb_class; k++){
-                        est_vect[k] = gmm.compute_estimation(
-                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),k);
-                    }
+
+                    est_vect = gmm.compute_estimation(
+                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
+
                     all_sample[i] =
                                 std::make_pair(
                                     Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),est_vect);
@@ -286,7 +286,6 @@ int main(int argc, char** argv){
                 //            std::cout << "[" << eigenval << "] -- [" << eigenvect << "]" << std::endl;
             }
         }
-
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;

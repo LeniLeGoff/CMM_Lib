@@ -13,7 +13,6 @@ class MCS{
 
 public:
 
-//    typedef tbb::concurrent_hash_map<std::string,Classifier::Ptr> classif_map;
 
     MCS(){
         srand(time(NULL));
@@ -35,7 +34,7 @@ public:
 
 
 
-    double compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
+    std::vector<double> compute_estimation(const std::map<std::string,Eigen::VectorXd> &sample);
 
     void add(const std::map<std::string,Eigen::VectorXd> &sample, int lbl);
 
@@ -56,7 +55,6 @@ private:
     int _dimension;
     int _nbr_class;
     Eigen::VectorXd _parameters;
-//    classif_map _classifiers;
     std::map<std::string,Classifier::Ptr> _classifiers;
     std::vector<double> _estimations;
     comb_fct_t _comb_fct;

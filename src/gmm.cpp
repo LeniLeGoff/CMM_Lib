@@ -23,7 +23,7 @@ void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
     _sum_map[_current_lbl] = sum;
 }
 
-double GMM::_estimator::estimation(int lbl){
+std::vector<double> GMM::_estimator::estimation(){
 
     for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
         tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
@@ -32,18 +32,21 @@ double GMM::_estimator::estimation(int lbl){
     double sum_of_sums = 0;
     for(const auto& sum : _sum_map)
         sum_of_sums += sum.second;
-    return (1 + _sum_map[lbl])/(_model->get_nbr_class() + sum_of_sums);
+    std::vector<double> estimations;
+    for(int lbl = 0; lbl < _model->get_nbr_class(); lbl++)
+        estimations.push_back((1 + _sum_map[lbl])/(_model->get_nbr_class() + sum_of_sums));
+    return estimations;
 }
 //--ESTIMATOR
 
-double GMM::compute_estimation(const Eigen::VectorXd& X, int lbl){
+std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
 
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
-        return 1./(double)_nbr_class;
+        return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
     _estimator estimator(this, X);
 
-    return estimator.estimation(lbl);
+    return estimator.estimation();
 }
 
 void GMM::compute_normalisation(){
@@ -113,21 +116,6 @@ void GMM::new_component(const Eigen::VectorXd& sample, int label){
     update_factors();
 }
 
-std::vector<double> GMM::model_scores(){
-    double score = 0;
-    std::vector<double> scores;
-
-    for(const auto& components: _model){
-        for(const auto& comp: components.second){
-            score = 0;
-            for(const auto& s: comp->get_samples()){
-                score += fabs(compute_estimation(s,components.first) - 1);
-            }
-            scores.push_back(score/(double)comp->size());
-        }
-    }
-    return scores;
-}
 
 void GMM::knn(const Eigen::VectorXd& center, TrainingData& output, int k){
     double min_dist, dist;

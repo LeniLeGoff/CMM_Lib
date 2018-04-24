@@ -13,8 +13,8 @@
 
 namespace iagmm{
 
-typedef std::function<double(const Eigen::VectorXd&,
-                             const std::vector<double>&)> comb_fct_t;
+typedef std::function<std::vector<double>(const Eigen::VectorXd&,
+                             const std::vector<std::vector<double>>&)> comb_fct_t;
 
 typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&)> param_fct_t;
 
@@ -25,10 +25,11 @@ struct combinatorial{
 
         map.emplace("sum",
                     [](const Eigen::VectorXd& confidences,
-                    const std::vector<double>& estimations) -> double {
-            double sum = 0;
+                    const std::vector<std::vector<double>>& estimations) -> std::vector<double> {
+            std::vector<double> sum(estimations[0].size(),0);
             for(int i = 0; i < estimations.size(); i++){
-                sum += confidences(i)*estimations[i];
+                for(int j = 0; j < estimations[i].size(); j++)
+                    sum[j] += confidences(i)*estimations[i][j];
             }
             return sum;
 
@@ -36,13 +37,15 @@ struct combinatorial{
 
         map.emplace("avg",
                     [](const Eigen::VectorXd& confidences,
-                const std::vector<double>& estimations) -> double {
+                const std::vector<std::vector<double>>& estimations) -> std::vector<double> {
 
-            double sum = 0;
+            std::vector<double> sum(estimations[0].size(),0);
             for(int i = 0; i < estimations.size(); i++){
-                sum += confidences[i]*estimations[i];
+                for(int j = 0; j < estimations[i].size(); j++)
+                    sum[j] += confidences(i)*estimations[i][j];
             }
-            sum = sum/(double)estimations.size();
+            for(int j = 0; j < estimations[0].size(); j++)
+                sum[j] = sum[j]/(double)estimations.size();
 
             return sum;
 
@@ -50,7 +53,7 @@ struct combinatorial{
 
         map.emplace("max",
                     [](const Eigen::VectorXd& confidences,
-                                    const std::vector<double>& estimations) -> double {
+                                    const std::vector<std::vector<double>>& estimations) -> std::vector<double> {
 
 
             double max = 0, max_val = confidences(0);

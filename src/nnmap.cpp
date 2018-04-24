@@ -3,7 +3,7 @@
 using namespace iagmm;
 
 
-double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
+std::vector<double> NNMap::compute_estimation(const Eigen::VectorXd &sample){
 
     double estimation = default_estimation;
 
@@ -11,7 +11,7 @@ double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
         double dist = _distance(s.second,sample);
 
         if(dist < distance_threshold){
-            if(s.first == label)
+            if(s.first == 1)
                 estimation += increment_factor*(1-dist);
             else estimation -= increment_factor*(1-dist);
 
@@ -22,6 +22,6 @@ double NNMap::compute_estimation(const Eigen::VectorXd &sample, int label){
         }
     }
 
-    return estimation;
+    return {1-estimation,estimation};
 
 }

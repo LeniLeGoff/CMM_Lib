@@ -143,12 +143,12 @@ int main(int argc, char** argv){
             toa << gmm;
             ofs.close();
             if(test){
-                std::vector<double> results;
+                std::vector<std::vector<double>> results;
                 double error = gmm.predict(test_data,results);
                 double exact_err = 0;
                 for(int i = 0; i < test_data.size(); i++){
                     double res = 0;
-                    if(results[i] >= 0.5)
+                    if(results[i][test_data[i].first] >= 1./(double)gmm.get_nbr_class())
                         res = 1;
                     exact_err += 1 - res;
                 }
@@ -180,12 +180,12 @@ int main(int argc, char** argv){
         iarch >> gmm;
 //        std::cout << gmm.print_info() << std::endl;
         if(test){
-            std::vector<double> results;
+            std::vector<std::vector<double>> results;
             double error = gmm.predict(test_data,results);
             double exact_err = 0;
             for(int i = 0; i < test_data.size(); i++){
                 double res = 0;
-                if(results[i] >= 0.5)
+                if(results[i][test_data[i].first] >= 1./(double)gmm.get_nbr_class())
                     res = 1;
                 exact_err += 1 - res;
             }

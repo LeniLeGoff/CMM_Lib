@@ -87,7 +87,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
 
-    double compute_estimation(const Eigen::VectorXd& sample, int lbl);
+    std::vector<double> compute_estimation(const Eigen::VectorXd& sample);
     void compute_normalisation();
     model_t& model(){return _model;}
 
@@ -113,9 +113,6 @@ public:
 
     void update_factors();
     double unit_factor();
-
-    double model_score(const std::vector<Eigen::VectorXd>& samples, const std::vector<int> &label);
-
 
     std::vector<double> model_scores();
 
@@ -218,7 +215,7 @@ private:
             _sum_map[_current_lbl] += est._sum_map.at(_current_lbl);
         }
 
-        double estimation(int lbl);
+        std::vector<double> estimation();
 
     private:
         GMM* _model;
