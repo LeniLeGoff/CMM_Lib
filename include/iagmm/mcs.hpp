@@ -50,6 +50,7 @@ public:
     void set_samples(std::string mod, TrainingData& data);
     int get_nb_samples(){return _classifiers.begin()->second->get_samples().size();}
     const TrainingData& get_samples(){return _classifiers.begin()->second->get_samples();}
+    int get_nbr_class(){return _nbr_class;}
 
 private:
     int _dimension;
