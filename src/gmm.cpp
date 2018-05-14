@@ -198,6 +198,7 @@ double GMM::loglikelihood(int label){
 
 bool GMM::_merge(const Component::Ptr& comp){
 
+    // if comp have too few samples or there is only one component in lbl model abort
     if(comp->size() < 5 || _model[comp->get_label()].size() == 1)
         return false;
 
@@ -233,8 +234,8 @@ bool GMM::_merge(const Component::Ptr& comp){
         distances(j) = comp->distance(_model[lbl][j]->get_mu());
     }
     distances.minCoeff(&r,&c);
-    if(_model[lbl][r]->get_samples().size() < 5)
-        return false;
+//    if(_model[lbl][r]->get_samples().size() < 5)
+//        return false;
 
 
 
@@ -243,7 +244,6 @@ bool GMM::_merge(const Component::Ptr& comp){
             candidate = GMM(_model);
             candidate.set_samples(_samples);
             candidate.model()[lbl][ind]->merge(candidate.model()[lbl][r]);
-
 
             candidate.model()[lbl].erase(candidate.model()[lbl].begin() + r);
             candidate.update_factors();
@@ -317,6 +317,7 @@ bool GMM::_split(const Component::Ptr& comp){
         return false;
     //*/
 
+    //*/ Retrieve the label and the indice of the component
     int lbl = comp->get_label();
     int ind;
     for(ind = 0; ind < _model[lbl].size(); ind++)
@@ -324,6 +325,7 @@ bool GMM::_split(const Component::Ptr& comp){
             break;
     if(ind == _model[lbl].size())
         return false;
+    //*/
 
 
     //*/verify the model of other classes are empty. If all the model of other classes are empty abort

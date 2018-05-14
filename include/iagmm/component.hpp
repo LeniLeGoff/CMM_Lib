@@ -53,7 +53,9 @@ public:
      */
     Component(const Component& c) :
         _covariance(c._covariance), _mu(c._mu), _label(c._label),
-        _samples(c._samples), _dimension(c._dimension), _factor(c._factor){}
+        _samples(c._samples), _dimension(c._dimension), _factor(c._factor),
+        _size(c._size)
+    {}
 
     /**
      * @brief update_parameters
@@ -76,7 +78,7 @@ public:
     //Modifiers
     void add(Eigen::VectorXd sample){
         _samples.push_back(sample);
-//        _incr_parameters(sample);
+        _size++;
     }
     void clear(){_samples.clear();}
 
@@ -102,7 +104,8 @@ public:
     void set_mu(const Eigen::VectorXd& mu){_mu = mu;}
     const Eigen::VectorXd& get_sample(int i) const {return _samples[i];}
     const std::vector<Eigen::VectorXd>& get_samples() const {return _samples;}
-    int size() const {return _samples.size();}
+    int size() const {return _size;}
+    void set_size(int n){_size = n;}
     int get_dimension() const {return _dimension;}
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
     void set_covariance(const Eigen::MatrixXd& covariance){_covariance = covariance;}
@@ -135,16 +138,18 @@ public:
         arch & _dimension;
         arch & _factor;
         arch & _label;
+        arch & _size;
     }
+    void _incr_parameters(const Eigen::VectorXd& X);
 
 
 private:
-    void _incr_parameters(const Eigen::VectorXd& X);
     void _check_samples();
 
     Eigen::MatrixXd _covariance;
     Eigen::VectorXd _mu;
     std::vector<Eigen::VectorXd> _samples;
+    int _size;
     int _dimension;
     double _factor;
     int _label;

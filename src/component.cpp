@@ -46,15 +46,17 @@ void Component::update_parameters(){
 
 
 void Component::_incr_parameters(const Eigen::VectorXd& X){
+    add(X);
     if(_samples.size() <= 1){
         _mu = X;
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
         return;
     }
     double f_size = _samples.size();
+
     _mu = (f_size-1)/f_size*_mu + 1/f_size*X;
     _covariance = (f_size-2)/(f_size-1)*_covariance
-            + 1/(f_size-1)*(X - _mu)*(X - _mu).transpose();
+            + f_size/((f_size-1)*(f_size-1))*(X - _mu)*(X - _mu).transpose();
 
 }
 
@@ -88,7 +90,6 @@ void Component::merge(const Component::Ptr c){
 
     for(int i = 0; i < c->size(); i++)
         add(c->get_sample(i));
-
 
     update_parameters();
 
