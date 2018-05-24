@@ -38,8 +38,8 @@ int main(int argc, char** argv){
 
     tbb::task_scheduler_init init;
 
-    if(argc != 2){
-        std::cout << "usage : nbr_class (max 10)" << std::endl;
+    if(argc < 3){
+        std::cout << "usage : nbr_class (max 10) and alpha" << std::endl;
         return 1;
     }
 
@@ -62,8 +62,8 @@ int main(int argc, char** argv){
 
 
 
-    if(argc == 3)
-        A = std::stod(argv[2]);
+    if(argc == 4)
+        A = std::stod(argv[3]);
     else
         A = rand()%100;
     std::cout << "A = " << A << std::endl;
@@ -71,11 +71,15 @@ int main(int argc, char** argv){
     double estimated_space[MAX_X][MAX_Y];
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
+
+    Component::_alpha = std::stod(argv[2]);
+
     GMM gmm(2,nb_class);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
     });
+    gmm.set_loglikelihood_driver(false);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

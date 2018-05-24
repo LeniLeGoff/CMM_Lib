@@ -1,8 +1,13 @@
+#ifndef INCR_GMM_HPP
+#define INCR_GMM_HPP
+
+
 #include <iostream>
 #include <map>
 
 #include "classifier.hpp"
 #include "component.hpp"
+#include "gmm_estimator.hpp"
 
 namespace  iagmm {
 
@@ -19,6 +24,10 @@ public:
     }
     IncrementalGMM(int dimension, int nbr_class) :
         Classifier(dimension,nbr_class){
+
+        for(int i = 0; i < nbr_class; i++)
+            _model.emplace(i,std::vector<Component::Ptr>());
+
         _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
             return (s1 - s2).squaredNorm();
         };
@@ -42,7 +51,14 @@ public:
     IncrementalGMM(const IncrementalGMM& igmm) :
         Classifier(igmm),_model(igmm._model){}
 
-    std::vector<double> compute_estimation(const Eigen::VectorXd &sample);
+
+    ~IncrementalGMM(){
+        for(auto& comps: _model)
+            for(auto& c : comps.second)
+                c.reset();
+    }
+
+    std::vector<double> compute_estimation(const Eigen::VectorXd &X);
     model_t& model(){return _model;}
 
     void new_component(const Eigen::VectorXd& sample, int label);
@@ -50,8 +66,15 @@ public:
     void add(const Eigen::VectorXd &sample, int lbl);
     void update();
 
+    double confidence(const Eigen::VectorXd &sample) const;
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double> > > &samples, Eigen::VectorXd &choice_dist_map);
+
     void update_factors();
     void _update_factors(int lbl);
+
+    void set_alpha(double a){_alpha = a;}
+    void set_u(double u){_u = u;}
+    void set_beta(double b){_beta = b;}
 
 private:
 
@@ -60,8 +83,8 @@ private:
 
     model_t _model;
 
-    int _last_index;
-    int _last_label;
+    int _last_index = 0;
+    int _last_label = 0;
 
 //    bool _llhood_drive;
 
@@ -71,3 +94,5 @@ private:
 };
 
 } //iagmm
+
+#endif //INCR_GMM_HPP

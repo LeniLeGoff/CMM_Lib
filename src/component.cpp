@@ -7,6 +7,8 @@
 using namespace iagmm;
 
 
+double Component::_alpha = 0.25;
+
 void Component::update_parameters(){
     if(_samples.size() <= 4){
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
@@ -42,6 +44,8 @@ void Component::update_parameters(){
     else
         _covariance = 1./(_samples.size()-1)*m_sum*COEF;
 
+    _size = _samples.size();
+
 }
 
 
@@ -76,6 +80,7 @@ double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
     double exp_arg = -1./2.*((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
     if(exp_arg > 0){
         std::cerr << "The covariance matrix is not positive definite" << std::endl;
+//        exp_arg = -exp_arg;
         return 0;
     }
     double res = 1/cm_determinant*exp(exp_arg);
@@ -204,6 +209,8 @@ Component::Ptr Component::split(){
     }
 
     update_parameters();
+
+
     new_c->update_parameters();
 
     return new_c;
@@ -217,7 +224,7 @@ bool Component::intersect(const Component::Ptr comp) const {
         return false;
     boost::math::fisher_f_distribution<double> F1(p,n1 - p);
 //    boost::math::fisher_f_distribution<double> F2(p,n2-p);
-    double q1 = boost::math::quantile(F1,0.75);
+    double q1 = boost::math::quantile(F1,1-_alpha);
 //    double q2 = boost::math::quantile(F2,0.95);
     double factor1 = (n1-1)*p*(n1+1)/((n1 - p)*n1)*q1;
 //    double factor2 = (n2-1)*p*(n2+1)/((n2-p)*n2)*q2;

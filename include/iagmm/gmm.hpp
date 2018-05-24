@@ -171,6 +171,7 @@ public:
     double loglikelihood(int label);
     double set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
 
+
 private:
 
     bool _merge(const Component::Ptr& comp);
@@ -197,32 +198,32 @@ private:
 
     int _dataset_size_max = 1000;
 
-    class _estimator{
-    public:
-        _estimator(GMM* model, const Eigen::VectorXd& X)
-            : _model(model), _X(X), _current_lbl(0){
+//    class _estimator{
+//    public:
+//        _estimator(GMM* model, const Eigen::VectorXd& X)
+//            : _model(model), _X(X), _current_lbl(0){
 
 
-            for(int i = 0; i < _model->model().size(); i++)
-                _sum_map.emplace(i,0.);
-        }
-        _estimator(const _estimator& est, tbb::split) : _model(est._model), _X(est._X), _current_lbl(est._current_lbl){
-            _sum_map[_current_lbl] = 0;
-        }
+//            for(int i = 0; i < _model->model().size(); i++)
+//                _sum_map.emplace(i,0.);
+//        }
+//        _estimator(const _estimator& est, tbb::split) : _model(est._model), _X(est._X), _current_lbl(est._current_lbl){
+//            _sum_map[_current_lbl] = 0;
+//        }
 
-        void operator()(const tbb::blocked_range<size_t>& r);
-        void join(const _estimator& est){
-            _sum_map[_current_lbl] += est._sum_map.at(_current_lbl);
-        }
+//        void operator()(const tbb::blocked_range<size_t>& r);
+//        void join(const _estimator& est){
+//            _sum_map[_current_lbl] += est._sum_map.at(_current_lbl);
+//        }
 
-        std::vector<double> estimation();
+//        std::vector<double> estimation();
 
-    private:
-        GMM* _model;
-        std::map<int,double> _sum_map;
-        int _current_lbl;
-        Eigen::VectorXd _X;
-    };
+//    private:
+//        GMM* _model;
+//        std::map<int,double> _sum_map;
+//        int _current_lbl;
+//        Eigen::VectorXd _X;
+//    };
 
     class _score_calculator{
     public:

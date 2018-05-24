@@ -2,11 +2,16 @@ cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
 
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
+if(DEBUG)
+    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
+else()
+    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Release -O3 ${CMAKE_CXX_FLAGS}")
+endif()
 
 if(VERBOSE)
-    set(CMAKE_CXX_FLAGS "-std=c++11 -O3  -DVERBOSE ${CMAKE_CXX_FLAGS}")
-else()
-    set(CMAKE_CXX_FLAGS "-std=c++11 -O3 ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-DVERBOSE ${CMAKE_CXX_FLAGS}")
 endif()
 
 include_directories(/usr/local/include/
@@ -71,6 +76,10 @@ if(TEST)
 
 add_executable(multiclass_test test/multiclass_test.cpp)
 target_link_libraries(multiclass_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+
+
+add_executable(incrgmm_test test/incrgmm_test.cpp)
+target_link_libraries(incrgmm_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(mcs_test test/mcs_test.cpp)
 #target_link_libraries(mcs_test iagmm  yaml-cpp.so)

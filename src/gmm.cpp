@@ -1,4 +1,5 @@
 #include "iagmm/gmm.hpp"
+#include "iagmm/gmm_estimator.hpp"
 #include <map>
 #include <chrono>
 #include <cmath>
@@ -8,35 +9,35 @@
 using namespace iagmm;
 
 //ESTIMATOR
-void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
-    double val;
-    double sum = _sum_map[_current_lbl];
+//void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
+//    double val;
+//    double sum = _sum_map[_current_lbl];
 
-    Eigen::VectorXd X = _X;
+//    Eigen::VectorXd X = _X;
 
-    for(size_t i=r.begin(); i != r.end(); ++i){
-        val = _model->model()[_current_lbl][i]->get_factor()*
-                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X);
-        sum += val;
+//    for(size_t i=r.begin(); i != r.end(); ++i){
+//        val = _model->model()[_current_lbl][i]->get_factor()*
+//                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X);
+//        sum += val;
 
-    }
-    _sum_map[_current_lbl] = sum;
-}
+//    }
+//    _sum_map[_current_lbl] = sum;
+//}
 
-std::vector<double> GMM::_estimator::estimation(){
+//std::vector<double> GMM::_estimator::estimation(){
 
-    for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
-        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
+//    for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
+//        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
 
 
-    double sum_of_sums = 0;
-    for(const auto& sum : _sum_map)
-        sum_of_sums += sum.second;
-    std::vector<double> estimations;
-    for(int lbl = 0; lbl < _model->get_nbr_class(); lbl++)
-        estimations.push_back((1 + _sum_map[lbl])/(_model->get_nbr_class() + sum_of_sums));
-    return estimations;
-}
+//    double sum_of_sums = 0;
+//    for(const auto& sum : _sum_map)
+//        sum_of_sums += sum.second;
+//    std::vector<double> estimations;
+//    for(int lbl = 0; lbl < _model->get_nbr_class(); lbl++)
+//        estimations.push_back((1 + _sum_map[lbl])/(_model->get_nbr_class() + sum_of_sums));
+//    return estimations;
+//}
 //--ESTIMATOR
 
 std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
@@ -44,7 +45,7 @@ std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
-    _estimator estimator(this, X);
+    Estimator<GMM> estimator(this, X);
 
     return estimator.estimation();
 }
@@ -265,6 +266,8 @@ bool GMM::_merge(const Component::Ptr& comp){
             _model[lbl].erase(_model[lbl].begin() + r);
             update_factors();    //* Display time spent for the algorithm.
 
+
+
             //* Display time spent for the algorithm.
 #ifdef VERBOSE
             std::cout << "Merge finish, time spent : "
@@ -452,7 +455,7 @@ bool GMM::_split(const Component::Ptr& comp){
 
 int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
-    boost::random::uniform_int_distribution<> dist_uni(0,samples.size());
+    boost::random::uniform_int_distribution<> dist_uni(0,samples.size()-1);
 
     if(_samples.size() <= 10)
         return dist_uni(_gen);

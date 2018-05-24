@@ -142,6 +142,7 @@ public:
     }
     void _incr_parameters(const Eigen::VectorXd& X);
 
+    static double _alpha;
 
 private:
     void _check_samples();
@@ -149,7 +150,7 @@ private:
     Eigen::MatrixXd _covariance;
     Eigen::VectorXd _mu;
     std::vector<Eigen::VectorXd> _samples;
-    int _size;
+    int _size = 0;
     int _dimension;
     double _factor;
     int _label;

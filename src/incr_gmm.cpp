@@ -10,6 +10,8 @@ void IncrementalGMM::add(const Eigen::VectorXd &sample, int lbl){
 
     if(_model[lbl].empty()){
         new_component(sample,lbl);
+        _last_index = 0;
+        _last_label = lbl;
         return;
     }
     Eigen::VectorXd distances(_model[lbl].size());
@@ -21,6 +23,41 @@ void IncrementalGMM::add(const Eigen::VectorXd &sample, int lbl){
     _model[lbl][r]->_incr_parameters(sample);
     update_factors();
 
+    _last_index = r;
+    _last_label = lbl;
+
+}
+
+void IncrementalGMM::update(){
+    int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
+    _estimate_training_dataset();
+
+
+    n = _model[_last_label].size();
+    if(!_split(_model[_last_label][_last_index]) && n > 1)
+        _merge(_model[_last_label][_last_index]);
+
+    for(int i = 0; i < _nbr_class; i++){
+        n = _model[i].size();
+
+        if(n < 2) break;
+        _estimate_training_dataset();
+
+        do
+            rand_ind = rand()%n;
+        while(rand_ind == _last_index);
+        if(!_split(_model[i][rand_ind]))
+            _merge(_model[i][rand_ind]);
+    }
+}
+
+std::vector<double> IncrementalGMM::compute_estimation(const Eigen::VectorXd &X){
+    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
+        return std::vector<double>(_nbr_class,1./(double)_nbr_class);
+
+    Estimator<IncrementalGMM> estimator(this, X);
+
+    return estimator.estimation();
 }
 
 void IncrementalGMM::new_component(const Eigen::VectorXd& sample, int label){
@@ -120,7 +157,7 @@ bool IncrementalGMM::_split(const Component::Ptr& comp){
                 std::cout << "-_- SPLIT _-_" << std::endl;
 #endif
 
-        Component::Ptr new_component;
+        Component::Ptr new_component(new Component(_dimension,comp->get_label()));
 
         Eigen::VectorXd eigenvalues;
         Eigen::MatrixXd eigenvectors;
@@ -128,25 +165,48 @@ bool IncrementalGMM::_split(const Component::Ptr& comp){
         comp->compute_eigenvalues(eigenvalues,eigenvectors);
         int r,c;
         eigenvalues.maxCoeff(&r,&c);
-        princ_axis = eigenvectors.col(r);
+        princ_axis = eigenvectors.col(r)/2.;
+        std::cout << eigenvectors << std::endl;
+        std::cout << eigenvalues << std::endl;
+        std::cout << std::endl;
 
+        std::cout << princ_axis << std::endl << std::endl;
 
-        new_component->set_factor(comp->get_factor()*(1-_alpha));
-        comp->set_factor(comp->get_factor()*_alpha);
+        std::cout << princ_axis*princ_axis.transpose() << std::endl  << std::endl;
+
+        std::cout << comp->get_covariance() << std::endl << std::endl;
+
+        new_component->set_size(comp->size()*(1-_alpha));
+        comp->set_size(comp->size()*_alpha);
+
 
         new_component->set_mu(comp->get_mu() + sqrt(_alpha/(1-_alpha))*_u*princ_axis);
         comp->set_mu(comp->get_mu() - sqrt((1-_alpha)/_alpha)*_u*princ_axis);
 
         new_component->set_covariance(
                     _alpha/(1-_alpha)*comp->get_covariance()
-                    + (_beta - _beta*_u*_u-1)*1/_alpha*princ_axis*princ_axis.transpose()
-                    + princ_axis*princ_axis.transpose());
-        comp->set_covariance(
-                    (1-_alpha)/_alpha*comp->get_covariance()
                     + (_beta*_u*_u - _beta - _u*_u)*1/(1-_alpha)*princ_axis*princ_axis.transpose()
                     + princ_axis*princ_axis.transpose());
 
+
+        std::cout << new_component->get_covariance() << std::endl << std::endl;
+
+        std::cout << comp->get_mu().transpose()*new_component->covariance_pseudoinverse()*comp->get_mu() << std::endl << std::endl;
+
+
+        comp->set_covariance(
+                    (1-_alpha)/_alpha*comp->get_covariance()
+                    + (_beta - _beta*_u*_u-1)*1/_alpha*princ_axis*princ_axis.transpose()
+                    + princ_axis*princ_axis.transpose());
+
+        std::cout << comp->get_covariance() << std::endl << std::endl;
+
+        std::cout << comp->get_mu().transpose()*comp->covariance_pseudoinverse()*comp->get_mu() << std::endl;
+
         _model[lbl].push_back(new_component);
+
+        update_factors();
+
 
 #ifdef VERBOSE
         std::cout << "Split finish, time spent : "
@@ -214,3 +274,6 @@ bool IncrementalGMM::_merge(const Component::Ptr &comp){
         _model[lbl].erase(_model[lbl].begin()+ r);
     }
 }
+
+double IncrementalGMM::confidence(const Eigen::VectorXd &sample) const{return 1;}
+int IncrementalGMM::next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double> > > &samples, Eigen::VectorXd &choice_dist_map){return 0;}
