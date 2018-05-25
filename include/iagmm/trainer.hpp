@@ -24,15 +24,15 @@ public:
 
         int dimension, nbr_class;
         _data.load_yml(data_file,dimension,nbr_class);
-        _classifier = Classifier(dimension, nbr_class);
+        _classifier = Classifier(dimension);
     }
 
-    Trainer(const TrainingData& data, int dimension, int nbr_class, int batch_size = 10, float test_set = 0.2) :
+    Trainer(const TrainingData& data, int dimension, int batch_size = 10, float test_set = 0.2) :
         _data(data), _batch_size(batch_size), _test_set(test_set){
         srand(time(NULL));
         _gen.seed(rand());
 
-        _classifier = Classifier(dimension, nbr_class);
+        _classifier = Classifier(dimension);
     }
 
     Trainer(const Trainer& t) :

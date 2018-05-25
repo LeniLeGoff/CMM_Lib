@@ -44,9 +44,9 @@ public:
         };
     }
 
-    GMM(int dimension, int nbr_class) :
-        Classifier(dimension,nbr_class){
-        for(int i = 0; i < nbr_class; i++)
+    GMM(int dimension) :
+        Classifier(dimension){
+        for(int i = 0; i < _nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
 
         srand(time(NULL));
@@ -59,8 +59,7 @@ public:
     GMM(const model_t& model){
 
         _dimension = model.at(0)[0]->get_dimension();
-        _nbr_class = model.size();
-        for(const auto& comps : model){
+         for(const auto& comps : model){
             _model.emplace(comps.first,std::vector<Component::Ptr>());
             for(const auto& comp : comps.second)
                 _model[comps.first].push_back(Component::Ptr(new Component(*(comp))));
@@ -125,7 +124,7 @@ public:
 
     double confidence(const Eigen::VectorXd& X) const;
 
-    int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd& choice_dist_map);
 
     void EM_init();
     void EM_step();

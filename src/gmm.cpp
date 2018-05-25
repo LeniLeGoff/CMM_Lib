@@ -456,7 +456,7 @@ bool GMM::_split(const Component::Ptr& comp){
     return false;
 }
 
-int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd &choice_dist_map){
+int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,double>> &samples, Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
     boost::random::uniform_int_distribution<> dist_uni(0,samples.size());
 
@@ -479,7 +479,10 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
             }
         }
         for(size_t i = r.begin(); i != r.end(); i++){
-            est = samples[i].second[min_ind];
+
+            est = samples[i].second;
+            if(min_ind == 0)
+                est = est-1;
             if(est < 1./(double)_nbr_class)
                 est = -4*est*est*(log(4*est*est)-1);
             else est = -2*est*(log(2*est)-1);

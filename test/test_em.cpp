@@ -47,7 +47,7 @@ int main(int argc, char** argv){
     std::vector<Eigen::VectorXd> samples;
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
-    GMM gmm(2,2);
+    GMM gmm(2);
     gmm.max_component = 4;
     int nb_pos = 0, nb_neg = 0;
     bool is_init = false;

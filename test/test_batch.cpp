@@ -130,7 +130,7 @@ int main(int argc, char** argv){
                 );
     }
 
-    Trainer<GMM> trainer(data_set,2,2,batch_size,0);
+    Trainer<GMM> trainer(data_set,2,batch_size,0);
     trainer.access_classifier().set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();

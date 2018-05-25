@@ -82,7 +82,7 @@ int main(int argc, char** argv){
     if(train){
         iagmm::TrainingData dataset;
         dataset.load_yml(argv[2],dimension,nbr_class);
-        gmm = iagmm::GMM(dimension,nbr_class);
+        gmm = iagmm::GMM(dimension);
         if(with_update_dataset)
             gmm.set_dataset_size_max(max_size);
 

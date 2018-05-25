@@ -43,7 +43,7 @@ public:
 
     void update_parameters(int label, double thres = 0.5, double rate = 0.1);
 
-    int next_sample(const std::map<std::string, std::vector<std::pair<Eigen::VectorXd, std::vector<double>> > > &samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::map<std::string, std::vector<std::pair<Eigen::VectorXd, double> > > &samples, Eigen::VectorXd& choice_dist_map);
     double confidence(const Eigen::VectorXd& sample){}
 
     std::map<std::string,Classifier::Ptr>& access_classifiers(){return _classifiers;}

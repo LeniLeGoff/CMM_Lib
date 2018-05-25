@@ -60,7 +60,7 @@ void MCS::update_parameters(int label, double thres, double rate){
 
 }
 
-int MCS::next_sample(const std::map<std::string,std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>>& samples, Eigen::VectorXd& choice_dist_map){
+int MCS::next_sample(const std::map<std::string,std::vector<std::pair<Eigen::VectorXd,double>>>& samples, Eigen::VectorXd& choice_dist_map){
     std::vector<int> indexes;
     std::vector<Eigen::VectorXd> cdms;
 

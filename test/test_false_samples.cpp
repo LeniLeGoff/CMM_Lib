@@ -60,7 +60,7 @@ int main(int argc, char** argv){
     std::vector<Eigen::VectorXd> samples;
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
-    GMM gmm(2,2);
+    GMM gmm(2);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
@@ -181,7 +181,6 @@ int main(int argc, char** argv){
 
 
         gmm.update_model(ind,lbl);
-        gmm.update_dataset();
 //        gmm.compute_normalisation();
         std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;

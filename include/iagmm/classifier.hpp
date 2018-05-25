@@ -41,10 +41,10 @@ public:
      * @param c a classifier.
      */
     Classifier(const Classifier &c) :
-        _nbr_class(c._nbr_class),
         _dimension(c._dimension),
         _samples(c._samples),
-        _distance(c._distance){}
+        _distance(c._distance),
+        _nbr_class(c._nbr_class){}
 
     virtual ~Classifier(){}
 
@@ -57,7 +57,7 @@ public:
     virtual double compute_estimation (const Eigen::VectorXd& sample, int lbl) = 0;
     virtual void update() = 0;
     virtual double confidence(const Eigen::VectorXd& sample) const = 0;
-    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
+    virtual int next_sample(const std::vector<std::pair<Eigen::VectorXd,double>>& samles,Eigen::VectorXd& choice_dist_map) = 0;
 
 
     virtual double predict(const TrainingData& data, std::vector<double>& results){
@@ -118,7 +118,7 @@ public:
 protected:
 
 
-    int _nbr_class;
+    int _nbr_class = 2;
     int _dimension;
     TrainingData _samples;
 
