@@ -13,6 +13,7 @@ void Component::update_parameters(){
     if(_samples.size() <= 4){
         _covariance = Eigen::MatrixXd::Identity(_dimension,_dimension)*COEF;
         _mu = _samples[0];
+        _size = _samples.size();
         return;
     }
     _check_samples();
@@ -210,7 +211,6 @@ Component::Ptr Component::split(){
 
     update_parameters();
 
-
     new_c->update_parameters();
 
     return new_c;
@@ -298,6 +298,24 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
 
 
     return V*singularValInv*U.transpose();
+}
+
+void Component::delete_outliers(){
+    std::vector<int> indexes;
+    double est;
+    double max = compute_multivariate_normal_dist(_mu);
+    for(int i = 0; i < _samples.size(); i++){
+        est = compute_multivariate_normal_dist(_samples[i]);
+        if(est/max > 0.05)
+            indexes.push_back(i);
+    }
+    std::cout << "keep " << indexes.size() << " over " << _samples.size() << std::endl;
+    std::vector<Eigen::VectorXd> n_samples;
+    for(const int& i : indexes)
+        n_samples.push_back(_samples[i]);
+    _samples.clear();
+    _samples = n_samples;
+    _size = _samples.size();
 }
 
 void Component::_check_samples(){

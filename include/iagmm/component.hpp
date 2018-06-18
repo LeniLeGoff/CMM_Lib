@@ -144,6 +144,8 @@ public:
 
     static double _alpha;
 
+    void delete_outliers();
+
 private:
     void _check_samples();
 

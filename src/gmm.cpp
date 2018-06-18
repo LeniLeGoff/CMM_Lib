@@ -8,37 +8,6 @@
 
 using namespace iagmm;
 
-//ESTIMATOR
-//void GMM::_estimator::operator ()(const tbb::blocked_range<size_t>& r){
-//    double val;
-//    double sum = _sum_map[_current_lbl];
-
-//    Eigen::VectorXd X = _X;
-
-//    for(size_t i=r.begin(); i != r.end(); ++i){
-//        val = _model->model()[_current_lbl][i]->get_factor()*
-//                _model->model()[_current_lbl][i]->compute_multivariate_normal_dist(X);
-//        sum += val;
-
-//    }
-//    _sum_map[_current_lbl] = sum;
-//}
-
-//std::vector<double> GMM::_estimator::estimation(){
-
-//    for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
-//        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
-
-
-//    double sum_of_sums = 0;
-//    for(const auto& sum : _sum_map)
-//        sum_of_sums += sum.second;
-//    std::vector<double> estimations;
-//    for(int lbl = 0; lbl < _model->get_nbr_class(); lbl++)
-//        estimations.push_back((1 + _sum_map[lbl])/(_model->get_nbr_class() + sum_of_sums));
-//    return estimations;
-//}
-//--ESTIMATOR
 
 std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
 
@@ -323,11 +292,13 @@ bool GMM::_split(const Component::Ptr& comp){
     //*/ Retrieve the label and the indice of the component
     int lbl = comp->get_label();
     int ind;
-    for(ind = 0; ind < _model[lbl].size(); ind++)
-        if(_model[lbl][ind].get() == comp.get())
-            break;
-    if(ind == _model[lbl].size())
-        return false;
+    if(_llhood_drive){
+        for(ind = 0; ind < _model[lbl].size(); ind++)
+            if(_model[lbl][ind].get() == comp.get())
+                break;
+        if(ind == _model[lbl].size())
+            return false;
+    }
     //*/
 
 
@@ -398,11 +369,13 @@ bool GMM::_split(const Component::Ptr& comp){
 
     if(comp->intersect(_model[labels[closest_comp_ind]][real_ind[closest_comp_ind]])){ //if the components intersect
         Component::Ptr new_component;
+        int s = comp->size();
+
         if(_llhood_drive){
             candidate = GMM(_model); //Create a model candidate
             candidate.set_samples(_samples);
             new_component = candidate.model()[lbl][ind]->split(); //split the component
-        }else new_component = _model[lbl][ind]->split();
+        }else new_component = comp->split();
 
         if(new_component){ //if the component is splitted
             if(_llhood_drive){
@@ -415,6 +388,7 @@ bool GMM::_split(const Component::Ptr& comp){
                 cand_score = candidate.loglikelihood();
                 //*/
 #ifdef VERBOSE
+                std::cout << "loglikelihood comparison :" << std::endl;
                 std::cout << cand_score << " >? " << score << std::endl;
 #endif
             }
@@ -423,7 +397,7 @@ bool GMM::_split(const Component::Ptr& comp){
 #ifdef VERBOSE
                 std::cout << "-_- SPLIT _-_" << std::endl;
 #endif
-                if(_llhood_drive) new_component = _model[lbl][ind]->split();
+                if(_llhood_drive) new_component = comp->split();
                 _model[lbl].push_back(new_component);
                 update_factors();
 
@@ -438,7 +412,6 @@ bool GMM::_split(const Component::Ptr& comp){
                 return true;
             }
         }
-
     }
 
 
@@ -600,6 +573,10 @@ void GMM::update_model(int ind, int lbl){
     _estimate_training_dataset();
 
 
+    for(const auto& components : _model)
+        for(auto& comp : components.second)
+            comp->delete_outliers();
+
     n = _model[lbl].size();
     if(!_split(_model[lbl][ind]) && n > 1)
         _merge(_model[lbl][ind]);
@@ -681,83 +658,6 @@ double GMM::compute_quality(const Eigen::VectorXd& sample,int lbl)
     }
     return score;
 }
-
-//void GMM::update_dataset_thres(double threshold){
-//    std::vector<int> indexes_sample, indexes_model, indexes_model_s, lbls;
-//    for(int i = 0; i < _samples.size(); i++){
-//        for(auto& model : _model){
-//            for(int k = 0; k < model.second.size(); k++){
-//                for(int j = 0; j < model.second[k]->get_samples().size(); j++){
-//                    if(_samples[i].second == model.second[k]->get_samples()[j]){
-//                        if(_samples.get_qualities()[i] < threshold){
-//                            indexes_sample.push_back(i);
-//                            indexes_model.push_back(k);
-//                            indexes_model_s.push_back(j);
-//                            lbls.push_back(model.first);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-//    for(int& i : indexes_sample)
-//        _samples.erase(i);
-//    for(int i = 0; i < indexes_model.size(); i++){
-//        _model[lbls[i]][indexes_model[i]]->remove_sample(indexes_model_s[i]);
-//        if(_model[lbls[i]][indexes_model[i]]->size() == 0){
-//            _model[lbls[i]].erase(_model[lbls[i]].begin() + indexes_model[i]);
-//            _model[lbls[i]].shrink_to_fit();
-//        }
-//    }
-//}
-
-//void GMM::update_dataset(){
-//    if(_samples.size() < _dataset_size_max)
-//        return;
-//    double min_q = _samples.get_qualities()[0];
-//    int min_lbl = 0, min_ind_comp = 0, min_ind_comp_s = 0, min_ind_s = 0;
-
-//    for(auto& model : _model){
-//        for(int k = 0; k < model.second.size(); k++){
-//            for(int i = 0; i < model.second[k]->get_samples().size(); i++){
-//                if(_samples[0].second == model.second[k]->get_samples()[i]){
-//                    min_q = _samples.get_qualities()[0];
-//                    min_lbl = model.first;
-//                    min_ind_comp = k;
-//                    min_ind_comp_s = i;
-//                    min_ind_s = 0;
-//                }
-//            }
-//        }
-//    }
-//    while(_samples.size() > _dataset_size_max){
-
-//        for(auto& model : _model){
-//            for(int k = 0; k < model.second.size(); k++){
-//                for(int i = 0; i < model.second[k]->get_samples().size(); i++){
-//                    for(int j = 1; j < _samples.size();j++){
-//                        if(_samples[j].second == model.second[k]->get_samples()[i]
-//                                && _samples.get_qualities()[j] < min_q){
-//                            min_q = _samples.get_qualities()[j];
-//                            min_lbl = model.first;
-//                            min_ind_comp = k;
-//                            min_ind_comp_s = i;
-//                            min_ind_s = j;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        std::cout << "----- minimum quality :  " << min_q << std::endl;
-//        _model[min_lbl][min_ind_comp]->remove_sample(min_ind_comp_s);
-//        if(_model[min_lbl][min_ind_comp]->size() == 0){
-//            _model[min_lbl].erase(_model[min_lbl].begin()+min_ind_comp);
-//            _model[min_lbl].shrink_to_fit();
-//        }
-//        _samples.erase(min_ind_s);
-//    }
-//}
 
 void GMM::_expectation(int lbl){
     std::vector<Eigen::VectorXd> samples = _samples.get_data(lbl);

@@ -59,6 +59,7 @@ int main(int argc, char** argv){
 
     double A;
     sf::RenderWindow window(sf::VideoMode(MAX_X*4*3,MAX_Y*4*2),"dataset");
+    window.setFramerateLimit(60);
 
 
 
@@ -174,19 +175,19 @@ int main(int argc, char** argv){
         }
         window.clear(sf::Color::White);
 
-        for(auto rect: rects_estimated)
+        for(const auto& rect: rects_estimated)
             window.draw(rect);
-        for(auto rect: rects_real)
+        for(const auto& rect: rects_real)
             window.draw(rect);
-        for(auto rect: rects_exact_est)
+        for(const auto& rect: rects_exact_est)
             window.draw(rect);
-        for(auto rect: rects_explored)
+        for(const auto& rect: rects_explored)
             window.draw(rect);
-        for(auto rect: rects_confidence)
+        for(const auto& rect: rects_confidence)
             window.draw(rect);
-        for(auto circle: components_center)
+        for(const auto& circle: components_center)
             window.draw(circle);
-        for(auto err : error_curve)
+        for(const auto& err : error_curve)
             window.draw(err);
 
 
@@ -306,7 +307,7 @@ int main(int argc, char** argv){
 
 
 
-        //        std::cin.ignore();
+//        std::cin.ignore();
     }
 
     std::ofstream of("archive_gmm");
