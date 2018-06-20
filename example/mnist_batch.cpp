@@ -45,6 +45,7 @@ int main(int argc, char** argv){
     mnist::MNIST_dataset<std::vector, std::vector<uint8_t>, uint8_t> mnist_dataset =
             mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(data_location);
 
+    iagmm::Component::_outlier_thres = 0;
     iagmm::TrainingData train_dataset;
     iagmm::TrainingData test_dataset;
 
@@ -66,6 +67,7 @@ int main(int argc, char** argv){
         trainer.epoch();
         error = trainer.test();
         std::cout << "ERROR = " << error << std::endl;
+        i++;
     }
 
 

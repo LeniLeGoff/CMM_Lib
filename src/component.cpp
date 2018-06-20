@@ -310,7 +310,6 @@ void Component::delete_outliers(){
         if(est/max > _outlier_thres)
             indexes.push_back(i);
     }
-    std::cout << "keep " << indexes.size() << " over " << _samples.size() << std::endl;
     std::vector<Eigen::VectorXd> n_samples;
     for(const int& i : indexes)
         n_samples.push_back(_samples[i]);
