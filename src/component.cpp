@@ -8,6 +8,7 @@ using namespace iagmm;
 
 
 double Component::_alpha = 0.25;
+double Component::_outlier_thres = 0.05;
 
 void Component::update_parameters(){
     if(_samples.size() <= 4){
@@ -306,7 +307,7 @@ void Component::delete_outliers(){
     double max = compute_multivariate_normal_dist(_mu);
     for(int i = 0; i < _samples.size(); i++){
         est = compute_multivariate_normal_dist(_samples[i]);
-        if(est/max > 0.05)
+        if(est/max > _outlier_thres)
             indexes.push_back(i);
     }
     std::cout << "keep " << indexes.size() << " over " << _samples.size() << std::endl;

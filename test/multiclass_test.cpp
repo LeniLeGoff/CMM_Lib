@@ -38,8 +38,8 @@ int main(int argc, char** argv){
 
     tbb::task_scheduler_init init;
 
-    if(argc < 3){
-        std::cout << "usage : nbr_class (max 10) and alpha" << std::endl;
+    if(argc < 4){
+        std::cout << "usage : nbr_class (max 10), alpha and outlier threshold" << std::endl;
         return 1;
     }
 
@@ -74,6 +74,7 @@ int main(int argc, char** argv){
     //    std::vector<Cluster::Ptr> model;
 
     Component::_alpha = std::stod(argv[2]);
+    Component::_outlier_thres = std::stod(argv[3]);
 
     GMM gmm(2,nb_class);
     gmm.set_distance_function(
@@ -84,7 +85,7 @@ int main(int argc, char** argv){
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;
-
+    double llhood;
 
     std::multimap<double,Eigen::Vector2i> choice_distribution;
     double cumul_est;
@@ -104,6 +105,7 @@ int main(int argc, char** argv){
     std::vector<sf::CircleShape> components_center;
 
     std::vector<sf::RectangleShape> error_curve;
+    std::vector<sf::RectangleShape> llhood_curve;
 
     Eigen::Vector2i coord(0,0);
     std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> all_sample(MAX_Y*MAX_X);
@@ -189,8 +191,8 @@ int main(int argc, char** argv){
             window.draw(circle);
         for(const auto& err : error_curve)
             window.draw(err);
-
-
+        for(const auto& llh : llhood_curve)
+            window.draw(llh);
 
 
         label.push_back(real_space[coord[0]][coord[1]]);
@@ -276,6 +278,14 @@ int main(int argc, char** argv){
         error_point.setPosition(sf::Vector2f(iteration,(1-error)*400+400));
         error_curve.push_back(error_point);
 
+
+        llhood = gmm.loglikelihood();
+        double llhood_norm = -llhood/10.;
+        sf::RectangleShape llhood_point(sf::Vector2f(4,4));
+        llhood_point.setFillColor(sf::Color(0,0,255));
+        llhood_point.setPosition(sf::Vector2f(iteration,(1-llhood_norm)*400+400));
+        llhood_curve.push_back(llhood_point);
+
         //        Eigen::VectorXd eigenval;
         //        Eigen::MatrixXd eigenvect;
         components_center.clear();
@@ -294,7 +304,7 @@ int main(int argc, char** argv){
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
-        std::cout << "loglikelihood : " << gmm.loglikelihood() << std::endl;
+        std::cout << "loglikelihood : " << llhood << std::endl;
 //        std::cout << gmm.print_info() << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;

@@ -10,6 +10,7 @@
 
 namespace iagmm{
 
+//TODO change class name to Data
 class TrainingData{
 
 public:

@@ -143,6 +143,7 @@ public:
     void _incr_parameters(const Eigen::VectorXd& X);
 
     static double _alpha;
+    static double _outlier_thres;
 
     void delete_outliers();
 

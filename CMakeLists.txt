@@ -14,6 +14,8 @@ if(VERBOSE)
     set(CMAKE_CXX_FLAGS "-DVERBOSE ${CMAKE_CXX_FLAGS}")
 endif()
 
+find_package(OpenCV)
+
 include_directories(/usr/local/include/
                     /usr/include/eigen3
                     /usr/local/include/SFML
@@ -49,8 +51,8 @@ target_link_libraries(gen_archive_stat iagmm yaml-cpp boost_serialization )
 add_executable(gmm_loglikelihood tools/gmm_loglikelihood.cpp)
 target_link_libraries(gmm_loglikelihood iagmm yaml-cpp boost_serialization boost_system boost_filesystem)
 
-add_executable(batch_train_gmm tools/batch_train_gmm.cpp)
-target_link_libraries(batch_train_gmm iagmm yaml-cpp boost_serialization boost_system)
+#add_executable(batch_train_gmm tools/batch_train_gmm.cpp)
+#target_link_libraries(batch_train_gmm iagmm yaml-cpp boost_serialization boost_system)
 
 add_executable(online_train_gmm tools/online_train_gmm.cpp)
 target_link_libraries(online_train_gmm iagmm yaml-cpp boost_serialization boost_system)
@@ -60,6 +62,13 @@ target_link_libraries(yml_to_libsvm iagmm yaml-cpp boost_serialization boost_sys
 
 add_executable(yml_to_data_labels tools/yml_to_data_labels.cpp)
 target_link_libraries(yml_to_data_labels iagmm yaml-cpp boost_serialization boost_system)
+
+add_executable(mnist_batch example/mnist_batch.cpp)
+target_link_libraries(mnist_batch iagmm tbb yaml-cpp)
+
+
+#add_executable(mnist_online example/mnist_online.cpp)
+#target_link_libraries(mnist_online iagmm tbb)
 
 ####
 
@@ -80,6 +89,9 @@ target_link_libraries(multiclass_test iagmm yaml-cpp tbb sfml-window sfml-system
 
 add_executable(incrgmm_test test/incrgmm_test.cpp)
 target_link_libraries(incrgmm_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+
+add_executable(mnist_test test/mnist_test.cpp)
+target_link_libraries(mnist_test tbb  ${OpenCV_LIBRARIES})
 
 #add_executable(mcs_test test/mcs_test.cpp)
 #target_link_libraries(mcs_test iagmm  yaml-cpp.so)

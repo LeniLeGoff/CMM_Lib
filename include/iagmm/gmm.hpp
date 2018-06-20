@@ -169,8 +169,7 @@ public:
 
     double loglikelihood();
     double loglikelihood(int label);
-    double set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
-
+    void set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
 
 private:
 
