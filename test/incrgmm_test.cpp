@@ -6,7 +6,11 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
 #include <math.h>
-#include <tbb/tbb.h>
+
+#ifndef NO_PARALLEL
+    #include <tbb/tbb.h>
+#endif
+
 #include <ctime>
 
 #include <boost/random.hpp>
@@ -36,7 +40,9 @@ int main(int argc, char** argv){
     boost::random::mt19937 gen;
     boost::chrono::system_clock::time_point timer;
 
+#ifndef NO_PARALLEL
     tbb::task_scheduler_init init;
+#endif
 
     if(argc != 2){
         std::cout << "usage : nbr_class (max 10)" << std::endl;
@@ -205,9 +211,13 @@ int main(int argc, char** argv){
         if(gmm.get_samples().size() > NBR_CLUSTER){
             cumul_est = 0;
             choice_distribution.clear();
+#ifdef NO_PARALLEL
+            for(int i = 0; i < MAX_X*MAX_Y; i++){
+#else
             tbb::parallel_for(tbb::blocked_range<size_t>(0,MAX_X*MAX_Y),
                               [&](const tbb::blocked_range<size_t>& r){
                 for(int i = r.begin(); i != r.end(); ++i){
+#endif
                     std::vector<double> est_vect(nb_class);
 
                     if(i%MAX_X == MAX_X - 1)
@@ -242,7 +252,9 @@ int main(int argc, char** argv){
                     }
                     rects_estimated[i].setFillColor(sf::Color(c[0],c[1],c[2]));
                 }
+#ifndef NO_PARALLEL
             });
+#endif
 //            next_s = all_sample[gmm.next_sample(all_sample,choice_dist_map)].first;
             coord[0] = rand()%MAX_X;
             coord[1] = rand()%MAX_Y;

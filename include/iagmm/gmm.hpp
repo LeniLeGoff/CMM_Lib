@@ -17,7 +17,9 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
-#include <tbb/tbb.h>
+#ifndef NO_PARALLEL
+    #include <tbb/tbb.h>
+#endif
 
 #include "component.hpp"
 #include "classifier.hpp"
@@ -85,7 +87,7 @@ public:
                 c.reset();
     }
 
-    void operator()(const tbb::blocked_range<size_t>& r);
+//    void operator()(const tbb::blocked_range<size_t>& r);
 
     std::vector<double> compute_estimation(const Eigen::VectorXd& sample);
     void compute_normalisation();
@@ -201,6 +203,8 @@ private:
     public:
         _score_calculator(GMM* model, TrainingData samples, bool all_samples = true, int lbl = 0) :
             _model(model), _samples(samples), _sum(0), _label(lbl), _all_samples(all_samples){}
+
+#ifndef NO_PARALLEL
         _score_calculator(const _score_calculator &sc, tbb::split) :
             _model(sc._model), _samples(sc._samples), _sum(0), _label(sc._label), _all_samples(sc._all_samples){}
 
@@ -208,6 +212,7 @@ private:
         void join(const _score_calculator& sc){
             _sum += sc._sum;
         }
+#endif
         double compute();
 
     private:

@@ -1,8 +1,12 @@
 #ifndef GMM_ESTIMATOR_HPP
 #define GMM_ESTIMATOR_HPP
 
-#include <iostream>
+#ifndef NO_PARALLEL
 #include <tbb/tbb.h>
+#endif
+
+#include <iostream>
+
 #include <map>
 #include <eigen3/Eigen/Core>
 
@@ -18,6 +22,9 @@ public:
         for(int i = 0; i < _model->model().size(); i++)
             _sum_map.emplace(i,0.);
     }
+
+
+#ifndef NO_PARALLEL
     Estimator(const Estimator& est, tbb::split) : _model(est._model), _X(est._X), _current_lbl(est._current_lbl){
         _sum_map[_current_lbl] = 0;
     }
@@ -40,12 +47,38 @@ public:
     void join(const Estimator& est){
         _sum_map[_current_lbl] += est._sum_map.at(_current_lbl);
     }
+#endif
 
     std::vector<double> estimation(){
-
+#ifdef NO_PARALLEL
         for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
-            tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
+        {
+            double val;
+            for(const auto& model : _model->model()[_current_lbl])
+            {
+                val = model->get_factor()*
+                        model->compute_multivariate_normal_dist(_X);
+                _sum_map[_current_lbl] += val;
+            }
+        }
+#else
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,_model->get_nbr_class()),
+                          [&](const tbb::blocked_range<size_t>& r){
+            for(int lbl = r.begin(); lbl != r.end();lbl++){
+                double val;
+                for(const auto& model : _model->model()[lbl])
+                {
+                    val = model->get_factor()*
+                            model->compute_multivariate_normal_dist(_X);
+                    _sum_map[lbl] += val;
+                }
+            }
 
+        });
+
+//        for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
+//            tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_model->model()[_current_lbl].size()),*this);
+#endif
 
         double sum_of_sums = 0;
         for(const auto& sum : _sum_map)

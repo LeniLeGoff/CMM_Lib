@@ -191,7 +191,7 @@ bool IncrementalGMM::_split(const Component::Ptr& comp){
 
         std::cout << new_component->get_covariance() << std::endl << std::endl;
 
-        std::cout << comp->get_mu().transpose()*new_component->covariance_pseudoinverse()*comp->get_mu() << std::endl << std::endl;
+//        std::cout << comp->get_mu().transpose()*new_component->covariance_pseudoinverse()*comp->get_mu() << std::endl << std::endl;
 
 
         comp->set_covariance(
@@ -201,7 +201,7 @@ bool IncrementalGMM::_split(const Component::Ptr& comp){
 
         std::cout << comp->get_covariance() << std::endl << std::endl;
 
-        std::cout << comp->get_mu().transpose()*comp->covariance_pseudoinverse()*comp->get_mu() << std::endl;
+//        std::cout << comp->get_mu().transpose()*comp->covariance_pseudoinverse()*comp->get_mu() << std::endl;
 
         _model[lbl].push_back(new_component);
 

@@ -15,11 +15,13 @@ if(VERBOSE)
 endif()
 
 find_package(OpenCV)
+find_package(Eigen 3.3.4 EXACT)
 
 include_directories(/usr/local/include/
                     /usr/include/eigen3
                     /usr/local/include/SFML
-                    include/)
+                    include/
+                    )
 
 
 FILE(GLOB_RECURSE HEADFILES "include/iagmm/*.hpp")
@@ -30,10 +32,16 @@ add_custom_target(headers SOURCES ${HEADFILES})
 
 install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
+if(NO_PARALLEL)
+    add_definitions(-DNO_PARALLEL)
+    add_library(iagmm SHARED ${SRCFILES})
+    target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
+else()
+    add_library(iagmm SHARED ${SRCFILES})
+    target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
+endif()
 
 
-add_library(iagmm SHARED ${SRCFILES})
-target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
 
 install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib

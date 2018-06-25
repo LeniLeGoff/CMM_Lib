@@ -4,7 +4,10 @@
 #include <iagmm/mcs_fct.hpp>
 #include <eigen3/Eigen/IterativeLinearSolvers>
 #include "boost/random.hpp"
+
+#ifndef NO_PARALLEL
 #include <tbb/tbb.h>
+#endif
 
 
 namespace iagmm

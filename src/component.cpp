@@ -1,7 +1,8 @@
-#include <iagmm/component.hpp>
+#include "iagmm/component.hpp"
 #include <map>
 #include <iostream>
 #include <boost/math/distributions/fisher_f.hpp>
+#include <boost/random.hpp>
 #define COEF 1.
 
 using namespace iagmm;
@@ -26,8 +27,6 @@ void Component::update_parameters(){
     for(int i = 0 ; i < _samples.size(); i++){
         v_sum += _samples[i];
     }
-
-
 
     _mu = 1./_samples.size()*v_sum;
 
@@ -67,25 +66,17 @@ void Component::_incr_parameters(const Eigen::VectorXd& X){
 }
 
 double Component::compute_multivariate_normal_dist(Eigen::VectorXd X) const {
-
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(2*PI*_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    Eigen::VectorXd singularVal = svd.singularValues();
-
-    double cm_determinant = 1.;
-    for(int i = 0; i < singularVal.rows(); ++i){
-        if(singularVal(i) != singularVal(i))
-            singularVal(i) = 0;
-        if(singularVal(i) > 1e-4)
-            cm_determinant = cm_determinant*singularVal(i);
-    }
-
-    double exp_arg = -1./2.*((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
+    double determinant = 1.;
+    Eigen::MatrixXd inverse;
+    covariance_inverse(inverse,determinant);
+    determinant = determinant*2*PI;
+    double exp_arg = -1./2.*((X - _mu).transpose()*inverse).dot(X - _mu);
     if(exp_arg > 0){
         std::cerr << "The covariance matrix is not positive definite" << std::endl;
 //        exp_arg = -exp_arg;
         return 0;
     }
-    double res = 1/cm_determinant*exp(exp_arg);
+    double res = 1/determinant*exp(exp_arg);
     if(res == res)
         return res;
     else return 0;
@@ -234,7 +225,7 @@ bool Component::intersect(const Component::Ptr comp) const {
     //* compute the vectors for intersection criterion
     diff_mu = (comp->get_mu()-_mu);
 //    dist_mu = diff_mu.norm();
-//    ellipse_vect1 = 1/factor1*(comp->covariance_pseudoinverse()*diff_mu/diff_mu.norm());
+//    ellipse_vect1 = 1/factor1*(comp->covariance_inverse()*diff_mu/diff_mu.norm());
 //    ellipse_vect1 = factor1*(_covariance*diff_mu/diff_mu.norm());
     //*/
     double val = distance(comp->get_mu());
@@ -250,7 +241,10 @@ bool Component::intersect(const Component::Ptr comp) const {
 }
 
 double Component::distance(const Eigen::VectorXd& X) const {
-    return ((X - _mu).transpose()*covariance_pseudoinverse()).dot(X - _mu);
+    Eigen::MatrixXd inverse;
+    double determinant;
+    covariance_inverse(inverse,determinant);
+    return ((X - _mu).transpose()*inverse).dot(X - _mu);
 }
 
 double Component::get_standard_deviation() const{
@@ -276,13 +270,24 @@ void Component::compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixX
     }
 }
 
-Eigen::MatrixXd Component::covariance_pseudoinverse() const{
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    Eigen::VectorXd singularVal = svd.singularValues();
+void Component::covariance_inverse(Eigen::MatrixXd& inverse, double& determinant) const{
+    if(_covariance.determinant() == 0)
+            covariance_pseudoinverse(inverse,determinant);
+    else{
+        inverse = _covariance.inverse();
+        determinant = _covariance.determinant();
+    }
+}
+
+void Component::covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& determinant) const{
+    Eigen::BDCSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXd singularVal = svd.singularValues();    
     Eigen::MatrixXd singularValInv = Eigen::MatrixXd::Zero(_dimension,_dimension);
     for(int i = 0; i < _dimension; i++){
-        if(singularVal(i) > 1e-4)
+        if(singularVal(i) > 1e-4){
             singularValInv(i,i) = 1./singularVal(i);
+            determinant = determinant*singularVal(i);
+        }
         if(singularValInv(i,i) != singularValInv(i,i))
             singularValInv(i,i) = 0;
     }
@@ -296,9 +301,7 @@ Eigen::MatrixXd Component::covariance_pseudoinverse() const{
                 U(j,i) = 0;
         }
     }
-
-
-    return V*singularValInv*U.transpose();
+    inverse = V*singularValInv*U.transpose();
 }
 
 void Component::delete_outliers(){
@@ -337,7 +340,7 @@ std::string Component::print_parameters() const {
     std::stringstream stream;
     stream << "----------------------" << std::endl;
     stream << "lbl : " << _label << std::endl;
-    stream << "pseudoinverse covariance : \n" << covariance_pseudoinverse() << std::endl;
+//    stream << "pseudoinverse covariance : \n" << covariance_pseudoinverse() << std::endl;
     stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;

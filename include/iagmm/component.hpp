@@ -6,6 +6,7 @@
 
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/SVD>
 
 #include <iagmm/serialization.hpp>
 #include <boost/serialization/vector.hpp>
@@ -128,7 +129,8 @@ public:
         return diameter;
     }
 
-    Eigen::MatrixXd covariance_pseudoinverse() const;
+    void covariance_inverse(Eigen::MatrixXd& inverse, double& determinant) const;
+    void covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& determinant) const;
 
     template <typename archive>
     void serialize(archive& arch, const unsigned int v){

@@ -33,6 +33,7 @@ void GMM::compute_normalisation(){
 }
 
 //SCORE_CALCULATOR
+#ifndef NO_PARALLEL
 void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     double sum = _sum;
 
@@ -42,10 +43,19 @@ void GMM::_score_calculator::operator()(const tbb::blocked_range<size_t>& r){
     }
     _sum = sum;
 }
+#endif
 
 double GMM::_score_calculator::compute(){
-    //    _model->compute_normalisation();
+#ifdef NO_PARALLEL
+    _sum = 0;
+    for(int i = 0; i < _samples.size(); i++){
+        if(_samples[i].first == _label || _all_samples)
+            _sum += std::log(_samples.estimations[i][_label]);
+    }
+#else
     tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_samples.size()),*this);
+#endif
+
     return _sum/((double)_samples.get_data(_label).size());
 }
 //--SCORE_CALCULATOR
@@ -438,9 +448,10 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
     std::vector<double> w(samples.size());
     boost::random::uniform_real_distribution<> distrib(0,1);
 
+#ifndef NO_PARALLEL
     tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
                       [&](const tbb::blocked_range<size_t>& r){
-
+#endif
         //* Search for the class with the less samples in the dataset
         double est;
         int min_size = _samples.get_data(0).size(), min_ind = 0;
@@ -452,8 +463,11 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
         }
         //*/
 
-//        for(size_t i = 0; i < choice_dist_map.rows(); i++){
+#ifdef NO_PARALLEL
+        for(size_t i = 0; i < choice_dist_map.rows(); i++){
+#else
         for(size_t i = r.begin(); i != r.end(); i++){
+#endif
             est = samples[i].second[min_ind];
             if(est < 1./(double)_nbr_class)
                 est = -4*est*est*(log(4*est*est)-1);
@@ -473,7 +487,9 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
             else if(w[i] > 1)
                 w[i] = 1;
         }
+#ifndef NO_PARALLEL
     });
+#endif
 
     double max_w = w[0];
     for(const double& v : w){

@@ -95,6 +95,7 @@ public:
 //    }
 
     void epoch(){
+
 //        int n;
 //        boost::random::uniform_int_distribution<> dist(0,_train_data.size()-1);
         for(int i = _g_count; i < _batch_size+_g_count && i < _train_data.size(); i++){

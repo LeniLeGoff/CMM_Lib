@@ -4,10 +4,13 @@
 #include <functional>
 #include <boost/shared_ptr.hpp>
 #include <eigen3/Eigen/Core>
-#include <tbb/tbb.h>
+#ifndef NO_PARALLEL
+    #include <tbb/tbb.h>
+#endif
 #include "data.hpp"
 
 namespace iagmm {
+
 
 /**
  * @brief The Classifier class
@@ -26,7 +29,11 @@ public:
     /**
      * @brief default Constructor
      */
-    Classifier(){}
+    Classifier(){
+#ifndef NO_PARALLEL
+        tbb::task_scheduler_init init;
+#endif
+    }
 
     /**
      * @brief basic constructor. Specify the dimension of the features space and the number of class
@@ -34,7 +41,11 @@ public:
      * @param nbr_class number of class
      */
     Classifier(int dimension, int nbr_class = 2) :
-        _dimension(dimension), _nbr_class(nbr_class){}
+        _dimension(dimension), _nbr_class(nbr_class){
+#ifndef NO_PARALLEL
+        tbb::task_scheduler_init init;
+#endif
+    }
 
     /**
      * @brief copy constructor
@@ -85,11 +96,18 @@ public:
      */
     virtual double predict(const TrainingData& data, std::vector<std::vector<double>>& results){
         results.resize(data.size());
+
+#ifdef NO_PARALLEL
+        for(int i = 0; i < data.size(); i++)
+            results[i] = compute_estimation(data[i].second);
+#else
         tbb::parallel_for(tbb::blocked_range<size_t>(0,data.size()),
                           [&](const tbb::blocked_range<size_t>& r){
             for(int i = r.begin(); i != r.end(); i++)
                 results[i] = compute_estimation(data[i].second);
         });
+#endif
+
         double error = 0;
         for(int i = 0; i < data.size(); i++){
             error = error + 1 - results[i][data[i].first];
@@ -127,6 +145,14 @@ public:
 
     void _estimate_training_dataset(){
         _samples.estimations.resize(_samples.size());
+
+#ifdef NO_PARALLEL
+        std::vector<double> estimates(_nbr_class);
+        for(int i = 0; i < _samples.size(); i++){
+            estimates = compute_estimation(_samples[i].second);
+            _samples.estimations[i] = estimates;
+        }
+#else
         tbb::parallel_for(tbb::blocked_range<size_t>(0,_samples.size()),
                           [&](const tbb::blocked_range<size_t>& r){
             std::vector<double> estimates(_nbr_class);
@@ -135,6 +161,7 @@ public:
                 _samples.estimations[i] = estimates;
             }
         });
+#endif
     }
 
 protected:

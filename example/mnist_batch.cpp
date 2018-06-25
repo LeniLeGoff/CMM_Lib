@@ -27,12 +27,13 @@ Eigen::VectorXd compute_histogram(const std::vector<uint8_t> &digit,int bins){
 
 int main(int argc, char** argv){
 
-    if(argc != 5){
+    if(argc != 6){
         std::cout << "Usage : " << std::endl;
         std::cout << "\t - location of MNIST dataset" << std::endl;
         std::cout << "\t - batch size" << std::endl;
         std::cout << "\t - number of epoch" << std::endl;
         std::cout << "\t - budget of training samples (max 60000)" << std::endl;
+        std::cout << "\t - alpha" << std::endl;
         return 1;
     }
 
@@ -46,6 +47,7 @@ int main(int argc, char** argv){
             mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(data_location);
 
     iagmm::Component::_outlier_thres = 0;
+    iagmm::Component::_alpha = std::stod(argv[5]);
     iagmm::TrainingData train_dataset;
     iagmm::TrainingData test_dataset;
 
@@ -59,6 +61,7 @@ int main(int argc, char** argv){
 
 
     iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,16,10,batch_size);
+    trainer.access_classifier().set_update_mode(iagmm::GMM::BATCH);
 
     double error = 0;
     int i = 0;
@@ -66,6 +69,9 @@ int main(int argc, char** argv){
         std::cout << "EPOCH -- " << i << std::endl;
         trainer.epoch();
         error = trainer.test();
+        for(int i = 0; i < 10; i++)
+            std::cout << "class " << i << " : " << trainer.access_classifier().model()[i].size() << std::endl;
+//        std::cout << trainer.access_classifier().print_info() << std::endl;
         std::cout << "ERROR = " << error << std::endl;
         i++;
     }

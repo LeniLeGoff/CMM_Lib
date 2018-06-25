@@ -20,13 +20,19 @@ std::vector<double> MCS::compute_estimation(const std::map<std::string, Eigen::V
     for(const auto& classi : _classifiers)
         key_vct.push_back(classi.first);
 
+#ifdef NO_PARALLEL
+    for(int i = 0; i < _classifiers.size(); i++){
+        estimations[i] = _classifiers[key_vct[i]]->compute_estimation(sample.at(key_vct[i]));
+        parameters[i] = _classifiers[key_vct[i]]->confidence(sample.at(key_vct[i]));
+    }
+#else
     tbb::parallel_for(tbb::blocked_range<size_t>(0,_classifiers.size()),[&](tbb::blocked_range<size_t>& r){
        for(int i = r.begin(); i != r.end(); i++){
            estimations[i] = _classifiers[key_vct[i]]->compute_estimation(sample.at(key_vct[i]));
            parameters[i] = _classifiers[key_vct[i]]->confidence(sample.at(key_vct[i]));
        }
     });
-
+#endif
     parameters = _param_fct(parameters);
 
 //    for(auto& classif : _classifiers){
