@@ -7,6 +7,10 @@
 #include <iagmm/data.hpp>
 #include <boost/random.hpp>
 
+#ifndef NO_PARALLEL
+    #include <tbb/tbb.h>
+#endif
+
 namespace iagmm{
 
 template <class Classifier>
@@ -96,23 +100,32 @@ public:
 
     void epoch(){
 
-//        int n;
-//        boost::random::uniform_int_distribution<> dist(0,_train_data.size()-1);
-        for(int i = _g_count; i < _batch_size+_g_count && i < _train_data.size(); i++){
-//            n = dist(_gen);
-            _classifier.add(_train_data[i].second,_train_data[i].first);
+        int n;
+        int upper_bound = _g_count + 10*_batch_size;
+        if(_g_count + 10*_batch_size > _train_data.size())
+            upper_bound -= upper_bound - _train_data.size();
+        boost::random::uniform_int_distribution<> dist(_g_count,upper_bound);
+        for(int i = 0; i < _batch_size; i++){
+            n = dist(_gen);
+            _classifier.add(_train_data[n].second,_train_data[n].first);
         }
         _classifier.update();
         _g_count += _batch_size;
-        if(_g_count > _train_data.size() - _batch_size)
+        if(_g_count > _train_data.size())
             _g_count = 0;
     }
 
     double test(){
         double error = 0;
+#ifdef NO_PARALLEL
         for(int i = 0; i < _test_data.size(); i++){
             error += 1 - _classifier.compute_estimation(_test_data[i].second)[_test_data[i].first];
         }
+#else
+        _error_computer ec(_classifier,_test_data);
+        tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_test_data.size()),ec);
+        error = ec.get_error();
+#endif
         error = error/(double) _test_data.size();
         return error;
     }
@@ -131,6 +144,35 @@ private:
     int _g_count = 0;
 
     boost::random::mt19937 _gen;
+
+    class _error_computer{
+    public:
+        _error_computer(Classifier& model, TrainingData samples) :
+            _model(model), _samples(samples), _sum(0){}
+
+#ifndef NO_PARALLEL
+        _error_computer(const _error_computer &sc, tbb::split) :
+            _model(sc._model), _samples(sc._samples), _sum(0){}
+
+        void operator ()(const tbb::blocked_range<size_t>& r){
+            double sum = _sum;
+            for(int i = r.begin(); i != r.end(); i++)
+                sum += 1 - _model.compute_estimation(_samples[i].second)[_samples[i].first];
+            _sum = sum;
+        }
+
+        void join(const _error_computer& sc){
+            _sum += sc._sum;
+        }
+#endif
+
+        double get_error(){return _sum;}
+
+    private:
+        Classifier _model;
+        double _sum;
+        TrainingData _samples;
+    };
 
 };
 } // iagmm

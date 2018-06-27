@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
 
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-fopenmp -std=c++11 ${CMAKE_CXX_FLAGS}")
 
 if(DEBUG)
     set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
@@ -15,13 +15,12 @@ if(VERBOSE)
 endif()
 
 find_package(OpenCV)
-find_package(Eigen 3.3.4 EXACT)
 
 include_directories(/usr/local/include/
                     /usr/include/eigen3
                     /usr/local/include/SFML
                     include/
-                    )
+/home/le_goff/Libraries/eigen-3.3.4)
 
 
 FILE(GLOB_RECURSE HEADFILES "include/iagmm/*.hpp")
@@ -37,6 +36,7 @@ if(NO_PARALLEL)
     add_library(iagmm SHARED ${SRCFILES})
     target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
 else()
+    set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
     add_library(iagmm SHARED ${SRCFILES})
     target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
 endif()

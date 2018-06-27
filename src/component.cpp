@@ -271,8 +271,9 @@ void Component::compute_eigenvalues(Eigen::VectorXd& eigenvalues, Eigen::MatrixX
 }
 
 void Component::covariance_inverse(Eigen::MatrixXd& inverse, double& determinant) const{
-    if(_covariance.determinant() == 0)
-            covariance_pseudoinverse(inverse,determinant);
+    if(_covariance.determinant() == 0){
+        covariance_pseudoinverse(inverse,determinant);
+    }
     else{
         inverse = _covariance.inverse();
         determinant = _covariance.determinant();
@@ -280,7 +281,7 @@ void Component::covariance_inverse(Eigen::MatrixXd& inverse, double& determinant
 }
 
 void Component::covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& determinant) const{
-    Eigen::BDCSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(_covariance, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXd singularVal = svd.singularValues();    
     Eigen::MatrixXd singularValInv = Eigen::MatrixXd::Zero(_dimension,_dimension);
     for(int i = 0; i < _dimension; i++){

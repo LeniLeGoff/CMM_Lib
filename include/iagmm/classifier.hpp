@@ -32,6 +32,7 @@ public:
     Classifier(){
 #ifndef NO_PARALLEL
         tbb::task_scheduler_init init;
+        Eigen::initParallel();
 #endif
     }
 
@@ -44,6 +45,7 @@ public:
         _dimension(dimension), _nbr_class(nbr_class){
 #ifndef NO_PARALLEL
         tbb::task_scheduler_init init;
+        Eigen::initParallel();
 #endif
     }
 

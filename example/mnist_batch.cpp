@@ -11,17 +11,31 @@
 Eigen::VectorXd compute_histogram(const std::vector<uint8_t> &digit,int bins){
     Eigen::VectorXd hist(bins);
 
-    int counter =  digit[0];
-    int j = 0;
-    for(int i = 1; i < digit.size(); i++){
-        if(i%49 == 0){
-            hist(j) = counter/(255.*49.);
-            counter = 0;
-            j++;
+    int square_size = 28/std::sqrt(bins);
+    int counter = 0;
+    for(int j = 0; j < 28; j++){
+        for(int i = 0; i < 28; i++){
+            int index = i/square_size + j/square_size*28/square_size;
+            hist(index) += digit[counter]/255.;
+            counter++;
         }
-        counter+=digit[i];
     }
-
+    for(int i = 0; i < hist.rows(); i++){
+        hist(i) = hist(i)/(square_size*square_size);
+        hist(i) = hist(i)*100;
+        hist(i) = std::round(hist(i));
+        hist(i) = hist(i)*0.01;
+        if(hist(i) != hist(i))
+            hist(i) = 0;
+    }
+//    for(int i = 1; i < digit.size(); i++){
+//        if(i%size == 0){
+//            hist(j) = counter/(255.*(float)size);
+//            counter = 0;
+//            j++;
+//        }
+//        counter+=digit[i];
+//    }
     return hist;
 }
 
@@ -50,17 +64,17 @@ int main(int argc, char** argv){
     iagmm::Component::_alpha = std::stod(argv[5]);
     iagmm::TrainingData train_dataset;
     iagmm::TrainingData test_dataset;
+    int dimension = 49;
 
 
     for(int k = 0; k < budget; k++)
-        train_dataset.add(mnist_dataset.training_labels[k],compute_histogram(mnist_dataset.training_images[k],16));
+        train_dataset.add(mnist_dataset.training_labels[k],compute_histogram(mnist_dataset.training_images[k],dimension));
 
     for(int k = 0; k < mnist_dataset.test_images.size(); k++)
-        test_dataset.add(mnist_dataset.test_labels[k],compute_histogram(mnist_dataset.test_images[k],16));
+        test_dataset.add(mnist_dataset.test_labels[k],compute_histogram(mnist_dataset.test_images[k],dimension));
 
 
-
-    iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,16,10,batch_size);
+    iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,dimension,10,batch_size);
     trainer.access_classifier().set_update_mode(iagmm::GMM::BATCH);
 
     double error = 0;
@@ -74,6 +88,8 @@ int main(int argc, char** argv){
 //        std::cout << trainer.access_classifier().print_info() << std::endl;
         std::cout << "ERROR = " << error << std::endl;
         i++;
+        if(error < 0.1)
+            return 0;
     }
 
 

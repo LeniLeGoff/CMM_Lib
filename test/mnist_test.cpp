@@ -3,7 +3,6 @@
 
 #include "iagmm/gmm.hpp"
 
-
 #include "mnist/mnist_reader.hpp"
 
 #include <opencv2/core/core.hpp>
