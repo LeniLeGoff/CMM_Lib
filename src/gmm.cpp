@@ -366,7 +366,6 @@ bool GMM::_split(const Component::Ptr& comp){
     int closest_comp_ind, c;
 
     //* Search for the closest component of comp
-    int counter = 0;
     std::vector<int> labels(nb_comp);
     std::vector<int> real_ind(nb_comp);
 #ifndef NO_PARALLEL
@@ -376,13 +375,14 @@ bool GMM::_split(const Component::Ptr& comp){
 #else
     for(int l = 0; l < _nbr_class; l++){
 #endif
-        if(l == lbl) // only consider models of other classes
+            if(l == lbl) // only consider models of other classes
                 continue;
 
             if(_model[l].empty()) // if the model of classes l is empty
                 continue;
 
         // compute the distances the component candidate for splitting and the components of the model of class l
+
 #ifndef NO_PARALLEL
             tbb::parallel_for(tbb::blocked_range<size_t>(0,_model[l].size()),
                               [&](tbb::blocked_range<size_t> s){
@@ -390,10 +390,14 @@ bool GMM::_split(const Component::Ptr& comp){
 #else
             for (int j = 0; j < _model[l].size(); j++) {
 #endif
-                    distances(counter) = comp->distance(_model[l][j]->get_mu());
-                    labels[counter] = l;
-                    real_ind[counter] = j;
-                    counter++;
+                    int index = 0;
+                    for(int k = 0; k < l; k++)
+                        if(lbl != k)
+                            index += _model[k].size();
+                    index += j;
+                    distances(index) = comp->distance(_model[l][j]->get_mu());
+                    labels[index] = l;
+                    real_ind[index] = j;
                 }
 #ifndef NO_PARALLEL
             });

@@ -62,14 +62,14 @@ std::vector<double> estimation(gmm* model, Eigen::VectorXd X){
     std::vector<double> estimations;
 
 #ifdef NO_PARALLEL
-    for(_current_lbl = 0; _current_lbl < _model->get_nbr_class(); _current_lbl++)
+    for(int lbl = 0; lbl < model->get_nbr_class(); lbl++)
     {
         double val;
-        for(const auto& model : _model->model()[_current_lbl])
+        for(const auto& model : model->model()[lbl])
         {
             val = model->get_factor()*
-                    model->compute_multivariate_normal_dist(_X);
-            sum_map[_current_lbl] += val;
+                    model->compute_multivariate_normal_dist(X);
+            sum_map[lbl] += val;
         }
     }
 #else
