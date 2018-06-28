@@ -206,6 +206,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         score = loglikelihood();
 
 
+    //* Find the closest component within the same class
     Eigen::VectorXd distances(_model[lbl].size());
 
     int r, c;
@@ -217,6 +218,7 @@ bool GMM::_merge(const Component::Ptr& comp){
         distances(j) = comp->distance(_model[lbl][j]->get_mu());
     }
     distances.minCoeff(&r,&c);
+    //*/
 //    if(_model[lbl][r]->get_samples().size() < 5)
 //        return false;
 
@@ -297,10 +299,23 @@ double GMM::_component_score(int i, int lbl){
 
 bool GMM::_split(const Component::Ptr& comp){
 
+
+
+
     //*If the component have less than 4 element abort
     if(comp->size() < 5)
         return false;
     //*/
+
+    //* Capture time.
+#ifdef VERBOSE
+    std::cout << "split function" << std::endl;
+//    std::cout << "component of class " << lbl << std::endl;
+    std::chrono::system_clock::time_point timer;
+    timer  = std::chrono::system_clock::now();
+#endif
+    //*/
+
 
     //*/ Retrieve the label and the indice of the component
     int lbl = comp->get_label();
@@ -330,15 +345,6 @@ bool GMM::_split(const Component::Ptr& comp){
     //*/
 
 
-    //* Capture time.
-#ifdef VERBOSE
-    std::cout << "split function" << std::endl;
-    std::cout << "component of class " << lbl << std::endl;
-    std::chrono::system_clock::time_point timer;
-    timer  = std::chrono::system_clock::now();
-#endif
-    //*/
-
 
     //* Local variables needed for the algorithm
     GMM candidate;
@@ -363,23 +369,43 @@ bool GMM::_split(const Component::Ptr& comp){
     int counter = 0;
     std::vector<int> labels(nb_comp);
     std::vector<int> real_ind(nb_comp);
+#ifndef NO_PARALLEL
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,_nbr_class),
+                      [&](tbb::blocked_range<size_t> r){
+        for(int l = r.begin(); l != r.end(); l++){
+#else
     for(int l = 0; l < _nbr_class; l++){
+#endif
         if(l == lbl) // only consider models of other classes
-            continue;
+                continue;
 
-        if(_model[l].empty()) // if the model of classes l is empty
-            continue;
+            if(_model[l].empty()) // if the model of classes l is empty
+                continue;
 
         // compute the distances the component candidate for splitting and the components of the model of class l
-        for (int j = 0; j < _model[l].size(); j++) {
-            distances(counter) = comp->distance(_model[l][j]->get_mu());
-            labels[counter] = l;
-            real_ind[counter] = j;
-            counter++;
+#ifndef NO_PARALLEL
+            tbb::parallel_for(tbb::blocked_range<size_t>(0,_model[l].size()),
+                              [&](tbb::blocked_range<size_t> s){
+                for(int j = s.begin(); j != s.end(); j++){
+#else
+            for (int j = 0; j < _model[l].size(); j++) {
+#endif
+                    distances(counter) = comp->distance(_model[l][j]->get_mu());
+                    labels[counter] = l;
+                    real_ind[counter] = j;
+                    counter++;
+                }
+#ifndef NO_PARALLEL
+            });
+#endif
+
         }
-    }
+#ifndef NO_PARALLEL
+    });
+#endif
     distances.minCoeff(&closest_comp_ind,&c); // take the indice of the closest component
     //*/
+
 
     if(comp->intersect(_model[labels[closest_comp_ind]][real_ind[closest_comp_ind]])){ //if the components intersect
         Component::Ptr new_component;

@@ -87,7 +87,8 @@ int main(int argc, char** argv){
                   << std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::system_clock::now() - timer).count() << std::endl;
         for(int i = 0; i < 10; i++)
-            std::cout << "class " << i << " : " << trainer.access_classifier().model()[i].size() << std::endl;
+            std::cout << "class " << i << " : " << trainer.access_classifier().model()[i].size()
+                      << " : " << trainer.access_classifier().get_samples().get_data(i).size() <<  std::endl;
 //        std::cout << trainer.access_classifier().print_info() << std::endl;
         std::cout << "ERROR = " << error << std::endl;
         i++;
