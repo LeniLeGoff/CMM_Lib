@@ -6,6 +6,7 @@
 #include <eigen3/Eigen/Eigen>
 #include <iagmm/data.hpp>
 #include <boost/random.hpp>
+#include <chrono>
 
 #ifndef NO_PARALLEL
     #include <tbb/tbb.h>
@@ -105,11 +106,21 @@ public:
         if(_g_count + 10*_batch_size > _train_data.size())
             upper_bound -= upper_bound - _train_data.size();
         boost::random::uniform_int_distribution<> dist(_g_count,upper_bound);
+        std::chrono::system_clock::time_point timer;
+        timer  = std::chrono::system_clock::now();
+
         for(int i = 0; i < _batch_size; i++){
             n = dist(_gen);
             _classifier.add(_train_data[n].second,_train_data[n].first);
         }
+        std::cout << "add step, time spent : "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now() - timer).count() << std::endl;
+        timer  = std::chrono::system_clock::now();
         _classifier.update();
+        std::cout << "update step, time spent : "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now() - timer).count() << std::endl;
         _g_count += _batch_size;
         if(_g_count > _train_data.size())
             _g_count = 0;

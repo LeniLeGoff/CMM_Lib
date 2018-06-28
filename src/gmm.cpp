@@ -200,7 +200,8 @@ bool GMM::_merge(const Component::Ptr& comp){
 
     GMM candidate;
     double score, candidate_score;
-    score = loglikelihood();
+    if(_llhood_drive)
+        score = loglikelihood();
 
 
     Eigen::VectorXd distances(_model[lbl].size());
@@ -343,7 +344,8 @@ bool GMM::_split(const Component::Ptr& comp){
     //*/
 
     //* compute of the score of the current model
-    score = loglikelihood();
+    if(_llhood_drive)
+        score = loglikelihood();
 
     //*/
     int nb_comp = 0;
@@ -567,17 +569,28 @@ void GMM::update(){
 
 void GMM::update_model(){
     std::vector<Component::Ptr> comp;
+
+    for(const auto& components : _model)
+        for(auto& comp : components.second)
+            comp->delete_outliers();
+
     for(int i = 0; i < _nbr_class; i++){
         for(int j = 0; j < _model[i].size(); j++){
             comp.push_back(_model[i][j]);
         }
     }
+
+
     for(int i = 0; i < comp.size(); i++){
-        _estimate_training_dataset();
+
+        if(_llhood_drive)
+            _estimate_training_dataset();
 
         if(!_split(comp[i]))
             _merge(comp[i]);
     }
+
+
     for(auto& components : _model)
         for(auto& comp : components.second)
             comp->update_parameters();
@@ -586,7 +599,8 @@ void GMM::update_model(){
 void GMM::update_model(int ind, int lbl){
 
     int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
-    _estimate_training_dataset();
+    if(_llhood_drive)
+        _estimate_training_dataset();
 
 
     for(const auto& components : _model)
@@ -601,7 +615,8 @@ void GMM::update_model(int ind, int lbl){
         n = _model[i].size();
 
         if(n < 2) break;
-        _estimate_training_dataset();
+        if(_llhood_drive)
+            _estimate_training_dataset();
 
         do
             rand_ind = rand()%n;

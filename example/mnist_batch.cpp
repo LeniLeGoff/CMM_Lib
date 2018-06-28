@@ -41,12 +41,11 @@ Eigen::VectorXd compute_histogram(const std::vector<uint8_t> &digit,int bins){
 
 int main(int argc, char** argv){
 
-    if(argc != 6){
+    if(argc != 5){
         std::cout << "Usage : " << std::endl;
         std::cout << "\t - location of MNIST dataset" << std::endl;
         std::cout << "\t - batch size" << std::endl;
         std::cout << "\t - number of epoch" << std::endl;
-        std::cout << "\t - budget of training samples (max 60000)" << std::endl;
         std::cout << "\t - alpha" << std::endl;
         return 1;
     }
@@ -54,35 +53,39 @@ int main(int argc, char** argv){
     std::string data_location = argv[1];
     int batch_size = std::stoi(argv[2]);
     int nbr_epoch = std::stoi(argv[3]);
-    int budget = std::stoi(argv[4]);
 
     // Load MNIST data
     mnist::MNIST_dataset<std::vector, std::vector<uint8_t>, uint8_t> mnist_dataset =
             mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(data_location);
 
     iagmm::Component::_outlier_thres = 0;
-    iagmm::Component::_alpha = std::stod(argv[5]);
+    iagmm::Component::_alpha = std::stod(argv[4]);
     iagmm::TrainingData train_dataset;
     iagmm::TrainingData test_dataset;
     int dimension = 49;
 
 
-    for(int k = 0; k < budget; k++)
+    for(int k = 0; k < mnist_dataset.training_images.size() ; k++)
         train_dataset.add(mnist_dataset.training_labels[k],compute_histogram(mnist_dataset.training_images[k],dimension));
 
-    for(int k = 0; k < mnist_dataset.test_images.size(); k++)
+    for(int k = 0; k < 1000; k++)
         test_dataset.add(mnist_dataset.test_labels[k],compute_histogram(mnist_dataset.test_images[k],dimension));
 
 
     iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,dimension,10,batch_size);
     trainer.access_classifier().set_update_mode(iagmm::GMM::BATCH);
-
     double error = 0;
     int i = 0;
+    std::chrono::system_clock::time_point timer;
+
     while(i < nbr_epoch){
         std::cout << "EPOCH -- " << i << std::endl;
         trainer.epoch();
+        timer  = std::chrono::system_clock::now();
         error = trainer.test();
+        std::cout << "test step, time spent : "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now() - timer).count() << std::endl;
         for(int i = 0; i < 10; i++)
             std::cout << "class " << i << " : " << trainer.access_classifier().model()[i].size() << std::endl;
 //        std::cout << trainer.access_classifier().print_info() << std::endl;

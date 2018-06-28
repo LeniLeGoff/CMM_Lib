@@ -3,6 +3,7 @@
 #include <iostream>
 #include <boost/math/distributions/fisher_f.hpp>
 #include <boost/random.hpp>
+
 #define COEF 1.
 
 using namespace iagmm;
@@ -306,6 +307,8 @@ void Component::covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& deter
 }
 
 void Component::delete_outliers(){
+    if(_outlier_thres == 0)
+        return;
     std::vector<int> indexes;
     double est;
     double max = compute_multivariate_normal_dist(_mu);

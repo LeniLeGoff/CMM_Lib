@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
 
-set(CMAKE_CXX_FLAGS "-fopenmp -std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 if(DEBUG)
     set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
