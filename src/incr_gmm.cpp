@@ -55,9 +55,8 @@ std::vector<double> IncrementalGMM::compute_estimation(const Eigen::VectorXd &X)
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
-    Estimator<IncrementalGMM> estimator(this, X);
 
-    return estimator.estimation();
+    return estimation<IncrementalGMM>(this,X);
 }
 
 void IncrementalGMM::new_component(const Eigen::VectorXd& sample, int label){

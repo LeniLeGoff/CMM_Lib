@@ -289,7 +289,7 @@ int main(int argc, char** argv){
         error_point.setPosition(sf::Vector2f(iteration,(1-error)*400+400));
         error_curve.push_back(error_point);
 
-
+        gmm._estimate_training_dataset();
         llhood = gmm.loglikelihood();
         double llhood_norm = -llhood/10.;
         sf::RectangleShape llhood_point(sf::Vector2f(4,4));

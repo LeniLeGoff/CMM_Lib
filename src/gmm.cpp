@@ -14,9 +14,11 @@ std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
-    Estimator<GMM> estimator(this, X);
 
-    return estimator.estimation();
+
+//    Estimator<GMM> estimator(this, X);
+
+    return estimation<GMM>(this,X);
 }
 
 void GMM::compute_normalisation(){

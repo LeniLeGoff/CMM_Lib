@@ -14,7 +14,6 @@ if(VERBOSE)
     set(CMAKE_CXX_FLAGS "-DVERBOSE ${CMAKE_CXX_FLAGS}")
 endif()
 
-find_package(OpenCV)
 
 include_directories(/usr/local/include/
                     /usr/include/eigen3
@@ -82,6 +81,8 @@ target_link_libraries(mnist_batch iagmm tbb yaml-cpp)
 
 #test
 if(TEST)
+find_package(OpenCV)
+
 #add_executable(test_1 test/test.cpp)
 #target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
