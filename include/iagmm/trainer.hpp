@@ -126,18 +126,25 @@ public:
             _g_count = 0;
     }
 
-    double test(){
+    double test(std::vector<double> &errors){
         double error = 0;
+        errors.resize(_classifier.get_nbr_class(),0);
 #ifdef NO_PARALLEL
+        double est;
         for(int i = 0; i < _test_data.size(); i++){
-            error += 1 - _classifier.compute_estimation(_test_data[i].second)[_test_data[i].first];
+            est =  _classifier.compute_estimation(_test_data[i].second)[_test_data[i].first];
+            error += 1 - est;
+            errors[_test_data[i].first]+=1-est;
         }
 #else
         _error_computer ec(_classifier,_test_data);
         tbb::parallel_reduce(tbb::blocked_range<size_t>(0,_test_data.size()),ec);
         error = ec.get_error();
+        errors = ec.get_errors();
 #endif
         error = error/(double) _test_data.size();
+        for(int i = 0; i < errors.size(); i++)
+            errors[i] = errors[i]/(double)_test_data.get_data(i).size();
         return error;
     }
 
@@ -159,29 +166,43 @@ private:
     class _error_computer{
     public:
         _error_computer(Classifier& model, TrainingData samples) :
-            _model(model), _samples(samples), _sum(0){}
+            _model(model), _samples(samples), _sum(0){
+            _sums.resize(_model.get_nbr_class(),0);
+        }
 
 #ifndef NO_PARALLEL
         _error_computer(const _error_computer &sc, tbb::split) :
-            _model(sc._model), _samples(sc._samples), _sum(0){}
+            _model(sc._model), _samples(sc._samples), _sum(0){
+            _sums.resize(_model.get_nbr_class(),0);
+        }
 
         void operator ()(const tbb::blocked_range<size_t>& r){
             double sum = _sum;
-            for(int i = r.begin(); i != r.end(); i++)
-                sum += 1 - _model.compute_estimation(_samples[i].second)[_samples[i].first];
+            double est;
+            std::vector<double> sums = _sums;
+            for(int i = r.begin(); i != r.end(); i++){
+                est =  _model.compute_estimation(_samples[i].second)[_samples[i].first];
+                sum += 1 - est;
+                sums[_samples[i].first] = 1 - est;
+            }
             _sum = sum;
+            _sums = sums;
         }
 
         void join(const _error_computer& sc){
             _sum += sc._sum;
+            for(int i = 0; i < _sums.size(); i++)
+                _sums[i] += sc._sums[i];
         }
 #endif
 
         double get_error(){return _sum;}
+        std::vector<double> get_errors(){return _sums;}
 
     private:
         Classifier _model;
         double _sum;
+        std::vector<double> _sums;
         TrainingData _samples;
     };
 

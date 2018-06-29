@@ -77,18 +77,19 @@ int main(int argc, char** argv){
     double error = 0;
     int i = 0;
     std::chrono::system_clock::time_point timer;
-
+    std::vector<double> errors;
     while(i < nbr_epoch){
         std::cout << "EPOCH -- " << i << std::endl;
         trainer.epoch();
         timer  = std::chrono::system_clock::now();
-        error = trainer.test();
+        error = trainer.test(errors);
         std::cout << "test step, time spent : "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::system_clock::now() - timer).count() << std::endl;
         for(int i = 0; i < 10; i++)
             std::cout << "class " << i << " : " << trainer.access_classifier().model()[i].size()
-                      << " : " << trainer.access_classifier().get_samples().get_data(i).size() <<  std::endl;
+                      << " : " << trainer.access_classifier().get_samples().get_data(i).size()
+                      << " : " << errors[i] << std::endl;
 //        std::cout << trainer.access_classifier().print_info() << std::endl;
         std::cout << "ERROR = " << error << std::endl;
         i++;
