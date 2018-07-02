@@ -22,7 +22,9 @@ for file in os.listdir(sys.argv[1]) :
   param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
   file_path = sys.argv[1] + "/" + file
   epoch, nbr_comp, nbr_samples = mnist.load_class_stat(file_path)
-  nbr_comp_v.append(nbr_comp)
+  
+  nbr_comp_v.append(sum(np.array(nbr_comp)))
+
   nbr_samples_v.append(nbr_samples)
 
 indexes = sorted(range(len(param_value)), key=lambda k: param_value[k])
@@ -43,9 +45,9 @@ colors = [cmap(i) for i in np.linspace(0,1,len(nbr_comp_v))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
 for i in range(0,len(nbr_comp_v)) :
-  for k in range(0,len(nbr_comp_v[i])):
-      x = np.array(epoch) + k
-      ax1.bar(x,nbr_comp_v[i][k],1.,color=colors[i],label="alpha = " + str(param_value[i]))
+      x = np.array(epoch) + i*2 
+      ax1.bar(x,nbr_comp_v[i],2,color=colors[i],label="alpha = " + str(param_value[i]))
 
+plt.legend()
 
 plt.show()
