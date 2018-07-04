@@ -70,12 +70,12 @@ target_link_libraries(yml_to_libsvm iagmm yaml-cpp boost_serialization boost_sys
 add_executable(yml_to_data_labels tools/yml_to_data_labels.cpp)
 target_link_libraries(yml_to_data_labels iagmm yaml-cpp boost_serialization boost_system)
 
+#examples
 add_executable(mnist_batch example/mnist_batch.cpp)
 target_link_libraries(mnist_batch iagmm tbb yaml-cpp)
 
-
-#add_executable(mnist_online example/mnist_online.cpp)
-#target_link_libraries(mnist_online iagmm tbb)
+add_executable(eggholder_two_class_problem example/eggholder_two_class_problem.cpp)
+target_link_libraries(eggholder_two_class_problem iagmm tbb yaml-cpp)
 
 ####
 
@@ -83,8 +83,8 @@ target_link_libraries(mnist_batch iagmm tbb yaml-cpp)
 if(TEST)
 find_package(OpenCV)
 
-#add_executable(test_1 test/test.cpp)
-#target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+add_executable(test_1 test/test.cpp)
+target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(test_batch test/test_batch.cpp)
 #target_link_libraries(test_batch iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)

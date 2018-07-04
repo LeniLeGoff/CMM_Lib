@@ -28,14 +28,7 @@ Eigen::VectorXd compute_histogram(const std::vector<uint8_t> &digit,int bins){
         if(hist(i) != hist(i))
             hist(i) = 0;
     }
-//    for(int i = 1; i < digit.size(); i++){
-//        if(i%size == 0){
-//            hist(j) = counter/(255.*(float)size);
-//            counter = 0;
-//            j++;
-//        }
-//        counter+=digit[i];
-//    }
+
     return hist;
 }
 

@@ -33,6 +33,7 @@ colors = [cmap(i) for i in np.linspace(0,1,len(errors))]
 fig, ax1 = plt.subplots(1,sharex=True)
 for i in range(0,len(errors)) :
   ax1.plot(epoch,errors[i],linewidth=2,color=colors[i],label="alpha = " + str(param_value[i]))
+  ax1.text(300,errors[i][-1],str(param_value[i]))
 
 plt.legend()
 

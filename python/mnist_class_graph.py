@@ -19,6 +19,7 @@ nbr_samples_v = list()
 errors_v = list()
 
 for file in os.listdir(sys.argv[1]) :
+  print file
   param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
   file_path = sys.argv[1] + "/" + file
   epoch, nbr_comp, nbr_samples = mnist.load_class_stat(file_path)
@@ -44,10 +45,11 @@ cmap = plt.get_cmap("gnuplot")
 colors = [cmap(i) for i in np.linspace(0,1,len(nbr_comp_v))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
+j = 0
 for i in range(0,len(nbr_comp_v)) :
-      x = np.array(epoch) + i*2 
-      ax1.bar(x,nbr_comp_v[i],2,color=colors[i],label="alpha = " + str(param_value[i]))
+      x = np.array(epoch) + i
+      ax1.bar(x,nbr_comp_v[i],1,color=colors[i],label="alpha = " + str(param_value[i]))
 
-plt.legend()
+plt.legend(bbox_to_anchor=(0.3,1))
 
 plt.show()

@@ -81,7 +81,7 @@ int main(int argc, char** argv){
     std::vector<sf::RectangleShape> error_curve;
 
     Eigen::Vector2i coord(0,0);
-    std::vector<std::pair<Eigen::VectorXd,double>> all_sample(MAX_Y*MAX_X);
+    std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> all_sample(MAX_Y*MAX_X);
 
 
     for(int i = 0; i < MAX_X*MAX_Y; i++){
@@ -174,11 +174,13 @@ int main(int argc, char** argv){
                         coord[1]++;
                     if(coord[1] >= MAX_Y)
                         coord[1] = 0;
-                    double est = gmm.compute_estimation(
-                                Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),1);
+                    std::vector<double> est_vect(2);
+
+                    est_vect = gmm.compute_estimation(
+                                Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
                     all_sample[i] =
                                 std::make_pair(
-                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),est);
+                                    Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y),est_vect);
                     //                    double conf = gmm.confidence(Eigen::Vector2d((double)(i%MAX_X)/(double)MAX_X,(double)(i/MAX_X)/(double)MAX_Y));
 //                    if(conf < 1e-03)
 //                        conf = 0;
@@ -190,10 +192,10 @@ int main(int argc, char** argv){
                                           255*dist,
                                           255*dist)
                                 );
-                    error += fabs(est-real_space[i%MAX_X][i/MAX_X]);
+                    error += 1-est_vect[real_space[i%MAX_X][i/MAX_X]];
 
                     rects_estimated[i].setFillColor(
-                                sf::Color(255*est,0,255*(1-est))
+                                sf::Color(255*est_vect[1],0,255*est_vect[0])
                                 );
                 }
             });
@@ -243,8 +245,8 @@ int main(int argc, char** argv){
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
-        std::cout << "loglikelihood : " << gmm.loglikelihood() << std::endl;
-        std::cout << gmm.print_info() << std::endl;
+//        std::cout << "loglikelihood : " << gmm.loglikelihood() << std::endl;
+//        std::cout << gmm.print_info() << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
         std::cout << "Time spent " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::system_clock::now() - timer) << std::endl;

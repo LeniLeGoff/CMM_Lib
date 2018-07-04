@@ -22,10 +22,10 @@ def load_class_stat(file_path):
       linesplit = line.split(" ")
       if linesplit[0] == "EPOCH" :
         epoch_num = int(linesplit[2])
-        if epoch_num%20 == 0 :
+        if epoch_num%10 == 0 :
           epoch.append(epoch_num)
       linesplit = line.split(" : ")
-      if linesplit[0].split(" ")[0] == "class" and epoch_num%20 == 0 :
+      if linesplit[0].split(" ")[0] == "class" and epoch_num%10 == 0 :
         index = int(linesplit[0].split(" ")[1])
         nbr_comp[index].append(int(linesplit[1]))
         nbr_samples[index].append(int(linesplit[2]))
