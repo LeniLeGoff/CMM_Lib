@@ -56,6 +56,9 @@ int main(int argc, char** argv){
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
     });
+    gmm.set_loglikelihood_driver(false);
+    gmm.use_confidence(true);
+    gmm.use_uncertainty(false);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

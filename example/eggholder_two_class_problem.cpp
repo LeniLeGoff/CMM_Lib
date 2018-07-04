@@ -30,15 +30,21 @@ int main(int argc, char** argv){
     tbb::task_scheduler_init init;
 #endif
 
-    if(argc < 4){
-        std::cout << "usage : alpha and outlier threshold" << std::endl;
+    if(argc < 6){
+        std::cout << "usage : \n"
+                  << "\t- alpha \n"
+                  << "\t- outlier threshold \n"
+                  << "\t- use loglikelihood (0|1) \n"
+                  << "\t- use uncertainty (0|1) \n"
+                  << "\t- use confidence (0|1) \n"
+                  << "\t- (optional) eggholder function parameter " << std::endl;
         return 1;
     }
 
     double A;
 
     if(argc == 4)
-        A = std::stod(argv[3]);
+        A = std::stod(argv[6]);
     else
         A = rand()%100;
     std::cout << "A = " << A << std::endl;
@@ -54,7 +60,18 @@ int main(int argc, char** argv){
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
     });
-    gmm.set_loglikelihood_driver(false);
+
+    if(std::stoi(argv[3]))
+        gmm.set_loglikelihood_driver(true);
+    else gmm.set_loglikelihood_driver(false);
+    if(std::stoi(argv[4]))
+        gmm.use_uncertainty(true);
+    else gmm.use_uncertainty(false);
+    if(std::stoi(argv[5]))
+        gmm.use_confidence(true);
+    else gmm.use_confidence(false);
+
+
     gmm.set_update_mode(iagmm::GMM::STOCHASTIC);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
