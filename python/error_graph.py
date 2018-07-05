@@ -8,9 +8,10 @@ import data_loaders as dl
 
 
 
-if len(sys.argv) != 2 :
+if len(sys.argv) != 3 :
   print("Usage : \narg1 : folder path")
   print("arg2 : online or batch")
+  sys.exit(1)
 
 errors = list()
 x = list()
