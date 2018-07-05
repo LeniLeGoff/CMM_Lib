@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import numpy as np
-import mnist_graph as mnist
+import data_loaders as dl
 
 
 
@@ -22,7 +22,7 @@ for file in os.listdir(sys.argv[1]) :
   print file
   param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
   file_path = sys.argv[1] + "/" + file
-  epoch, nbr_comp, nbr_samples = mnist.load_class_stat(file_path)
+  epoch, nbr_comp, nbr_samples = dl.load_class_stat(file_path)
   
   nbr_comp_v.append(sum(np.array(nbr_comp)))
 

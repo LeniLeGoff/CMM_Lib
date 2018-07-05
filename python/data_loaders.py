@@ -34,7 +34,7 @@ def load_class_stat(file_path):
   
   return epoch, nbr_comp, nbr_samples
 
-def load_error(file_path):
+def load_batch_error(file_path):
   error = list()
   epoch = list()
   with open(file_path) as file :
@@ -48,3 +48,16 @@ def load_error(file_path):
 
   return epoch, error
 
+def load_online_error(file_path):
+  error = list()
+  epoch = list()
+  with open(file_path) as file :
+    content = file.readlines()
+    for line in content :
+      linesplit = line.split(" ")
+      if linesplit[0] == "ERROR" :
+        error.append(float(linesplit[2]))
+      elif linesplit[0] == "ITERATION" :
+        epoch.append(int(linesplit[2]))
+
+  return epoch, error
