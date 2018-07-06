@@ -61,3 +61,14 @@ def load_online_error(file_path):
         epoch.append(int(linesplit[2]))
 
   return epoch, error
+
+
+def median_perc(data) :
+    median = np.zeros(data.shape[1])
+    perc_25 = np.zeros(data.shape[1])
+    perc_75 = np.zeros(data.shape[1])
+    for i in range(0, len(median)):
+        median[i] = np.median(data[:, i])
+        perc_25[i] = np.percentile(data[:, i], 25)
+        perc_75[i] = np.percentile(data[:, i], 75)
+    return median, perc_75, perc_25
