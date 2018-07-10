@@ -20,12 +20,14 @@ for folder in os.listdir(sys.argv[1]) :
   folder_path = sys.argv[1] + "/" + folder
   errors = list()
   for file in os.listdir(folder_path) :
-    param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
     file_path = folder_path + "/" + file
     if(sys.argv[2] == "batch"):
+      param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
       x, error = dl.load_batch_error(file_path)
     elif (sys.argv[2] == "online"):
       x, error = dl.load_online_error(file_path)
+      param_value.append(float(file.split("_")[-1].split("-")[0]))
+
 
     errors.append(error)
   errors_v.append(errors)
@@ -71,12 +73,30 @@ cmap = plt.get_cmap("gnuplot")
 colors = [cmap(i) for i in np.linspace(0,1,len(errors))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
+ax1.set_ylim([0,0.6])
+
+
 for i in range(0,len(errors_m)) :
   ax1.plot(x,errors_m[i],linewidth=2,color=colors[i],label="alpha = " + str(param_value[i]))
   # ax1.fill_between(x,errors_25p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
   # ax1.fill_between(x,errors_75p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
   ax1.text(x[-1],errors_m[i][-1],str(param_value[i]))
 
-plt.legend()
 
-plt.show()
+
+# plt.legend(bbox_to_anchor=(1.4,1))
+
+folder = sys.argv[1]
+
+print folder
+
+exp_name = folder.split("/")[-2]
+
+print exp_name
+
+plt.tight_layout()
+
+plt.savefig(sys.argv[1] + "../graphs/"  + exp_name + ".png")#,bbox_inches='tight')
+
+
+# plt.show()
