@@ -73,7 +73,7 @@ cmap = plt.get_cmap("gnuplot")
 colors = [cmap(i) for i in np.linspace(0,1,len(errors))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
-ax1.set_ylim([0,0.6])
+ax1.set_ylim([0.1,0.6])
 
 
 for i in range(0,len(errors_m)) :
@@ -84,7 +84,7 @@ for i in range(0,len(errors_m)) :
 
 
 
-# plt.legend(bbox_to_anchor=(1.4,1))
+plt.legend()
 
 folder = sys.argv[1]
 
@@ -96,7 +96,7 @@ print exp_name
 
 plt.tight_layout()
 
-plt.savefig(sys.argv[1] + "../graphs/"  + exp_name + ".png")#,bbox_inches='tight')
+# plt.savefig(sys.argv[1] + "../graphs/"  + exp_name + ".png")#,bbox_inches='tight')
 
 
-# plt.show()
+plt.show()
