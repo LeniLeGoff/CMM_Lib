@@ -7,6 +7,13 @@ import numpy as np
 import data_loaders as dl
 
 
+plt.style.use('fivethirtyeight')
+plt.rcParams['axes.facecolor'] = 'white'
+plt.rcParams['axes.edgecolor'] = 'white'
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['figure.edgecolor'] = 'white'
+plt.rcParams['savefig.facecolor'] = 'white'
+plt.rcParams['savefig.edgecolor'] = 'white'
 
 if len(sys.argv) != 3 :
   print("Usage : \narg1 : folder path")
@@ -73,7 +80,7 @@ cmap = plt.get_cmap("gnuplot")
 colors = [cmap(i) for i in np.linspace(0,1,len(errors))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
-ax1.set_ylim([0.1,0.6])
+ax1.set_ylim([0.,0.6])
 
 
 for i in range(0,len(errors_m)) :
@@ -84,7 +91,7 @@ for i in range(0,len(errors_m)) :
 
 
 
-plt.legend()
+plt.legend(bbox_to_anchor=(0., 1., 1., .0), loc=0,ncol=6)#, borderaxespad=0.)
 
 folder = sys.argv[1]
 
