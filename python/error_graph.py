@@ -77,17 +77,17 @@ errors_75p = errors_sorted_75p
 errors_25p = errors_sorted_25p
 
 cmap = plt.get_cmap("gnuplot")
-colors = [cmap(i) for i in np.linspace(0,1,len(errors))]
+colors = ['k','r'] #[cmap(i) for i in np.linspace(0,1,len(errors))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
 ax1.set_ylim([0.,0.6])
 
 
 for i in range(0,len(errors_m)) :
-  ax1.plot(x,errors_m[i],linewidth=2,color=colors[i],label="alpha = " + str(param_value[i]))
-  # ax1.fill_between(x,errors_25p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
-  # ax1.fill_between(x,errors_75p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
-  ax1.text(x[-1],errors_m[i][-1],str(param_value[i]))
+  ax1.plot(x,errors_m[i],linewidth=2,color=colors[i],label="loglikelihood = " + str(param_value[i]))
+  ax1.fill_between(x,errors_25p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
+  ax1.fill_between(x,errors_75p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
+  # ax1.text(x[-1],errors_m[i][-1],str(param_value[i]))
 
 
 
