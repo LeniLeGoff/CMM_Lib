@@ -172,8 +172,11 @@ public:
     double loglikelihood();
     double loglikelihood(int label);
     void set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
+    bool get_loglikelihood_driver(){return _llhood_drive;}
     void use_confidence(bool c){_use_confidence = c;}
     void use_uncertainty(bool u){_use_uncertainty = u;}
+    bool get_use_confidence(){return _use_confidence;}
+    bool get_use_uncertainty(){return _use_uncertainty;}
 
 private:
 
