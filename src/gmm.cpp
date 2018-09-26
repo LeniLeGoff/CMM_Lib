@@ -123,8 +123,10 @@ Eigen::VectorXd  GMM::mean_shift(const Eigen::VectorXd& X, int lbl){
     Eigen::VectorXd numerator = Eigen::VectorXd::Zero(_dimension);
     //    for(const auto& comps : _model){
     for(int i = 0; i < _model[lbl].size(); i++){
-        numerator += _model[lbl][i]->get_factor()*_model[lbl][i]->compute_multivariate_normal_dist(X)*_model[lbl][i]->get_mu();
-        estimation += _model[lbl][i]->get_factor()*_model[lbl][i]->compute_multivariate_normal_dist(X);
+        numerator += _model[lbl][i]->get_factor()*
+                _model[lbl][i]->compute_multivariate_normal_dist(X)*_model[lbl][i]->get_mu();
+        estimation += _model[lbl][i]->get_factor()*
+                _model[lbl][i]->compute_multivariate_normal_dist(X);
     }
     //    }
 
@@ -142,8 +144,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
     if(size == 0)
         return 0;
 
+    //* Look for the closest consistent (size >= 5) component of X
     Eigen::VectorXd distances(size);
     int k = 0;
+    double denominator = 0;
     for(int i = 0 ; i < _model.size(); i++){
         for (int j = 0; j < _model.at(i).size(); j++) {
             if(_model.at(i).size() < 5)
@@ -154,7 +158,9 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
     }
     int r=0,c=0;
     distances.minCoeff(&r,&c);
+    //*/
 
+    //* Compute the real indexes of the components in the model
     int lbl = 0, s = _model.at(lbl).size();
     while(r >= s){
         if(s >= 5)
@@ -162,6 +168,10 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
         lbl++;
         s = _model.at(lbl).size();
     }
+    //*/
+
+
+
 
     return _model.at(lbl).at(r)->compute_multivariate_normal_dist(X)/
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
@@ -470,7 +480,9 @@ bool GMM::_split(const Component::Ptr& comp){
     return false;
 }
 
-int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd &choice_dist_map){
+
+int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
+                     Eigen::VectorXd &choice_dist_map){
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
     boost::random::uniform_int_distribution<> dist_uni(0,samples.size()-1);
 
@@ -511,7 +523,9 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
                 est = 0;
 
             double c = _use_confidence ? confidence(samples[i].first) : 0;
-            if(c > 1) c = 1;
+            if(c > 1)
+                c = 1;
+
             else if (c < 10e-4) c = 0;
 
             if(!_use_uncertainty)
@@ -620,8 +634,9 @@ void GMM::update_model(){
         if(_llhood_drive)
             _estimate_training_dataset();
 
-        if(!_split(comp[i]))
-            _merge(comp[i]);
+//        if(!_split(comp[i]))
+        _split(comp[i]);
+        _merge(comp[i]);
     }
 
 
@@ -642,7 +657,9 @@ void GMM::update_model(int ind, int lbl){
             comp->delete_outliers();
 
     n = _model[lbl].size();
-    if(!_split(_model[lbl][ind]) && n > 1)
+//    if(!_split(_model[lbl][ind]) && n > 1)
+    _split(_model[lbl][ind]);
+    if(n>1)
         _merge(_model[lbl][ind]);
 
     for(int i = 0; i < _nbr_class; i++){
@@ -655,8 +672,9 @@ void GMM::update_model(int ind, int lbl){
         do
             rand_ind = rand()%n;
         while(rand_ind == ind);
-        if(!_split(_model[i][rand_ind]))
-            _merge(_model[i][rand_ind]);
+//        if(!_split(_model[i][rand_ind]))
+        _split(_model[i][rand_ind]);
+        _merge(_model[i][rand_ind]);
 
 
     }

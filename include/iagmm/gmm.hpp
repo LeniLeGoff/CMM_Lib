@@ -124,7 +124,8 @@ public:
 
     double confidence(const Eigen::VectorXd& X) const;
 
-    int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples, Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
+                    Eigen::VectorXd& choice_dist_map);
 
     void EM_init();
     void EM_step();
@@ -183,9 +184,11 @@ private:
     bool _merge(const Component::Ptr& comp);
     double _component_score(int i, int lbl);
     bool _split(const Component::Ptr& comp);
+    void _update_factors(int lbl);
+
+
     void _expectation(int lbl);
     void _maximisation(int lbl);
-    void _update_factors(int lbl);
 
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 

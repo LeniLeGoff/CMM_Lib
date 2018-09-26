@@ -42,8 +42,8 @@ int main(int argc, char** argv){
     tbb::task_scheduler_init init;
 #endif
 
-    if(argc < 4){
-        std::cout << "usage : nbr_class (max 10), alpha and outlier threshold" << std::endl;
+    if(argc < 5){
+        std::cout << "usage : nbr_class (max 10), alpha [0,1], u (0|1) and c (0|1)" << std::endl;
         return 1;
     }
 
@@ -78,7 +78,7 @@ int main(int argc, char** argv){
     //    std::vector<Cluster::Ptr> model;
 
     Component::_alpha = std::stod(argv[2]);
-    Component::_outlier_thres = std::stod(argv[3]);
+    Component::_outlier_thres = 0;
 
     GMM gmm(2,nb_class);
     gmm.set_distance_function(
@@ -86,6 +86,8 @@ int main(int argc, char** argv){
         return (s1 - s2).squaredNorm();
     });
     gmm.set_loglikelihood_driver(false);
+    gmm.use_confidence(std::stoi(argv[3]));
+    gmm.use_uncertainty(std::stoi(argv[4]));
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

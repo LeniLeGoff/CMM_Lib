@@ -311,7 +311,7 @@ int main(int argc, char** argv){
 
         window.display();
 
-        std::cin.ignore();
+//        std::cin.ignore();
     }
 
 //    std::ofstream of("archive_gmm");
