@@ -149,3 +149,7 @@ target_link_libraries(mnist_test tbb  ${OpenCV_LIBRARIES})
 endif()
 ####
 
+message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
+message(STATUS "VERBOSE_RUNTIME is ${VERBOSE_RUNTIME}")
+message(STATUS "NO_PARALLEL is ${NO_PARALLEL}")
+
