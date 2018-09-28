@@ -37,16 +37,17 @@ add_custom_target(headers SOURCES ${HEADFILES})
 
 install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
-if(NO_PARALLEL)
-    add_definitions(-DNO_PARALLEL)
-    add_library(iagmm SHARED ${SRCFILES})
-    target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
-else()
-    set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
-    add_library(iagmm SHARED ${SRCFILES})
-    target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
-endif()
 
+add_library(iagmm SHARED ${SRCFILES})
+
+if (NO_PARALLEL)
+  add_definitions("-DNO_PARALLEL")
+else (NO_PARALLEL)
+  set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
+  target_link_libraries(iagmm tbb)  
+endif(NO_PARALLEL) 
+
+target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
 
 
 # The EXPORT option in install() and the install(EXPORT...) make iagmm
