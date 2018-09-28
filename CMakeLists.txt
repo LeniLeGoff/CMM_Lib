@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
+# The syntax set...CACHE used below chooses a value while letting caller override it.
 
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+# Ref https://cmake.org/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
+# It would be cleaner to declare per-target target_compile_features
+# and https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html
 
 if(DEBUG)
     set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
