@@ -21,7 +21,10 @@ if(VERBOSE_RUNTIME)
   add_definitions("-DVERBOSE")
 endif()
 
-
+# FIXME could find package eigen and declare that it's necessary only for tests.
+# FIXME could find package eigen.
+# FIXME could find boost components: boost_serialization boost_chrono boost_filesystem
+# FIXME could find package sfml and declare that it's necessary only for tests.
 include_directories(/usr/local/include/
                     /usr/include/eigen3
                     /usr/local/include/SFML
