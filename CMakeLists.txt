@@ -45,11 +45,20 @@ endif()
 
 
 
-install(TARGETS ${PROJECT_NAME}
+# The EXPORT option in install() and the install(EXPORT...) make iagmm
+# library available to other projects, ref
+# https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Exporting-and-Importing-Targets
+install(TARGETS ${PROJECT_NAME} EXPORT iagmm-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib)
 
+install(EXPORT iagmm-targets DESTINATION lib/iagmm)
 
+# Caller CMake project can use:
+# add_library(iagmm SHARED IMPORTED)
+# set_property(TARGET iagmm PROPERTY IMPORTED_LOCATION "${IAGMM_INSTALL_TREE}/lib/libiagmm.so" )
+# and be called like this:
+# cmake -DIAGMM_INSTALL_TREE=/some/path/ ...
 #tools
 
 #add_executable(load_archive tools/load_archive.cpp)
