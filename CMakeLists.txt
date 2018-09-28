@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
 # The line below cleanly ensure release builds have O3 optimization level.
 add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
 
+option(VERBOSE_RUNTIME "Set true to create a build with more run-time output." FALSE)
+
 # Since in CMake-generated makefiles, make VERBOSE=1 means verbose
 # *build*, renamed it to VERBOSE_RUNTIME.  In C++ code it remains VERBOSE.
 if(VERBOSE_RUNTIME)
