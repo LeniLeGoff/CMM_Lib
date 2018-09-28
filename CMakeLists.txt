@@ -107,13 +107,9 @@ target_link_libraries(eggholder_two_class_problem iagmm tbb yaml-cpp)
 
 ####
 
-# if(TEST) below is deprecated because CMake 3.10.2 introduced a TEST operator... cmake  --help-policy CMP0064
-if(POLICY CMP0064)
-  cmake_policy(SET CMP0064 OLD)
-endif()
+option(BUILD_TESTS "Set true to compile some test executables." FALSE)
 
-#test
-if(TEST)
+if(BUILD_TESTS)
 find_package(OpenCV)
 
 add_executable(test_1 test/test.cpp)
@@ -152,4 +148,5 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 message(STATUS "VERBOSE_RUNTIME is ${VERBOSE_RUNTIME}")
 message(STATUS "NO_PARALLEL is ${NO_PARALLEL}")
+message(STATUS "BUILD_TESTS is ${BUILD_TESTS}")
 
