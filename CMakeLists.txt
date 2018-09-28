@@ -37,6 +37,17 @@ add_custom_target(headers SOURCES ${HEADFILES})
 
 install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(DEFAULT_NO_PARALLEL TRUE)
+else(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(DEFAULT_NO_PARALLEL FALSE)
+endif(CMAKE_BUILD_TYPE STREQUAL Debug)
+
+option(NO_PARALLEL "If enabled, force sequential execution.  Very useful for debugging.  Enabled by default on debug build." ${DEFAULT_NO_PARALLEL})
+
+#set(NO_PARALLEL TRUE CACHE BOOL "If enabled, force sequential execution.  Very useful for debugging.  Enabled by default on debug build." )
+
+
 
 add_library(iagmm SHARED ${SRCFILES})
 
