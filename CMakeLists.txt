@@ -8,11 +8,10 @@ set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
 # It would be cleaner to declare per-target target_compile_features
 # and https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html
 
-if(DEBUG)
-    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
-else()
-    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Release -O3 ${CMAKE_CXX_FLAGS}")
-endif()
+
+# Eigen runs much much much faster when compiled in -O3.
+# The line below cleanly ensure release builds have O3 optimization level.
+add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
 
 if(VERBOSE)
     set(CMAKE_CXX_FLAGS "-DVERBOSE ${CMAKE_CXX_FLAGS}")
