@@ -79,6 +79,11 @@ target_link_libraries(eggholder_two_class_problem iagmm tbb yaml-cpp)
 
 ####
 
+# if(TEST) below is deprecated because CMake 3.10.2 introduced a TEST operator... cmake  --help-policy CMP0064
+if(POLICY CMP0064)
+  cmake_policy(SET CMP0064 OLD)
+endif()
+
 #test
 if(TEST)
 find_package(OpenCV)
