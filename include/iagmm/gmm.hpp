@@ -79,7 +79,7 @@ public:
         _model(gmm._model),_gen(gmm._gen),
         _last_index(gmm._last_index), _last_label(gmm._last_label),
         _membership(gmm._membership), _update_mode(gmm._update_mode),
-    _llhood_drive(gmm._llhood_drive){}
+    _llhood_drive(gmm._llhood_drive), _max_nb_components(gmm._max_nb_components){}
 
     ~GMM(){
         for(auto& comps: _model)
@@ -170,6 +170,8 @@ public:
 
     void set_update_mode(update_mode_t um){_update_mode = um;}
 
+    void set_max_nb_components(int max_nb){_max_nb_components = max_nb;}
+
     double loglikelihood();
     double loglikelihood(int label);
     void set_loglikelihood_driver(bool ll){_llhood_drive = ll;}
@@ -186,6 +188,7 @@ private:
     bool _split(const Component::Ptr& comp);
     void _update_factors(int lbl);
 
+    void _redescription();
 
     void _expectation(int lbl);
     void _maximisation(int lbl);
@@ -206,6 +209,8 @@ private:
 
     int _last_index;
     int _last_label;
+
+    int _max_nb_components = 0;
 
     int _dataset_size_max = 1000;
 
@@ -232,8 +237,6 @@ private:
         bool _all_samples;
         TrainingData _samples;
     };
-
-
 };
 }
 

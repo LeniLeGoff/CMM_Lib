@@ -81,6 +81,7 @@ int main(int argc, char** argv){
     Component::_outlier_thres = 0;
 
     GMM gmm(2,nb_class);
+    gmm.set_max_nb_components(10);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();

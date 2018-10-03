@@ -2,6 +2,13 @@
 
 using namespace iagmm;
 
+void TrainingData::generate_train_test_dataset(TrainingData& train, TrainingData& test,
+                                                float train_test_ratio){
+
+
+
+}
+
 bool TrainingData::load_yml(const std::string& filename, int& dimension, int& nbr_class){
     std::cout << "load dataset : " << filename << std::endl;
 

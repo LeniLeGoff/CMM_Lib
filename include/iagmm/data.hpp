@@ -129,6 +129,8 @@ public:
 
     estimation_t estimations;
 
+    void generate_train_test_dataset(TrainingData& train, TrainingData& test, float train_test_ratio);
+
     bool load_yml(const std::string& filename, int& dimension, int& nbr_class);
     bool save_yml(const std::string& filename) const;
     bool save_libsvm(const std::string& filename) const;
