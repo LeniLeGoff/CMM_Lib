@@ -11,7 +11,8 @@ using namespace iagmm;
 
 std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
 
-    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
+    if([&]() -> bool { for(int i = 0; i < _nbr_class; i++)
+    {if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
 
@@ -309,13 +310,13 @@ double GMM::_component_score(int i, int lbl){
 
 bool GMM::_split(const Component::Ptr& comp){
 
-
-
-
     //*If the component have less than 4 element abort
     if(comp->size() < 5)
         return false;
     //*/
+
+    if(_max_nb_components != 0 && _model[comp->get_label()].size() >= _max_nb_components)
+        return false;
 
     //* Capture time.
 #ifdef VERBOSE
@@ -634,9 +635,8 @@ void GMM::update_model(){
         if(_llhood_drive)
             _estimate_training_dataset();
 
-//        if(!_split(comp[i]))
-        _split(comp[i]);
-        _merge(comp[i]);
+        if(!_split(comp[i]))
+            _merge(comp[i]);
     }
 
 
@@ -657,9 +657,7 @@ void GMM::update_model(int ind, int lbl){
             comp->delete_outliers();
 
     n = _model[lbl].size();
-//    if(!_split(_model[lbl][ind]) && n > 1)
-    _split(_model[lbl][ind]);
-    if(n>1)
+    if(!_split(_model[lbl][ind]) && n > 1)
         _merge(_model[lbl][ind]);
 
     for(int i = 0; i < _nbr_class; i++){
@@ -672,9 +670,8 @@ void GMM::update_model(int ind, int lbl){
         do
             rand_ind = rand()%n;
         while(rand_ind == ind);
-//        if(!_split(_model[i][rand_ind]))
-        _split(_model[i][rand_ind]);
-        _merge(_model[i][rand_ind]);
+        if(!_split(_model[i][rand_ind]))
+            _merge(_model[i][rand_ind]);
 
 
     }
@@ -740,6 +737,12 @@ double GMM::compute_quality(const Eigen::VectorXd& sample,int lbl)
         }
     }
     return score;
+}
+
+void _redescription(){
+
+
+
 }
 
 void GMM::_expectation(int lbl){
