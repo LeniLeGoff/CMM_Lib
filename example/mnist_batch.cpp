@@ -34,13 +34,14 @@ Eigen::VectorXd compute_histogram(const std::vector<uint8_t> &digit,int bins){
 
 int main(int argc, char** argv){
 
-    if(argc != 6){
+    if(argc != 7){
         std::cout << "Usage : " << std::endl;
         std::cout << "\t - location of MNIST dataset" << std::endl;
         std::cout << "\t - batch size" << std::endl;
         std::cout << "\t - number of epoch" << std::endl;
         std::cout << "\t - alpha" << std::endl;
         std::cout << "\t - loglikelihood enable 0|1" << std::endl;
+        std::cout << "\t - max number of components per class" << std::endl;
         return 1;
     }
 
@@ -68,6 +69,7 @@ int main(int argc, char** argv){
 
     iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,dimension,10,batch_size);
     trainer.access_classifier().set_update_mode(iagmm::GMM::BATCH);
+    trainer.access_classifier().set_max_nb_components(std::stoi(argv[6]));
 
     if(std::stoi(argv[5]))
         trainer.access_classifier().set_loglikelihood_driver(true);
