@@ -4,14 +4,16 @@ project(iagmm)
 # The syntax set...CACHE used below chooses a value while letting caller override it.
 
 # Ref https://cmake.org/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
+# set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
 # It would be cleaner to declare per-target target_compile_features
 # and https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html
 
 
 # Eigen runs much much much faster when compiled in -O3.
 # The line below cleanly ensure release builds have O3 optimization level.
-add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
+add_compile_options("$<$<CONFIG:RELEASE>:-O3 -std=c++11>")
+
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 option(VERBOSE_RUNTIME "Set true to create a build with more run-time output." FALSE)
 
