@@ -46,7 +46,7 @@ public:
         };
     }
 
-    GMM(int dimension, int nbr_class) :
+    GMM(int dimension, int nbr_class, int max_nb_comp = 0) :
         Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
             _model.emplace(i,std::vector<Component::Ptr>());
@@ -56,7 +56,10 @@ public:
         _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
             return (s1 - s2).squaredNorm();
         };
+        _max_nb_components = max_nb_comp;
     }
+
+
 
     GMM(const model_t& model){
 
