@@ -1,20 +1,30 @@
 cmake_minimum_required(VERSION 2.8)
 project(iagmm)
 
+# The syntax set...CACHE used below chooses a value while letting caller override it.
 
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+# Ref https://cmake.org/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to be used")
+# It would be cleaner to declare per-target target_compile_features
+# and https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html
 
-if(DEBUG)
-    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Debug -O0 ${CMAKE_CXX_FLAGS}")
-else()
-    set(CMAKE_CXX_FLAGS "-DCMAKE_BUILD_TYPE=Release -O3 ${CMAKE_CXX_FLAGS}")
+
+# Eigen runs much much much faster when compiled in -O3.
+# The line below cleanly ensure release builds have O3 optimization level.
+add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
+
+option(VERBOSE_RUNTIME "Set true to create a build with more run-time output." FALSE)
+
+# Since in CMake-generated makefiles, make VERBOSE=1 means verbose
+# *build*, renamed it to VERBOSE_RUNTIME.  In C++ code it remains VERBOSE.
+if(VERBOSE_RUNTIME)
+  add_definitions("-DVERBOSE")
 endif()
 
-if(VERBOSE)
-    set(CMAKE_CXX_FLAGS "-DVERBOSE ${CMAKE_CXX_FLAGS}")
-endif()
-
-
+# FIXME could find package eigen and declare that it's necessary only for tests.
+# FIXME could find package eigen.
+# FIXME could find boost components: boost_serialization boost_chrono boost_filesystem
+# FIXME could find package sfml and declare that it's necessary only for tests.
 include_directories(/usr/local/include/
                     /usr/include/eigen3
                     /usr/local/include/SFML
@@ -30,23 +40,44 @@ add_custom_target(headers SOURCES ${HEADFILES})
 
 install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)
 
-if(NO_PARALLEL)
-    add_definitions(-DNO_PARALLEL)
-    add_library(iagmm SHARED ${SRCFILES})
-    target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
-else()
-    set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
-    add_library(iagmm SHARED ${SRCFILES})
-    target_link_libraries(iagmm tbb boost_serialization boost_chrono boost_filesystem)
-endif()
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(DEFAULT_NO_PARALLEL TRUE)
+else(CMAKE_BUILD_TYPE STREQUAL Debug)
+  set(DEFAULT_NO_PARALLEL FALSE)
+endif(CMAKE_BUILD_TYPE STREQUAL Debug)
+
+option(NO_PARALLEL "If enabled, force sequential execution.  Very useful for debugging.  Enabled by default on debug build." ${DEFAULT_NO_PARALLEL})
+
+#set(NO_PARALLEL TRUE CACHE BOOL "If enabled, force sequential execution.  Very useful for debugging.  Enabled by default on debug build." )
 
 
 
-install(TARGETS ${PROJECT_NAME}
+add_library(iagmm SHARED ${SRCFILES})
+
+if (NO_PARALLEL)
+  add_definitions("-DNO_PARALLEL")
+else (NO_PARALLEL)
+  set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
+  target_link_libraries(iagmm tbb)  
+endif(NO_PARALLEL) 
+
+target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
+
+
+# The EXPORT option in install() and the install(EXPORT...) make iagmm
+# library available to other projects, ref
+# https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Exporting-and-Importing-Targets
+install(TARGETS ${PROJECT_NAME} EXPORT iagmm-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib)
 
+install(EXPORT iagmm-targets DESTINATION lib/iagmm)
 
+# Caller CMake project can use:
+# add_library(iagmm SHARED IMPORTED)
+# set_property(TARGET iagmm PROPERTY IMPORTED_LOCATION "${IAGMM_INSTALL_TREE}/lib/libiagmm.so" )
+# and be called like this:
+# cmake -DIAGMM_INSTALL_TREE=/some/path/ ...
 #tools
 
 #add_executable(load_archive tools/load_archive.cpp)
@@ -79,8 +110,9 @@ target_link_libraries(eggholder_two_class_problem iagmm tbb yaml-cpp)
 
 ####
 
-#test
-if(TEST)
+option(BUILD_TESTS "Set true to compile some test executables." FALSE)
+
+if(BUILD_TESTS)
 find_package(OpenCV)
 
 add_executable(test_1 test/test.cpp)
@@ -115,4 +147,9 @@ target_link_libraries(mnist_test tbb  ${OpenCV_LIBRARIES})
 #target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
 endif()
 ####
+
+message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
+message(STATUS "VERBOSE_RUNTIME is ${VERBOSE_RUNTIME}")
+message(STATUS "NO_PARALLEL is ${NO_PARALLEL}")
+message(STATUS "BUILD_TESTS is ${BUILD_TESTS}")
 
