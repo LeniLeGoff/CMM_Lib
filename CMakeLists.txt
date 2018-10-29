@@ -13,7 +13,13 @@ project(iagmm)
 # The line below cleanly ensure release builds have O3 optimization level.
 add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+if (CMAKE_VERSION VERSION_LESS "3.1")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options("-std=c++11")
+  endif ()
+else ()
+  set (CMAKE_CXX_STANDARD 11)
+endif ()
 
 option(VERBOSE_RUNTIME "Set true to create a build with more run-time output." FALSE)
 
