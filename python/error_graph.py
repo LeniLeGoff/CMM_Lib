@@ -15,9 +15,10 @@ plt.rcParams['figure.edgecolor'] = 'white'
 plt.rcParams['savefig.facecolor'] = 'white'
 plt.rcParams['savefig.edgecolor'] = 'white'
 
-if len(sys.argv) != 3 :
+if len(sys.argv) != 4 :
   print("Usage : \narg1 : folder path")
   print("arg2 : online or batch")
+  print("arg3 : param name")
   sys.exit(1)
 
 errors_v = list()
@@ -29,7 +30,7 @@ for folder in os.listdir(sys.argv[1]) :
   for file in os.listdir(folder_path) :
     file_path = folder_path + "/" + file
     if(sys.argv[2] == "batch"):
-      param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))
+      param_value.append(float(file.split("_")[-1].split("log")[0][:-1]))#split(".")[0]))
       x, error = dl.load_batch_error(file_path)
     elif (sys.argv[2] == "online"):
       x, error = dl.load_online_error(file_path)
@@ -77,17 +78,17 @@ errors_75p = errors_sorted_75p
 errors_25p = errors_sorted_25p
 
 cmap = plt.get_cmap("gnuplot")
-colors = ['k','r'] #[cmap(i) for i in np.linspace(0,1,len(errors))]
+colors =  [cmap(i) for i in np.linspace(0,1,len(errors_m))]
 
 fig, ax1 = plt.subplots(1,sharex=True)
 ax1.set_ylim([0.,0.6])
 
 
 for i in range(0,len(errors_m)) :
-  ax1.plot(x,errors_m[i],linewidth=2,color=colors[i],label="loglikelihood = " + str(param_value[i]))
+  ax1.plot(x,errors_m[i],linewidth=2,color=colors[i],label= sys.argv[3] + " = " + str(param_value[i]))
   ax1.fill_between(x,errors_25p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
   ax1.fill_between(x,errors_75p[i],errors_m[i],facecolor=colors[i],alpha=0.2)
-  # ax1.text(x[-1],errors_m[i][-1],str(param_value[i]))
+  ax1.text(x[-1],errors_m[i][-1],str(param_value[i]))
 
 
 
@@ -95,11 +96,11 @@ plt.legend(bbox_to_anchor=(0., 1., 1., .0), loc=0,ncol=6)#, borderaxespad=0.)
 
 folder = sys.argv[1]
 
-print folder
+print(folder)
 
 exp_name = folder.split("/")[-2]
 
-print exp_name
+print(exp_name)
 
 plt.tight_layout()
 
