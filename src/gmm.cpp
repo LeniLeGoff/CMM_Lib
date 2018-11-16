@@ -9,13 +9,11 @@
 using namespace iagmm;
 
 
-std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X){
+std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X) const{
 
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++)
     {if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
-
-
 
 //    Estimator<GMM> estimator(this, X);
 
@@ -148,7 +146,7 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
     //* Look for the closest consistent (size >= 5) component of X
     Eigen::VectorXd distances(size);
     int k = 0;
-    double denominator = 0;
+//    double denominator = 0;
     for(int i = 0 ; i < _model.size(); i++){
         for (int j = 0; j < _model.at(i).size(); j++) {
             if(_model.at(i).size() < 5)
@@ -315,8 +313,14 @@ bool GMM::_split(const Component::Ptr& comp){
         return false;
     //*/
 
-    if(_max_nb_components != 0 && _model[comp->get_label()].size() >= _max_nb_components)
+
+    if(_max_nb_components != 0 && _model[comp->get_label()].size() >= _max_nb_components){
+#ifdef VERBOSE
+        std::cout << "maximum number of components reach : " << _max_nb_components << std::endl;
+        std::cout << "do not apply split" << std::endl;
+#endif
         return false;
+    }
 
     //* Capture time.
 #ifdef VERBOSE
@@ -611,6 +615,9 @@ void GMM::append_EM(const Eigen::VectorXd &sample,const int& lbl){
 }
 
 void GMM::update(){
+#ifdef VERBOSE
+    std::cout << print_info() << std::endl;
+#endif
     if(_update_mode == STOCHASTIC)
         update_model(_last_index,_last_label);
     else update_model();

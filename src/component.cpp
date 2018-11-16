@@ -10,7 +10,7 @@ using namespace iagmm;
 
 
 double Component::_alpha = 0.25;
-double Component::_outlier_thres = 0.05;
+double Component::_outlier_thres = 0.;
 
 void Component::update_parameters(){
     if(_samples.size() <= 4){
@@ -211,10 +211,17 @@ Component::Ptr Component::split(){
 }
 
 bool Component::intersect(const Component::Ptr comp) const {
+#ifdef VERBOSE
+    std::cout << "test intersection" << std::endl;
+#endif
     Eigen::VectorXd diff_mu, ellipse_vect1, ellipse_vect2;
     double n1 = _samples.size(), n2 = comp->get_samples().size(), p = _dimension;
-    if(n1 <= p /*|| n2 <= p*/)
+    if(n1 <= p /*|| n2 <= p*/){
+#ifdef VERBOSE
+    std::cout << "drop intersection test n < p : " << n1 << " < " << p << std::endl;
+#endif
         return false;
+    }
     boost::math::fisher_f_distribution<double> F1(p,n1 - p);
 //    boost::math::fisher_f_distribution<double> F2(p,n2-p);
     double q1 = boost::math::quantile(F1,1-_alpha);

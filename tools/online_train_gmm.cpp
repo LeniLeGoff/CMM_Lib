@@ -70,7 +70,14 @@ int main(int argc, char** argv){
     iagmm::TrainingData test_data;
     int dimension, nbr_class;
 
+    iagmm::Component::_alpha = 0.5;
+    iagmm::Component::_outlier_thres = 0;
+
     iagmm::GMM gmm;
+    gmm.set_dataset_size_max(4);
+    gmm.set_loglikelihood_driver(false);
+    gmm.use_confidence(true);
+    gmm.use_uncertainty(true);
 
 
     if(test){
@@ -111,7 +118,7 @@ int main(int argc, char** argv){
 //                gmm.update_dataset();
 
 
-            llhood = gmm.loglikelihood();
+//            llhood = gmm.loglikelihood();
             std::cout << gmm.get_samples().get_data(0).size() << " " << gmm.get_samples().get_data(1).size() << std::endl;
             diff_dataset = gmm.get_samples().get_data(0).size() - gmm.get_samples().get_data(1).size();
             div_dataset = (double)gmm.get_samples().get_data(1).size()/(double)gmm.get_samples().get_data(0).size();
@@ -135,9 +142,9 @@ int main(int argc, char** argv){
                 boost::filesystem::create_directory(stream_iter.str());
 
             std::stringstream stream_dataset,stream_gmm;
-            stream_dataset << stream_iter.str() << "/dataset_meanFPFHLabHist.yml";
+            stream_dataset << stream_iter.str() << "/dataset_centralFPFHLabHist.yml";
             gmm.get_samples().save_yml(stream_dataset.str());
-            stream_gmm << stream_iter.str() << "/gmm_archive_meanFPFHLabHist";
+            stream_gmm << stream_iter.str() << "/gmm_archive_centralFPFHLabHist";
             std::ofstream ofs(stream_gmm.str());
             boost::archive::text_oarchive toa(ofs);
             toa << gmm;

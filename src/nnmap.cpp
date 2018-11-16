@@ -3,7 +3,7 @@
 using namespace iagmm;
 
 
-std::vector<double> NNMap::compute_estimation(const Eigen::VectorXd &sample){
+std::vector<double> NNMap::compute_estimation(const Eigen::VectorXd &sample) const {
 
     double estimation = default_estimation;
 

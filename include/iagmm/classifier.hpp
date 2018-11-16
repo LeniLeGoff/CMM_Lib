@@ -67,7 +67,7 @@ public:
      * @param label of the class
      * @return the probability of the sample to be part of the class lbl
      */
-    virtual std::vector<double> compute_estimation (const Eigen::VectorXd& sample) = 0;
+    virtual std::vector<double> compute_estimation (const Eigen::VectorXd& sample) const = 0;
 
     /**
      * @brief update the classifier according the dataset

@@ -29,7 +29,7 @@ public:
         increment_factor(nnmap.increment_factor){}
 
 
-    std::vector<double> compute_estimation(const Eigen::VectorXd& sample);
+    std::vector<double> compute_estimation(const Eigen::VectorXd& sample) const;
     void update(){}
     double confidence(const Eigen::VectorXd& sample) const {return 1.;}
     int next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double>> >& samples, Eigen::VectorXd &choice_dist_map) {}

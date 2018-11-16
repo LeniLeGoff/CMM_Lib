@@ -11,7 +11,7 @@ project(iagmm)
 
 # Eigen runs much much much faster when compiled in -O3.
 # The line below cleanly ensure release builds have O3 optimization level.
-add_compile_options("$<$<CONFIG:RELEASE>:-O3 -std=c++11>")
+add_compile_options("$<$<CONFIG:RELEASE>:-O3>")
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 

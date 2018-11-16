@@ -15,7 +15,7 @@ namespace iagmm{
 template <class gmm>
 class Estimator{
 public:
-    Estimator(gmm* model, const Eigen::VectorXd& X, int lbl)
+    Estimator(const gmm* model, const Eigen::VectorXd& X, int lbl)
         : _model(model), _X(X), _current_lbl(lbl),_sum(0){}
 
 
@@ -54,7 +54,7 @@ private:
 };
 
 template<class gmm>
-std::vector<double> estimation(gmm* model, Eigen::VectorXd X){
+std::vector<double> estimation(const gmm* model, Eigen::VectorXd X){
     std::map<int,double> sum_map;
     for(int i = 0; i < model->get_nbr_class(); i++){
         sum_map[i] = 0;
@@ -65,7 +65,7 @@ std::vector<double> estimation(gmm* model, Eigen::VectorXd X){
     for(int lbl = 0; lbl < model->get_nbr_class(); lbl++)
     {
         double val;
-        for(const auto& model : model->model()[lbl])
+        for(const auto& model : model->model().at(lbl))
         {
             val = model->get_factor()*
                     model->compute_multivariate_normal_dist(X);

@@ -46,6 +46,8 @@ public:
         };
     }
 
+
+
     GMM(int dimension, int nbr_class, int max_nb_comp = 0) :
         Classifier(dimension,nbr_class){
         for(int i = 0; i < nbr_class; i++)
@@ -92,10 +94,10 @@ public:
 
 //    void operator()(const tbb::blocked_range<size_t>& r);
 
-    std::vector<double> compute_estimation(const Eigen::VectorXd& sample);
+    std::vector<double> compute_estimation(const Eigen::VectorXd& sample) const;
     void compute_normalisation();
     model_t& model(){return _model;}
-
+    const model_t& model() const {return _model;}
 //    double get_result(int lbl){
 //        double sum_of_sums;
 //        for(const auto& sum : _sum_map)

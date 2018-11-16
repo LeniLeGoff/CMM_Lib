@@ -58,8 +58,9 @@ public:
                 c.reset();
     }
 
-    std::vector<double> compute_estimation(const Eigen::VectorXd &X);
+    std::vector<double> compute_estimation(const Eigen::VectorXd &X) const;
     model_t& model(){return _model;}
+    const model_t& model() const {return _model;}
 
     void new_component(const Eigen::VectorXd& sample, int label);
 
