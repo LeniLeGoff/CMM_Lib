@@ -180,7 +180,10 @@ double GMM::novelty(const Eigen::VectorXd &feature){
     double sum = 0;
     for(size_t i = 0; i < _samples.size(); i++)
         sum += (feature - _samples[i].second).squaredNorm();
-    return sum/(double)_samples.size();
+
+    sum = sum/(double)_samples.size();
+    if(sum < 0.5) sum = 0;
+    return sum;
 }
 
 double GMM::loglikelihood(){
@@ -544,9 +547,9 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
             else if (n < 10e-4) n = 0;
 
             if(!_use_uncertainty)
-                est = 1;
+                est = 0;
 
-            w[i] = est*(1-c)*n;
+            w[i] = est*(1-c)+n*n;
             if(w[i] != w[i] || w[i] < 10e-4)
                 w[i] = 0;
             else if(w[i] > 1)
