@@ -49,7 +49,9 @@ public:
     }
 
     IncrementalGMM(const IncrementalGMM& igmm) :
-        Classifier(igmm),_model(igmm._model){}
+        Classifier(igmm),_model(igmm._model),
+    _last_index(igmm._last_index), _last_label(igmm._last_label),
+    _alpha(igmm._alpha), _u(igmm._u), _beta(igmm._beta){}
 
 
     ~IncrementalGMM(){

@@ -16,7 +16,9 @@ template <class gmm>
 class Estimator{
 public:
     Estimator(const gmm* model, const Eigen::VectorXd& X, int lbl)
-        : _model(model), _X(X), _current_lbl(lbl),_sum(0){}
+        : _X(X), _current_lbl(lbl),_sum(0){
+        _model = new gmm(*model);
+    }
 
 
 #ifndef NO_PARALLEL
@@ -77,7 +79,7 @@ std::vector<double> estimation(const gmm* model, Eigen::VectorXd X){
                       [&](const tbb::blocked_range<size_t>& r){
         for(int lbl = r.begin(); lbl != r.end();lbl++){
             Estimator<gmm> estimator(model,X,lbl);
-            tbb::parallel_reduce(tbb::blocked_range<size_t>(0,model->model()[lbl].size()),estimator);
+            tbb::parallel_reduce(tbb::blocked_range<size_t>(0,model->model().at(lbl).size()),estimator);
             sum_map[lbl] = estimator.get_sum();
         }
     });
