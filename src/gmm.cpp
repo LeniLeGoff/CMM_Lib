@@ -176,6 +176,12 @@ double GMM::confidence(const Eigen::VectorXd& X) const{
             _model.at(lbl).at(r)->compute_multivariate_normal_dist(_model.at(lbl).at(r)->get_mu());
 }
 
+double GMM::novelty(const Eigen::VectorXd &feature){
+    double sum = 0;
+    for(size_t i = 0; i < _samples.size(); i++)
+        sum += (feature - _samples[i].second).squaredNorm();
+    return sum/(double)_samples.size();
+}
 
 double GMM::loglikelihood(){
     _score_calculator sc(this,_samples);
@@ -491,7 +497,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
     boost::random::uniform_int_distribution<> dist_uni(0,samples.size()-1);
 
-    if(_samples.size() <= 10 || !(_use_confidence || _use_uncertainty))
+    if(_samples.size() <= 10 || !(_use_confidence || _use_uncertainty || _use_novelty))
         return dist_uni(_gen);
 
     double total = 0,cumul = 0;
@@ -530,13 +536,17 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
             double c = _use_confidence ? confidence(samples[i].first) : 0;
             if(c > 1)
                 c = 1;
-
             else if (c < 10e-4) c = 0;
+
+            double n = _use_novelty ? novelty(samples[i].first) : 1;
+            if(n > 1)
+                n = 1;
+            else if (n < 10e-4) n = 0;
 
             if(!_use_uncertainty)
                 est = 1;
 
-            w[i] = est*(1-c);
+            w[i] = est*(1-c)*n;
             if(w[i] != w[i] || w[i] < 10e-4)
                 w[i] = 0;
             else if(w[i] > 1)

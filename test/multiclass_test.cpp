@@ -42,8 +42,8 @@ int main(int argc, char** argv){
     tbb::task_scheduler_init init;
 #endif
 
-    if(argc < 5){
-        std::cout << "usage : nbr_class (max 10), alpha [0,1], u (0|1) and c (0|1)" << std::endl;
+    if(argc < 6){
+        std::cout << "usage : nbr_class (max 10), alpha [0,1], u (0|1), c (0|1) and n (0|1)" << std::endl;
         return 1;
     }
 
@@ -89,6 +89,8 @@ int main(int argc, char** argv){
     gmm.set_loglikelihood_driver(false);
     gmm.use_confidence(std::stoi(argv[3]));
     gmm.use_uncertainty(std::stoi(argv[4]));
+    gmm.use_novelty(std::stoi(argv[5]));
+
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

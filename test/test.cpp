@@ -57,8 +57,9 @@ int main(int argc, char** argv){
         return (s1 - s2).squaredNorm();
     });
     gmm.set_loglikelihood_driver(false);
-    gmm.use_confidence(true);
-    gmm.use_uncertainty(false);
+    gmm.use_confidence(false);
+    gmm.use_uncertainty(true);
+    gmm.use_novelty(true);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

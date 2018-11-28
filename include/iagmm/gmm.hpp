@@ -129,6 +129,7 @@ public:
 
     double confidence(const Eigen::VectorXd& X) const;
 
+    double novelty(const Eigen::VectorXd& feature);
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
                     Eigen::VectorXd& choice_dist_map);
 
@@ -183,8 +184,10 @@ public:
     bool get_loglikelihood_driver(){return _llhood_drive;}
     void use_confidence(bool c){_use_confidence = c;}
     void use_uncertainty(bool u){_use_uncertainty = u;}
+    void use_novelty(bool n){_use_novelty = n;}
     bool get_use_confidence(){return _use_confidence;}
     bool get_use_uncertainty(){return _use_uncertainty;}
+    bool get_use_novelty(){return _use_novelty;}
 
 private:
 
@@ -203,6 +206,8 @@ private:
     model_t _model;
     std::map<int, Eigen::MatrixXd> _membership;
 
+    std::vector<GMM> _base_classifiers;
+
     update_mode_t _update_mode = STOCHASTIC;
 
     boost::random::mt19937 _gen;
@@ -211,6 +216,7 @@ private:
     bool _llhood_drive = false;
     bool _use_confidence = true;
     bool _use_uncertainty = true;
+    bool _use_novelty = false;
 
     int _last_index;
     int _last_label;
