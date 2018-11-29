@@ -105,13 +105,13 @@ public:
 #else
         tbb::parallel_for(tbb::blocked_range<size_t>(0,data.size()),
                           [&](const tbb::blocked_range<size_t>& r){
-            for(int i = r.begin(); i != r.end(); i++)
+            for(size_t i = r.begin(); i != r.end(); i++)
                 results[i] = compute_estimation(data[i].second);
         });
 #endif
 
         double error = 0;
-        for(int i = 0; i < data.size(); i++){
+        for(size_t i = 0; i < data.size(); i++){
             error = error + 1 - results[i][data[i].first];
         }
         return error/(double)data.size();
@@ -158,7 +158,7 @@ public:
         tbb::parallel_for(tbb::blocked_range<size_t>(0,_samples.size()),
                           [&](const tbb::blocked_range<size_t>& r){
             std::vector<double> estimates(_nbr_class);
-            for(int i = r.begin(); i != r.end(); i++){
+            for(size_t i = r.begin(); i != r.end(); i++){
                 estimates = compute_estimation(_samples[i].second);
                 _samples.estimations[i] = estimates;
             }
