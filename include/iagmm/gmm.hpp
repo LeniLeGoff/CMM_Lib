@@ -189,6 +189,8 @@ public:
     bool get_use_uncertainty(){return _use_uncertainty;}
     bool get_use_novelty(){return _use_novelty;}
 
+    bool skip_bootstrap = false;
+
 private:
 
     bool _merge(const Component::Ptr& comp);

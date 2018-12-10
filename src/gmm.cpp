@@ -500,7 +500,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
     choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
     boost::random::uniform_int_distribution<> dist_uni(0,samples.size()-1);
 
-    if(_samples.size() <= 10 || !(_use_confidence || _use_uncertainty || _use_novelty))
+    if(!skip_bootstrap && _samples.size() <= 10 || !(_use_confidence || _use_uncertainty || _use_novelty))
         return dist_uni(_gen);
 
     double total = 0,cumul = 0;
@@ -541,7 +541,7 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
                 c = 1;
             else if (c < 10e-4) c = 0;
 
-            double n = _use_novelty ? novelty(samples[i].first) : 1;
+            double n = _use_novelty ? novelty(samples[i].first) : 0;
             if(n > 1)
                 n = 1;
             else if (n < 10e-4) n = 0;
@@ -569,7 +569,6 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
 
     bool all_zero = true;
     for(int i = 0; i < choice_dist_map.rows(); ++i){
-
         choice_dist_map(i) =  w[i];
         all_zero = all_zero && choice_dist_map(i) == 0;
         total += choice_dist_map(i);

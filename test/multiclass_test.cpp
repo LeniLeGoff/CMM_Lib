@@ -94,7 +94,7 @@ int main(int argc, char** argv){
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;
-    double llhood;
+    double llhood = 0;
 
     std::multimap<double,Eigen::Vector2i> choice_distribution;
     double cumul_est;
@@ -216,7 +216,7 @@ int main(int argc, char** argv){
 //        gmm.update_model();
 //        gmm.update_dataset_thres();
 //        gmm.compute_normalisation();
-        std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
+//        std::cout << "NORMALISATION : " << gmm.get_normalisation() << std::endl;
         error = 0;
 
 
@@ -295,7 +295,7 @@ int main(int argc, char** argv){
         error_curve.push_back(error_point);
 
         gmm._estimate_training_dataset();
-        llhood = gmm.loglikelihood();
+//        llhood = gmm.loglikelihood();
         double llhood_norm = -llhood/10.;
         sf::RectangleShape llhood_point(sf::Vector2f(4,4));
         llhood_point.setFillColor(sf::Color(0,0,255));
@@ -320,7 +320,7 @@ int main(int argc, char** argv){
 
         std::cout << "_________________________________________________________________" << std::endl;
         std::cout << "error : " << error << std::endl;
-        std::cout << "loglikelihood : " << llhood << std::endl;
+//        std::cout << "loglikelihood : " << llhood << std::endl;
 //        std::cout << gmm.print_info() << std::endl;
         std::cout << "total number of samples in the model : " << gmm.number_of_samples() << std::endl;
         std::cout << iteration << "-------------------------------------------------------------------" << std::endl;
