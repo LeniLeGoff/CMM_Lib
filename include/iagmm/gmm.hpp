@@ -132,6 +132,9 @@ public:
     double novelty(const Eigen::VectorXd& feature);
     int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
                     Eigen::VectorXd& choice_dist_map);
+    int next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
+                    Eigen::VectorXd& choice_dist_map, Eigen::VectorXd& filter);
+    void estimate_features(const std::vector<Eigen::VectorXd> &samples, Eigen::VectorXd& predictions, int lbl = 1);
 
     void EM_init();
     void EM_step();

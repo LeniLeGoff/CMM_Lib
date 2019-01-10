@@ -515,12 +515,18 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
         //* Search for the class with the less samples in the dataset
         double est;
         int min_size = _samples.get_data(0).size(), min_ind = 0;
+        bool all_equal = true;
         for(int i = 1; i < _nbr_class; i++){
-            if(min_size > _samples.get_data(i).size()){
-                min_size = _samples.get_data(i).size();
+            int size = _samples.get_data(i).size();
+            all_equal = all_equal && min_size == size;
+            if(min_size > size){
+                min_size = size;
                 min_ind = i;
             }
+
         }
+        if(all_equal)
+            min_ind = 1; //rand()%_nbr_class;
         //*/
 
 #ifdef NO_PARALLEL
@@ -584,6 +590,119 @@ int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<dou
     return dist_uni(_gen);
 }
 
+int GMM::next_sample(const std::vector<std::pair<Eigen::VectorXd,std::vector<double>>> &samples,
+                     Eigen::VectorXd &choice_dist_map, Eigen::VectorXd& filter){
+    choice_dist_map = Eigen::VectorXd::Constant(samples.size(),0.5);
+    boost::random::uniform_int_distribution<> dist_uni(0,samples.size()-1);
+
+    if(!skip_bootstrap && _samples.size() <= 10 || !(_use_confidence || _use_uncertainty || _use_novelty))
+        return dist_uni(_gen);
+
+    double total = 0,cumul = 0;
+
+    std::vector<double> w(samples.size());
+    boost::random::uniform_real_distribution<> distrib(0,1);
+
+#ifndef NO_PARALLEL
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,choice_dist_map.rows()),
+                      [&](const tbb::blocked_range<size_t>& r){
+#endif
+        //* Search for the class with the less samples in the dataset
+        double est;
+        int min_size = _samples.get_data(0).size(), min_ind = 0;
+        bool all_equal = true;
+        for(int i = 1; i < _nbr_class; i++){
+            int size = _samples.get_data(i).size();
+            all_equal = all_equal && min_size == size;
+            if(min_size > size){
+                min_size = size;
+                min_ind = i;
+            }
+
+        }
+        if(all_equal)
+            min_ind = 1; //rand()%_nbr_class;
+        //*/
+
+#ifdef NO_PARALLEL
+        for(size_t i = 0; i < choice_dist_map.rows(); i++){
+#else
+        for(size_t i = r.begin(); i != r.end(); i++){
+#endif
+            est = samples[i].second[min_ind];
+            if(est < 1./(double)_nbr_class)
+                est = -4*est*est*(log(4*est*est)-1);
+            else est = -2*est*(log(2*est)-1);
+
+            if(est < 10e-4)
+                est = 0;
+
+            double c = _use_confidence ? confidence(samples[i].first) : 0;
+            if(c > 1)
+                c = 1;
+            else if (c < 10e-4) c = 0;
+
+            double n = _use_novelty ? novelty(samples[i].first) : 0;
+            if(n > 1)
+                n = 1;
+            else if (n < 10e-4) n = 0;
+
+            if(!_use_uncertainty)
+                est = 0;
+
+            w[i] = est*(1-c)+n*n;
+            if(w[i] != w[i] || w[i] < 10e-4)
+                w[i] = 0;
+            else if(w[i] > 1)
+                w[i] = 1;
+        }
+#ifndef NO_PARALLEL
+    });
+#endif
+
+    double max_w = w[0];
+    for(const double& v : w){
+        if(v > max_w)
+            max_w = v;
+    }
+    for(int i = 0 ; i < w.size(); i++)
+        w[i] = w[i]/max_w;
+
+    bool all_zero = true;
+    for(int i = 0; i < choice_dist_map.rows(); ++i){
+        if(filter(i) > 10e-4)
+            filter(i) = 1;
+        else filter(i) = 0;
+        choice_dist_map(i) =  w[i]*filter(i);
+        all_zero = all_zero && choice_dist_map(i) == 0;
+        total += choice_dist_map(i);
+    }
+    if(all_zero)
+        return dist_uni(_gen);
+    double rand_nb = distrib(_gen);
+    for(int i = 0; i < choice_dist_map.rows(); ++i){
+        cumul += choice_dist_map(i);
+        if(rand_nb < cumul/total)
+            return i;
+    }
+    return dist_uni(_gen);
+}
+
+void GMM::estimate_features(const std::vector<Eigen::VectorXd> &samples, Eigen::VectorXd& predictions, int lbl){
+    predictions = Eigen::VectorXd::Constant(samples.size(),0.5);
+#ifndef NO_PARALLEL
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,samples.size()),
+                      [&](const tbb::blocked_range<size_t>& r){
+        for(size_t i = r.begin(); i != r.end(); i++){
+#else
+    for(size_t i = 0; i < choice_dist_map.rows(); i++){
+#endif
+            predictions(i) = compute_estimation(samples[i])[lbl];
+        }
+#ifndef NO_PARALLEL
+    });
+#endif
+}
 
 void GMM::append(const std::vector<Eigen::VectorXd> &samples, const std::vector<int>& lbl){
     int r,c; //row and column indexes
