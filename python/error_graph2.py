@@ -42,6 +42,12 @@ for i in range(0,len(errors)) :
   ax1.plot(x,errors[i],linewidth=2,color=colors[i],label= sys.argv[3] +  " = " + str(param_value[i]))
   ax1.text(x[-1],errors[i][-1],str(param_value[i]))
 
+ax1.set_xlabel('number of epochs',fontsize=30)
+ax1.set_ylabel('generalization error', fontsize=30)
+
+ax1.tick_params('x',labelsize=20)
+ax1.tick_params('y',labelsize=20)
+
 plt.legend()
 
 plt.show()

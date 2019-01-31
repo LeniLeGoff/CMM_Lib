@@ -67,10 +67,10 @@ std::vector<double> estimation(const gmm* model, Eigen::VectorXd X){
     for(int lbl = 0; lbl < model->get_nbr_class(); lbl++)
     {
         double val;
-        for(const auto& model : model->model().at(lbl))
+        for(const auto& comp : model->model().at(lbl))
         {
-            val = model->get_factor()*
-                    model->compute_multivariate_normal_dist(X);
+            val = comp->get_factor()*
+                    comp->compute_multivariate_normal_dist(X);
             sum_map[lbl] += val;
         }
     }

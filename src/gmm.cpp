@@ -695,7 +695,7 @@ void GMM::estimate_features(const std::vector<Eigen::VectorXd> &samples, Eigen::
                       [&](const tbb::blocked_range<size_t>& r){
         for(size_t i = r.begin(); i != r.end(); i++){
 #else
-    for(size_t i = 0; i < choice_dist_map.rows(); i++){
+    for(size_t i = 0; i < samples.size(); i++){
 #endif
             predictions(i) = compute_estimation(samples[i])[lbl];
         }
