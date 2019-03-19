@@ -1,6 +1,6 @@
-#include <iagmm/nnmap.hpp>
+#include <cmm/nnmap.hpp>
 
-using namespace iagmm;
+using namespace cmm;
 
 
 std::vector<double> NNMap::compute_estimation(const Eigen::VectorXd &sample) const {

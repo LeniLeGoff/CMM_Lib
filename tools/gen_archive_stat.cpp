@@ -6,9 +6,9 @@
 
 #include <boost/archive/text_iarchive.hpp>
 
-#include <iagmm/gmm.hpp>
+#include <cmm/gmm.hpp>
 
-using namespace iagmm;
+using namespace cmm;
 
 void write_file(GMM& gmm, const std::string file){
     std::ofstream ofs(file);

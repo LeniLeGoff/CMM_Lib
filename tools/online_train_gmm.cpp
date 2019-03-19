@@ -3,8 +3,8 @@
 #include <sstream>
 #include <fstream>
 #include <random>
-#include <iagmm/trainer.hpp>
-#include <iagmm/gmm.hpp>
+#include <cmm/trainer.hpp>
+#include <cmm/gmm.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/algorithm/string.hpp>
@@ -67,13 +67,13 @@ int main(int argc, char** argv){
 
     std::cout << "with dataset update : " << with_update_dataset << std::endl
               << "test : " << test << std::endl;
-    iagmm::TrainingData test_data;
+    cmm::TrainingData test_data;
     int dimension, nbr_class;
 
-    iagmm::Component::_alpha = 0.5;
-    iagmm::Component::_outlier_thres = 0;
+    cmm::Component::_alpha = 0.5;
+    cmm::Component::_outlier_thres = 0;
 
-    iagmm::GMM gmm;
+    cmm::GMM gmm;
     gmm.set_dataset_size_max(4);
     gmm.set_loglikelihood_driver(false);
     gmm.use_confidence(true);
@@ -87,9 +87,9 @@ int main(int argc, char** argv){
 
 
     if(train){
-        iagmm::TrainingData dataset;
+        cmm::TrainingData dataset;
         dataset.load_yml(argv[2],dimension,nbr_class);
-        gmm = iagmm::GMM(dimension,nbr_class);
+        gmm = cmm::GMM(dimension,nbr_class);
         if(with_update_dataset)
             gmm.set_dataset_size_max(max_size);
 

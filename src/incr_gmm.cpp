@@ -1,7 +1,7 @@
-#include <iagmm/incr_gmm.hpp>
+#include <cmm/incr_gmm.hpp>
 #include <chrono>
 
-using namespace iagmm;
+using namespace cmm;
 
 void IncrementalGMM::add(const Eigen::VectorXd &sample, int lbl){
     int r,c; //row and column indexes

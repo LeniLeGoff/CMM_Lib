@@ -8,7 +8,7 @@
 #include <eigen3/Eigen/Core>
 #include <yaml-cpp/yaml.h>
 
-namespace iagmm{
+namespace cmm{
 
 //TODO change class name to Data
 class TrainingData{
@@ -163,6 +163,6 @@ inline std::ostream& operator<< (std::ostream& os,const TrainingData& dataset ){
 
     return os;
 }
-}//iagmm
+}//cmm
 
 #endif //TRAINING_DATA_HPP

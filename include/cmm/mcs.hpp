@@ -1,7 +1,7 @@
 #ifndef MCS_HPP
 #define MCS_HPP
 
-#include <iagmm/mcs_fct.hpp>
+#include <cmm/mcs_fct.hpp>
 #include <eigen3/Eigen/IterativeLinearSolvers>
 #include "boost/random.hpp"
 
@@ -10,7 +10,7 @@
 #endif
 
 
-namespace iagmm
+namespace cmm
 {
 class MCS{
 

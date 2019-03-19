@@ -1,12 +1,12 @@
-#include "iagmm/gmm.hpp"
-#include "iagmm/gmm_estimator.hpp"
+#include "cmm/gmm.hpp"
+#include "cmm/gmm_estimator.hpp"
 #include <map>
 #include <chrono>
 #include <cmath>
 
 
 
-using namespace iagmm;
+using namespace cmm;
 
 
 std::vector<double> GMM::compute_estimation(const Eigen::VectorXd& X) const{

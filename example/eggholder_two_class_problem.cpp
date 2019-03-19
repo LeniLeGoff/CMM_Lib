@@ -11,13 +11,13 @@
 #endif
 #include <ctime>
 
-#include <iagmm/gmm.hpp>
+#include <cmm/gmm.hpp>
 
 #define MAX_X 100
 #define MAX_Y 100
 #define PI 3.14159265359
 
-using namespace iagmm;
+using namespace cmm;
 
 double eggholder(double A,double x, double y){
     return -(y+A)*sin(sqrt(abs(x/2+(y+A))))-x*sin(sqrt(abs(x-(y+A))));
@@ -72,7 +72,7 @@ int main(int argc, char** argv){
     else gmm.use_confidence(false);
 
 
-    gmm.set_update_mode(iagmm::GMM::STOCHASTIC);
+    gmm.set_update_mode(cmm::GMM::STOCHASTIC);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

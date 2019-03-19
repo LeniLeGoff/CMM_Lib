@@ -25,7 +25,8 @@
 #include "classifier.hpp"
 
 
-namespace iagmm{
+namespace cmm{
+
 
 class GMM : public Classifier {
 public:

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <yaml-cpp/yaml.h>
-#include <iagmm/data.hpp>
+#include <cmm/data.hpp>
 #include <boost/algorithm/string.hpp>
 
 int main(int argc, char** argv){
@@ -9,7 +9,7 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    iagmm::TrainingData data;
+    cmm::TrainingData data;
     int dimension, nbr_class;
     data.load_yml(argv[1],dimension,nbr_class);
     std::vector<std::string> stringsplit;

@@ -10,7 +10,7 @@
 #include <map>
 #include <eigen3/Eigen/Core>
 
-namespace iagmm{
+namespace cmm{
 
 template <class gmm>
 class Estimator{
@@ -93,5 +93,5 @@ std::vector<double> estimation(const gmm* model, Eigen::VectorXd X){
     return estimations;
 }
 
-}//iagmm
+}//cmm
 #endif //GMM_ESTIMATOR_HPP

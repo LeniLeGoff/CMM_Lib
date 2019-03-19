@@ -9,7 +9,7 @@
 #include "component.hpp"
 #include "gmm_estimator.hpp"
 
-namespace  iagmm {
+namespace  cmm {
 
 
 class IncrementalGMM : public Classifier{
@@ -96,6 +96,6 @@ private:
     double _beta; /**<covariance split parameter*/
 };
 
-} //iagmm
+} //cmm
 
 #endif //INCR_GMM_HPP

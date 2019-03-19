@@ -1,6 +1,6 @@
-#include <iagmm/data.hpp>
+#include <cmm/data.hpp>
 
-using namespace iagmm;
+using namespace cmm;
 
 void TrainingData::generate_train_test_dataset(TrainingData& train, TrainingData& test,
                                                 float train_test_ratio){

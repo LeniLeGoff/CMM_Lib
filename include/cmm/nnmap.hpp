@@ -5,7 +5,7 @@
 #include "data.hpp"
 #include "classifier.hpp"
 
-namespace iagmm {
+namespace cmm {
 
 /**
  * @brief The NNMap class

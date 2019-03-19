@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <eigen3/Eigen/Eigen>
-#include <iagmm/data.hpp>
+#include <cmm/data.hpp>
 #include <boost/random.hpp>
 #include <chrono>
 
@@ -12,7 +12,7 @@
     #include <tbb/tbb.h>
 #endif
 
-namespace iagmm{
+namespace cmm{
 
 template <class Classifier>
 class Trainer {
@@ -207,6 +207,6 @@ private:
     };
 
 };
-} // iagmm
+} // cmm
 
 #endif //TRAINER_HPP

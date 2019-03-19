@@ -8,9 +8,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-#include <iagmm/gmm.hpp>
+#include <cmm/gmm.hpp>
 
-using namespace iagmm;
+using namespace cmm;
 
 void write_file(GMM& gmm, const std::string file,int iteration){
     std::ofstream ofs(file, std::ofstream::out | std::ofstream::app);

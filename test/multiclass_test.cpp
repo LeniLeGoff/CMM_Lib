@@ -26,7 +26,7 @@
 #define PI 3.14159265359
 #define NBR_CLUSTER 2
 
-using namespace iagmm;
+using namespace cmm;
 
 double compute_f(double A,double x, double y){
     return -(y+A)*sin(sqrt(abs(x/2+(y+A))))-x*sin(sqrt(abs(x-(y+A))));

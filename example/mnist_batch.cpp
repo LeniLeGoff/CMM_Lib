@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 
-#include "iagmm/gmm.hpp"
-#include "iagmm/trainer.hpp"
+#include "cmm/gmm.hpp"
+#include "cmm/trainer.hpp"
 
 #include "mnist/mnist_reader.hpp"
 
@@ -53,10 +53,10 @@ int main(int argc, char** argv){
     mnist::MNIST_dataset<std::vector, std::vector<uint8_t>, uint8_t> mnist_dataset =
             mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(data_location);
 
-    iagmm::Component::_outlier_thres = 0;
-    iagmm::Component::_alpha = std::stod(argv[4]);
-    iagmm::TrainingData train_dataset;
-    iagmm::TrainingData test_dataset;
+    cmm::Component::_outlier_thres = 0;
+    cmm::Component::_alpha = std::stod(argv[4]);
+    cmm::TrainingData train_dataset;
+    cmm::TrainingData test_dataset;
     int dimension = 49;
 
 
@@ -67,8 +67,8 @@ int main(int argc, char** argv){
         test_dataset.add(mnist_dataset.test_labels[k],compute_histogram(mnist_dataset.test_images[k],dimension));
 
 
-    iagmm::Trainer<iagmm::GMM> trainer(train_dataset,test_dataset,dimension,10,batch_size);
-    trainer.access_classifier().set_update_mode(iagmm::GMM::BATCH);
+    cmm::Trainer<cmm::GMM> trainer(train_dataset,test_dataset,dimension,10,batch_size);
+    trainer.access_classifier().set_update_mode(cmm::GMM::BATCH);
     trainer.access_classifier().set_max_nb_components(std::stoi(argv[6]));
 
     if(std::stoi(argv[5]))

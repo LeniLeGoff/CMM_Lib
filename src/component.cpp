@@ -1,4 +1,4 @@
-#include "iagmm/component.hpp"
+#include "cmm/component.hpp"
 #include <map>
 #include <iostream>
 #include <boost/math/distributions/fisher_f.hpp>
@@ -6,7 +6,7 @@
 
 #define COEF 1.
 
-using namespace iagmm;
+using namespace cmm;
 
 
 double Component::_alpha = 0.25;

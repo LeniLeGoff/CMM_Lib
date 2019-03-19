@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(iagmm)
+project(cmm)
 
 # The syntax set...CACHE used below chooses a value while letting caller override it.
 
@@ -41,8 +41,8 @@ include_directories(/usr/local/include/
 /home/le_goff/Libraries/eigen-3.3.4)
 
 
-FILE(GLOB_RECURSE HEADFILES "include/iagmm/*.hpp")
-FILE(GLOB_RECURSE SRCFILES "src/*cpp" "include/iagmm/mcs_fct.hpp")
+FILE(GLOB_RECURSE HEADFILES "include/cmm/*.hpp")
+FILE(GLOB_RECURSE SRCFILES "src/*cpp" "include/cmm/mcs_fct.hpp")
 
 add_custom_target(headers SOURCES ${HEADFILES})
 
@@ -61,61 +61,61 @@ option(NO_PARALLEL "If enabled, force sequential execution.  Very useful for deb
 
 
 
-add_library(iagmm SHARED ${SRCFILES})
+add_library(cmm SHARED ${SRCFILES})
 
 if (NO_PARALLEL)
   add_definitions("-DNO_PARALLEL")
 else (NO_PARALLEL)
   set(CMAKE_CXX_FLAGS "-fopenmp ${CMAKE_CXX_FLAGS}")
-  target_link_libraries(iagmm tbb)  
+  target_link_libraries(cmm tbb)
 endif(NO_PARALLEL) 
 
-target_link_libraries(iagmm boost_serialization boost_chrono boost_filesystem)
+target_link_libraries(cmm boost_serialization boost_chrono boost_filesystem)
 
 
-# The EXPORT option in install() and the install(EXPORT...) make iagmm
+# The EXPORT option in install() and the install(EXPORT...) make cmm
 # library available to other projects, ref
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Exporting-and-Importing-Targets
-install(TARGETS ${PROJECT_NAME} EXPORT iagmm-targets
+install(TARGETS ${PROJECT_NAME} EXPORT cmm-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib)
 
-install(EXPORT iagmm-targets DESTINATION lib/iagmm)
+install(EXPORT cmm-targets DESTINATION lib/cmm)
 
 # Caller CMake project can use:
-# add_library(iagmm SHARED IMPORTED)
-# set_property(TARGET iagmm PROPERTY IMPORTED_LOCATION "${IAGMM_INSTALL_TREE}/lib/libiagmm.so" )
+# add_library(cmm SHARED IMPORTED)
+# set_property(TARGET cmm PROPERTY IMPORTED_LOCATION "${cmm_INSTALL_TREE}/lib/libcmm.so" )
 # and be called like this:
-# cmake -DIAGMM_INSTALL_TREE=/some/path/ ...
+# cmake -Dcmm_INSTALL_TREE=/some/path/ ...
 #tools
 
-#add_executable(load_archive tools/load_archive.cpp)
-#target_link_libraries(load_archive iagmm )
+#add_executable(load_archive tools/load_archive.cpp)iagmm
+#target_link_libraries(load_archive cmm )
 
 add_executable(gen_archive_stat tools/gen_archive_stat.cpp)
-target_link_libraries(gen_archive_stat iagmm yaml-cpp boost_serialization )
+target_link_libraries(gen_archive_stat cmm yaml-cpp boost_serialization )
 
 add_executable(gmm_loglikelihood tools/gmm_loglikelihood.cpp)
-target_link_libraries(gmm_loglikelihood iagmm yaml-cpp boost_serialization boost_system boost_filesystem)
+target_link_libraries(gmm_loglikelihood cmm yaml-cpp boost_serialization boost_system boost_filesystem)
 
 #add_executable(batch_train_gmm tools/batch_train_gmm.cpp)
-#target_link_libraries(batch_train_gmm iagmm yaml-cpp boost_serialization boost_system)
+#target_link_libraries(batch_train_gmm cmm yaml-cpp boost_serialization boost_system)
 
 add_executable(online_train_gmm tools/online_train_gmm.cpp)
-target_link_libraries(online_train_gmm iagmm yaml-cpp boost_serialization boost_system)
+target_link_libraries(online_train_gmm cmm yaml-cpp boost_serialization boost_system)
 
 add_executable(yml_to_libsvm tools/yml_to_libsvm.cpp)
-target_link_libraries(yml_to_libsvm iagmm yaml-cpp boost_serialization boost_system)
+target_link_libraries(yml_to_libsvm cmm yaml-cpp boost_serialization boost_system)
 
 add_executable(yml_to_data_labels tools/yml_to_data_labels.cpp)
-target_link_libraries(yml_to_data_labels iagmm yaml-cpp boost_serialization boost_system)
+target_link_libraries(yml_to_data_labels cmm yaml-cpp boost_serialization boost_system)
 
 #examples
 add_executable(mnist_batch example/mnist_batch.cpp)
-target_link_libraries(mnist_batch iagmm tbb yaml-cpp)
+target_link_libraries(mnist_batch cmm tbb yaml-cpp)
 
 add_executable(eggholder_two_class_problem example/eggholder_two_class_problem.cpp)
-target_link_libraries(eggholder_two_class_problem iagmm tbb yaml-cpp)
+target_link_libraries(eggholder_two_class_problem cmm tbb yaml-cpp)
 
 ####
 
@@ -125,35 +125,35 @@ if(BUILD_TESTS)
 find_package(OpenCV)
 
 add_executable(test_1 test/test.cpp)
-target_link_libraries(test_1 iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+target_link_libraries(test_1 cmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(test_batch test/test_batch.cpp)
-#target_link_libraries(test_batch iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#target_link_libraries(test_batch cmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(test_false_samples test/test_false_samples.cpp)
-#target_link_libraries(test_false_samples iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#target_link_libraries(test_false_samples cmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 add_executable(multiclass_test test/multiclass_test.cpp)
-target_link_libraries(multiclass_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+target_link_libraries(multiclass_test cmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 
 add_executable(incrgmm_test test/incrgmm_test.cpp)
-target_link_libraries(incrgmm_test iagmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+target_link_libraries(incrgmm_test cmm yaml-cpp tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 add_executable(mnist_test test/mnist_test.cpp)
 target_link_libraries(mnist_test tbb  ${OpenCV_LIBRARIES})
 
 #add_executable(mcs_test test/mcs_test.cpp)
-#target_link_libraries(mcs_test iagmm  yaml-cpp.so)
+#target_link_libraries(mcs_test cmm  yaml-cpp.so)
 
 #add_executable(test_mvn test/test_mvn.cpp)
-#target_link_libraries(test_mvn iagmm tbb)
+#target_link_libraries(test_mvn cmm tbb)
 
 #add_executable(test_em test/test_em.cpp)
-#target_link_libraries(test_em iagmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
+#target_link_libraries(test_em cmm tbb sfml-window sfml-system sfml-graphics boost_serialization boost_system boost_chrono)
 
 #add_executable(test_serial test/test_serial.cpp)
-#target_link_libraries(test_serial iagmm sfml-window sfml-system sfml-graphics boost_serialization)
+#target_link_libraries(test_serial cmm sfml-window sfml-system sfml-graphics boost_serialization)
 endif()
 ####
 

@@ -16,13 +16,14 @@
 #define PI 3.14159265359
 
 
-namespace iagmm {
+namespace cmm {
 
 typedef std::vector<Eigen::VectorXd> samples_t;
 
 /**
  * @brief The Component class
- * This class is relative to the GMM classifier. A component represent a gaussian. It is constitute of a set of sample of same class, a dimension of the feature space.
+ * This class is relative to the GMM classifier. A component represent a gaussian. 
+ * It is constituted of a set of sample of same class, a dimension of the feature space.
  *
  * This class compute Gaussian distribution with a set of sample.
  *

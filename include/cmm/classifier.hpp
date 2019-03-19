@@ -9,7 +9,7 @@
 #endif
 #include "data.hpp"
 
-namespace iagmm {
+namespace cmm {
 
 
 /**
