@@ -10,7 +10,7 @@ Collaborative Mixture Models Library is an implementation of a machine learning 
 
 follow the command lines :
 <pre>
-cd IAGMM_Lib
+cd CMM_Lib
 mkdir build
 cd build
 cmake ..
