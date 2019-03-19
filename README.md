@@ -1,5 +1,5 @@
-## IAGMM_Lib
-Incremental and Adaptative Gaussian Mixture Model Library is an implementation of a machine learning algorithms based on GMM. The algorithm learn incrementaly and adapt the number of components during the learning.
+## CMM_Lib
+Collaborative Mixture Models Library is an implementation of a machine learning algorithms based on GMM. The algorithm learn from data and adapt the number of components during the learning. CMM could be online or offline trained.
 
 # Dependencies :
 - Eigen 3
