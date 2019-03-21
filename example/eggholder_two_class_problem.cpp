@@ -53,9 +53,8 @@ int main(int argc, char** argv){
     std::vector<int> label;
 
     Component::_alpha = std::stod(argv[1]);
-    Component::_outlier_thres = std::stod(argv[2]);
 
-    GMM gmm(2,2);
+    CollabMM gmm(2,2);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
         return (s1 - s2).squaredNorm();
@@ -72,7 +71,7 @@ int main(int argc, char** argv){
     else gmm.use_confidence(false);
 
 
-    gmm.set_update_mode(cmm::GMM::STOCHASTIC);
+    gmm.set_update_mode(cmm::CollabMM::STOCHASTIC);
     Eigen::VectorXd choice_dist_map = Eigen::VectorXd::Zero(MAX_Y*MAX_X);
 
     double error;

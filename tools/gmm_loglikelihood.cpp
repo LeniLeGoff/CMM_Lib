@@ -12,7 +12,7 @@
 
 using namespace cmm;
 
-void write_file(GMM& gmm, const std::string file,int iteration){
+void write_file(CollabMM& gmm, const std::string file,int iteration){
     std::ofstream ofs(file, std::ofstream::out | std::ofstream::app);
     if(!ofs.is_open()){
         std::cerr << "impossible d'ouvrir le fichier : " << file << std::endl;
@@ -42,7 +42,7 @@ int main(int argc, char** argv){
     std::string gmm_path;
     std::string dataset_path = argv[2];
     bool empty_ite = false;
-    TrainingData data;
+    Data data;
     int dim, nbr_class;
     data.load_yml(dataset_path,dim,nbr_class);
     for(;dir_it != end_it; ++dir_it){
@@ -75,11 +75,11 @@ int main(int argc, char** argv){
         }
 
         boost::archive::text_iarchive iarch(ifs);
-        GMM gmm;
+        CollabMM gmm;
         iarch >> gmm;
         ifs.close();
 
-        TrainingData data2;
+        Data data2;
         int dim, nbr_class;
         data2.load_yml(dataset_path,dim,nbr_class);
 

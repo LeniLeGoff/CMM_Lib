@@ -10,7 +10,6 @@ using namespace cmm;
 
 
 double Component::_alpha = 0.25;
-double Component::_outlier_thres = 0.;
 
 void Component::update_parameters(){
     if(_samples.size() <= 4){
@@ -223,18 +222,11 @@ bool Component::intersect(const Component::Ptr comp) const {
         return false;
     }
     boost::math::fisher_f_distribution<double> F1(p,n1 - p);
-//    boost::math::fisher_f_distribution<double> F2(p,n2-p);
     double q1 = boost::math::quantile(F1,1-_alpha);
-//    double q2 = boost::math::quantile(F2,0.95);
     double factor1 = (n1-1)*p*(n1+1)/((n1 - p)*n1)*q1;
-//    double factor2 = (n2-1)*p*(n2+1)/((n2-p)*n2)*q2;
-//    std::cout << factor1 << " " << factor2 << std::endl;
-//    double dist_mu;
+
     //* compute the vectors for intersection criterion
     diff_mu = (comp->get_mu()-_mu);
-//    dist_mu = diff_mu.norm();
-//    ellipse_vect1 = 1/factor1*(comp->covariance_inverse()*diff_mu/diff_mu.norm());
-//    ellipse_vect1 = factor1*(_covariance*diff_mu/diff_mu.norm());
     //*/
     double val = distance(comp->get_mu());
     if(val != val){
@@ -313,25 +305,6 @@ void Component::covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& deter
     inverse = V*singularValInv*U.transpose();
 }
 
-void Component::delete_outliers(){
-    if(_outlier_thres == 0)
-        return;
-    std::vector<int> indexes;
-    double est;
-    double max = compute_multivariate_normal_dist(_mu);
-    for(int i = 0; i < _samples.size(); i++){
-        est = compute_multivariate_normal_dist(_samples[i]);
-        if(est/max > _outlier_thres)
-            indexes.push_back(i);
-    }
-    std::vector<Eigen::VectorXd> n_samples;
-    for(const int& i : indexes)
-        n_samples.push_back(_samples[i]);
-    _samples.clear();
-    _samples = n_samples;
-    _size = _samples.size();
-}
-
 void Component::_check_samples(){
     for(int i = 0; i < _samples.size(); i++){
         if(_samples[i].rows() == 0){
@@ -351,13 +324,10 @@ std::string Component::print_parameters() const {
     std::stringstream stream;
     stream << "----------------------" << std::endl;
     stream << "lbl : " << _label << std::endl;
-//    stream << "pseudoinverse covariance : \n" << covariance_pseudoinverse() << std::endl;
     stream << "mu : \n" << _mu << std::endl;
     stream << "factor : " << _factor << std::endl;
     stream << "size : " << _samples.size() << std::endl;
-//    stream << "score : " << component_score() << std::endl;
     stream << "standard deviation : " << get_standard_deviation() << std::endl;
-//    stream << "maximum value : " << _max << std::endl;
     stream << "----------------------" << std::endl;
     return stream.str();
 }

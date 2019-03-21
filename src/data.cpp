@@ -2,14 +2,8 @@
 
 using namespace cmm;
 
-void TrainingData::generate_train_test_dataset(TrainingData& train, TrainingData& test,
-                                                float train_test_ratio){
 
-
-
-}
-
-bool TrainingData::load_yml(const std::string& filename, int& dimension, int& nbr_class){
+bool Data::load_yml(const std::string& filename, int& dimension, int& nbr_class){
     std::cout << "load dataset : " << filename << std::endl;
 
 
@@ -45,7 +39,7 @@ bool TrainingData::load_yml(const std::string& filename, int& dimension, int& nb
     return true;
 }
 
-bool TrainingData::save_yml(const std::string& filename) const{
+bool Data::save_yml(const std::string& filename) const{
 
     std::ofstream ofs(filename,std::ofstream::out);
     if(!ofs.is_open())
@@ -86,7 +80,7 @@ bool TrainingData::save_yml(const std::string& filename) const{
     return true;
 }
 
-bool TrainingData::save_libsvm(const std::string& filename) const{
+bool Data::save_libsvm(const std::string& filename) const{
     std::ofstream ofs(filename,std::ofstream::out);
     if(!ofs.is_open())
         return false;
@@ -103,7 +97,7 @@ bool TrainingData::save_libsvm(const std::string& filename) const{
 
 }
 
-bool TrainingData::save_data_label(const std::string& filename) const{
+bool Data::save_data_label(const std::string& filename) const{
     std::ofstream ofs(filename + ".data",std::ofstream::out);
     if(!ofs.is_open())
         return false;

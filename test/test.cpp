@@ -50,7 +50,7 @@ int main(int argc, char** argv){
     double estimated_space[MAX_X][MAX_Y];
     std::vector<int> label;
     //    std::vector<Cluster::Ptr> model;
-    GMM gmm(2,2);
+    CollabMM gmm(2,2);
     gmm.set_dataset_size_max(400);
     gmm.set_distance_function(
         [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {

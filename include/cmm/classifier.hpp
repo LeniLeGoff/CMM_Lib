@@ -51,7 +51,7 @@ public:
 
     /**
      * @brief copy constructor
-     * @param c a classifier.
+     * @param c : classifier.
      */
     Classifier(const Classifier &c) :
         _nbr_class(c._nbr_class),
@@ -70,7 +70,7 @@ public:
     virtual std::vector<double> compute_estimation (const Eigen::VectorXd& sample) const = 0;
 
     /**
-     * @brief update the classifier according the dataset
+     * @brief update the classifier according to the dataset
      */
     virtual void update() = 0;
 
@@ -96,7 +96,7 @@ public:
      * @param results the prediction of label
      * @return error of prediction
      */
-    virtual double predict(const TrainingData& data, std::vector<std::vector<double>>& results){
+    virtual double predict(const Data& data, std::vector<std::vector<double>>& results){
         results.resize(data.size());
 
 #ifdef NO_PARALLEL
@@ -132,19 +132,21 @@ public:
      */
     size_t dataset_size() const {return _samples.size();}
 
-    /**
-     * @brief get_samples
-     * @return all the samples of the training dataset
-     */
-    const TrainingData& get_samples() const {return _samples;}
-    void set_samples(TrainingData samples){_samples = samples;}
+
+    //** Getters & Setters
+    const Data& get_samples() const {return _samples;}
+    void set_samples(Data samples){_samples = samples;}
     int get_nbr_class() const {return _nbr_class;}
     int get_dimension() const {return _dimension;}
 
     void set_distance_function(_distance_f distance){
         _distance = distance;
     }
+    //*/
 
+    /**
+     * @brief compute an estimation of class membership for all the samples in the training dataset
+     */
     void _estimate_training_dataset(){
         _samples.estimations.resize(_samples.size());
 
@@ -169,7 +171,7 @@ public:
 protected:
     int _nbr_class;
     int _dimension;
-    TrainingData _samples;
+    Data _samples;
 
     _distance_f _distance;
 };

@@ -10,7 +10,7 @@
 
 using namespace cmm;
 
-void write_file(GMM& gmm, const std::string file){
+void write_file(CollabMM& gmm, const std::string file){
     std::ofstream ofs(file);
     if(!ofs.is_open()){
         std::cerr << "impossible d'ouvrir le fichier : " << file << std::endl;
@@ -88,11 +88,11 @@ int main(int argc, char** argv){
     }
 
     boost::archive::text_iarchive iarch(ifs);
-    GMM gmm;
+    CollabMM gmm;
     iarch >> gmm;
     ifs.close();
 
-    TrainingData data;
+    Data data;
     int dim, nbr_class;
     data.load_yml(argv[2],dim,nbr_class);
 

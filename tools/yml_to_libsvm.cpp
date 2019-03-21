@@ -9,7 +9,7 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    cmm::TrainingData data;
+    cmm::Data data;
     int dimension, nbr_class;
     data.load_yml(argv[1],dimension,nbr_class);
     std::vector<std::string> stringsplit;

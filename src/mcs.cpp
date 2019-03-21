@@ -83,6 +83,6 @@ int MCS::next_sample(const std::map<std::string,std::vector<std::pair<Eigen::Vec
     return indexes[choice];
 }
 
-void MCS::set_samples(std::string mod, TrainingData &data){
+void MCS::set_samples(std::string mod, Data &data){
     _classifiers[mod]->set_samples(data);
 }

@@ -96,9 +96,14 @@ public:
      */
     double distance(const Eigen::VectorXd& X) const;
 
+    /**
+     * @brief compute intersectation condition of this with comp
+     * @param comp
+     * @return true if the components are intersecting false otherwise
+     */
     bool intersect(const Component::Ptr comp) const;
 
-    //Getters & Setters
+    //** Getters & Setters
     void set_factor(double f){_factor = f;}
     double get_factor() const {return _factor;}
     int get_label() const {return _label;}
@@ -111,27 +116,37 @@ public:
     int get_dimension() const {return _dimension;}
     const Eigen::MatrixXd& get_covariance() const {return _covariance;}
     void set_covariance(const Eigen::MatrixXd& covariance){_covariance = covariance;}
+    //*/
 
+    /**
+     * @brief remove a sample from the component by index
+     * @param index of the samples
+     */
     void remove_sample(int i){
         _samples.erase(_samples.begin() + i);
         _samples.shrink_to_fit();
     }
 
+    /**
+     * @brief printable format of the parameters values
+     * @return a string containing the value of the variable
+     */
     std::string print_parameters() const;
 
-
-    double diameter(){
-        double dist , diameter = (_samples[0] - _mu).squaredNorm();
-        for(auto& s : _samples){
-            dist = (s - _mu).squaredNorm();
-            if(dist > diameter)
-                diameter = dist;
-        }
-        return diameter;
-    }
-
+    /**
+     * @brief Compute the true inverse of the covariance. It is assumed that the covariance matrix is invertible
+     * @param inverse matrix
+     * @param determinant of the covariance matrix
+     */
     void covariance_inverse(Eigen::MatrixXd& inverse, double& determinant) const;
+
+    /**
+     * @brief Compute the pseudo inverse of the covariance matrix by using its singular value decomposition
+     * @param pseudo inverse matrix
+     * @param pseudo determinant of the covariance matrix
+     */
     void covariance_pseudoinverse(Eigen::MatrixXd& inverse, double& determinant) const;
+
 
     template <typename archive>
     void serialize(archive& arch, const unsigned int v){
@@ -143,23 +158,29 @@ public:
         arch & _label;
         arch & _size;
     }
+
+    /**
+     * @brief add X to the dataset and then do an incremental update of the parameters
+     * @param the new samples added in the dataset
+     */
     void _incr_parameters(const Eigen::VectorXd& X);
 
-    static double _alpha;
-    static double _outlier_thres;
+    static double _alpha; /**<hyperparameters controlling the sensibility of intersection criterion*/
 
-    void delete_outliers();
 
 private:
+    /**
+     * @brief check and remove artefakt samples
+     */
     void _check_samples();
 
-    Eigen::MatrixXd _covariance;
-    Eigen::VectorXd _mu;
-    std::vector<Eigen::VectorXd> _samples;
-    int _size = 0;
-    int _dimension;
-    double _factor;
-    int _label;
+    Eigen::MatrixXd _covariance; /**<covariance matrix of the normal distribution encoding the component*/
+    Eigen::VectorXd _mu; /**<the mean of the normal distribution encoding the component*/
+    std::vector<Eigen::VectorXd> _samples; /**<the dataset on which the parameters of the normal distribution are computed*/
+    int _size = 0; /**<Number of samples in the dataset*/
+    int _dimension; /**<the dimension of the multivariate normal distribution*/
+    double _factor; /**<the multiplicator factor of the component used when combined in the mixture*/
+    int _label; /**<the label of the component corresponding to the class all the samples belong*/
 };
 
 }

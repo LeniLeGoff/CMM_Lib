@@ -50,9 +50,9 @@ public:
 
     std::map<std::string,Classifier::Ptr>& access_classifiers(){return _classifiers;}
 
-    void set_samples(std::string mod, TrainingData& data);
+    void set_samples(std::string mod, Data& data);
     int get_nb_samples(){return _classifiers.begin()->second->get_samples().size();}
-    const TrainingData& get_samples(){return _classifiers.begin()->second->get_samples();}
+    const Data& get_samples(){return _classifiers.begin()->second->get_samples();}
     int get_nbr_class(){return _nbr_class;}
 
 private:

@@ -10,13 +10,12 @@
 
 namespace cmm{
 
-//TODO change class name to Data
-class TrainingData{
+class Data{
 
 public:
 
-    typedef std::shared_ptr<TrainingData> Ptr;
-    typedef const std::shared_ptr<TrainingData> ConstPtr;
+    typedef std::shared_ptr<Data> Ptr;
+    typedef const std::shared_ptr<Data> ConstPtr;
 
     /**
      * @brief element_t : (label; data)
@@ -28,9 +27,14 @@ public:
     /**
      * @brief default constructor
      */
-    TrainingData(){}
+    Data(){}
 
-    TrainingData(int dim, int nbr_class){
+    /**
+     * @brief Basic constructor. Initialize the dataset with the dimension of the samples and the number of class.
+     * @param dim
+     * @param nbr_class
+     */
+    Data(int dim, int nbr_class){
         _dimension = dim;
         _nbr_class = nbr_class;
     }
@@ -39,7 +43,7 @@ public:
      * @brief copy constructor
      * @param d
      */
-    TrainingData(const TrainingData& d) :
+    Data(const Data& d) :
         _data(d._data),
         estimations(d.estimations),
         _dimension(d._dimension),
@@ -48,33 +52,28 @@ public:
 
     /**
      * @brief add an element in the data
-     * @param positive data or negative data
-     * @param data
+     * @param a label
+     * @param a sample
      */
     void add(int label,const Eigen::VectorXd& d){
         _data.push_back(std::make_pair(label,d));
     }
 
-//    void add(int label,const Eigen::VectorXd& d,double quality){
-//        _data.push_back(std::make_pair(label,d));
-//        _qualities.push_back(quality);
-//    }
 
+    /**
+     * @brief add an element in the data
+     * @param elt : a pair of a label and a sample
+     */
     void add(const element_t& elt){
         _data.push_back(elt);
     }
 
-//    void add(const element_t &elt, double quality){
-//        _data.push_back(elt);
-//        _qualities.push_back(quality);
-//    }
 
+    /**
+     * @brief erase a sample from the dataset by index
+     * @param index i
+     */
     void erase(int i){
-
-//        if(_qualities.size() == _data.size()){
-//            _qualities.erase(_qualities.begin() + i);
-//            _qualities.shrink_to_fit();
-//        }
         _data.erase(_data.begin() + i);
         _data.shrink_to_fit();
     }
@@ -87,22 +86,22 @@ public:
     }
 
     /**
-     * @brief operator []
+     * @brief access to a data per index
      * @param i
-     * @return
+     * @return constant reference to the element
      */
     const element_t& operator [](size_t i) const {return _data[i];}
 
     /**
-     * @brief operator []
+     * @brief access to a data per index
      * @param i
-     * @return
+     * @return refereence to the element
      */
     element_t& operator [](size_t i){return _data[i];}
 
     /**
      * @brief number of elements
-     * @return
+     * @return number of elements
      */
     size_t size() const {return _data.size();}
 
@@ -125,31 +124,64 @@ public:
         return res;
     }
 
+    /**
+     * @brief access to the last element added.
+     * @return constant reference to this element
+     */
     const element_t& last(){return _data.back();}
 
-    estimation_t estimations;
+    estimation_t estimations;/**<estimations of the samples in the dataset. They must be computed with an external classifier*/
 
-    void generate_train_test_dataset(TrainingData& train, TrainingData& test, float train_test_ratio);
+    /**
+     * @brief share randomly the dataset between a training and test dataset according to a ratio
+     * @param train dataset
+     * @param test dataset
+     * @param train test size ratio
+     */
+    void generate_train_test_dataset(Data& train, Data& test, float train_test_ratio);
 
+    /**
+     * @brief load a dataset from yaml file
+     * @param filename
+     * @param dimension
+     * @param nbr_class
+     * @return true if the dataset is successfully loaded
+     */
     bool load_yml(const std::string& filename, int& dimension, int& nbr_class);
+
+    /**
+     * @brief export the dataset into a yaml
+     * @param filename
+     * @return true if the dataset is successfully exported
+     */
     bool save_yml(const std::string& filename) const;
+
+    /**
+     * @brief export the dataset into a libsvm format
+     * @param filename
+     * @return true if the dataset is successfully exported
+     */
     bool save_libsvm(const std::string& filename) const;
+
+    /**
+     * @brief export the dataset into a .data/.labels format
+     * @param filename
+     * @return true if the dataset is successfully exported
+     */
     bool save_data_label(const std::string& filename) const;
 
 
-//    const estimation_t& get_qualities(){return _qualities;}
 
 protected:
-    data_t _data;
-//    estimation_t _qualities;
-    int _dimension;
-    int _nbr_class;
+    data_t _data; /**<the dataset*/
+    int _dimension;/**<the dimension of the samples*/
+    int _nbr_class;/**<the number of class*/
 };
 
-template <typename Data>
-inline std::ostream& operator<< (std::ostream& os,const TrainingData& dataset ){
+template <typename D>
+inline std::ostream& operator<< (std::ostream& os,const Data& dataset ){
 
-    typename TrainingData::data_t data_set = dataset.get();
+    typename Data::data_t data_set = dataset.get();
     for(auto data : data_set){
         os << "1 : ";
         os << "l : ";

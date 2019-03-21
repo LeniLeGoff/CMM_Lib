@@ -43,7 +43,7 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
-    Trainer(const TrainingData& data, int dimension, int nbr_class, int batch_size = 10) :
+    Trainer(const Data& data, int dimension, int nbr_class, int batch_size = 10) :
         _train_data(data), _batch_size(batch_size){
         srand(time(NULL));
         _gen.seed(rand());
@@ -51,7 +51,7 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
-    Trainer(const TrainingData& train_data, const TrainingData& test_data,  int dimension, int nbr_class, int batch_size = 10) :
+    Trainer(const Data& train_data, const Data& test_data,  int dimension, int nbr_class, int batch_size = 10) :
         _train_data(train_data), _test_data(test_data), _batch_size(batch_size){
         srand(time(NULL));
         _gen.seed(rand());
@@ -149,13 +149,13 @@ public:
     }
 
     Classifier& access_classifier(){return _classifier;}
-    void set_train_data(const TrainingData& data){_train_data = data;}
-    void set_test_data(const TrainingData& data){_test_data = data;}
+    void set_train_data(const Data& data){_train_data = data;}
+    void set_test_data(const Data& data){_test_data = data;}
 
 
 private:
-    TrainingData _test_data;
-    TrainingData _train_data;
+    Data _test_data;
+    Data _train_data;
     Classifier _classifier;
 
     int _batch_size;
@@ -165,7 +165,7 @@ private:
 
     class _error_computer{
     public:
-        _error_computer(Classifier& model, TrainingData samples) :
+        _error_computer(Classifier& model, Data samples) :
             _model(model), _samples(samples), _sum(0){
             _sums.resize(_model.get_nbr_class(),0);
         }
@@ -203,7 +203,7 @@ private:
         Classifier _model;
         double _sum;
         std::vector<double> _sums;
-        TrainingData _samples;
+        Data _samples;
     };
 
 };
