@@ -8,7 +8,7 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/SVD>
 
-#include <iagmm/serialization.hpp>
+#include <cmm/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/shared_ptr.hpp>
 

@@ -25,6 +25,7 @@ typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&)> param_fct_t;
  *      - avg : combines the predictions computing the weighted average of them
  *      - max : return the prediction of the classifier with the highest parameter which is assumed to be a confidence.
  */
+//TODO change name
 struct combinatorial{
     static std::map<std::string,comb_fct_t> create_map(){
         std::map<std::string,comb_fct_t> map;
