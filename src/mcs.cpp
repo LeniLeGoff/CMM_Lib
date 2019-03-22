@@ -54,18 +54,6 @@ void MCS::update(){
         c.second->update();
 }
 
-void MCS::update_parameters(int label, double thres, double rate){
-
-    for(size_t i = 0; i < _estimations.size(); i++){
-        if(fabs(label - _estimations[i]) < thres)
-            _parameters(i) -= rate;
-        else
-            _parameters(i) += rate;
-    }
-
-
-}
-
 int MCS::next_sample(const std::map<std::string,std::vector<std::pair<Eigen::VectorXd,std::vector<double>>>>& samples, Eigen::VectorXd& choice_dist_map){
     std::vector<int> indexes;
     std::vector<Eigen::VectorXd> cdms;

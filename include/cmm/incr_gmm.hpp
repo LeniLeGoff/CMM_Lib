@@ -11,18 +11,20 @@
 
 namespace  cmm {
 
-
-class IncrementalGMM : public Classifier{
+/**
+ * @brief An implementation of CMM with incremental update of internal parameter. This implementation is still experimental.
+ */
+class IncrementalCollabMM : public Classifier{
 public:
 
     typedef std::map<int, std::vector<Component::Ptr>> model_t;
 
-    IncrementalGMM(){
+    IncrementalCollabMM(){
         _distance = [](const Eigen::VectorXd& s1,const Eigen::VectorXd& s2) -> double {
             return (s1 - s2).squaredNorm();
         };
     }
-    IncrementalGMM(int dimension, int nbr_class) :
+    IncrementalCollabMM(int dimension, int nbr_class) :
         Classifier(dimension,nbr_class){
 
         for(int i = 0; i < nbr_class; i++)
@@ -33,7 +35,7 @@ public:
         };
     }
 
-    IncrementalGMM(const model_t& model){
+    IncrementalCollabMM(const model_t& model){
         _dimension = model.at(0)[0]->get_dimension();
         _nbr_class = model.size();
         for(const auto& comps : model){
@@ -48,13 +50,13 @@ public:
         };
     }
 
-    IncrementalGMM(const IncrementalGMM& igmm) :
+    IncrementalCollabMM(const IncrementalCollabMM& igmm) :
         Classifier(igmm),_model(igmm._model),
     _last_index(igmm._last_index), _last_label(igmm._last_label),
     _alpha(igmm._alpha), _u(igmm._u), _beta(igmm._beta){}
 
 
-    ~IncrementalGMM(){
+    ~IncrementalCollabMM(){
         for(auto& comps: _model)
             for(auto& c : comps.second)
                 c.reset();
@@ -89,7 +91,6 @@ private:
     int _last_index = 0;
     int _last_label = 0;
 
-//    bool _llhood_drive;
 
     double _alpha; /**<factor split parameter*/
     double _u; /**<mean split parameter*/

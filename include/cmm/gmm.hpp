@@ -310,12 +310,9 @@ private:
      */
     std::pair<double,double> _coeff_intersection(int ind1, int lbl1, int ind2, int lbl2);
 
-    model_t _model;
-    std::map<int, Eigen::MatrixXd> _membership;
+    model_t _model; /**<the model : a gaussian mixture model per class*/
 
-    std::vector<CollabMM> _base_classifiers;
-
-    update_mode_t _update_mode = STOCHASTIC;
+    update_mode_t _update_mode = STOCHASTIC; /**<mode of update of CMM : Stochastic or Batch. Stochastic for online learning and Batch for offline*/
 
     boost::random::mt19937 _gen;
 
@@ -331,7 +328,7 @@ private:
     int _dataset_size_max = 1000;
 
     /**
-     * @brief The _score_calculator class is a helper function to compute the loglikelihood in parallel with tbb.
+     * @brief The _score_calculator class is a helper class to compute the loglikelihood in parallel with parallel reduce algo of intel tbb.
      */
     class _score_calculator{
     public:

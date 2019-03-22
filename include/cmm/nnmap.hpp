@@ -9,7 +9,7 @@ namespace cmm {
 
 /**
  * @brief The NNMap class
- * Simple classifier based on Nearest Neighbor Map
+ * Simple classifier based on a Nearest Neighbor Map
  */
 class NNMap : public Classifier{
 

@@ -18,7 +18,13 @@ typedef std::function<std::vector<double>(const Eigen::VectorXd&,
 
 typedef std::function<Eigen::VectorXd(const Eigen::VectorXd&)> param_fct_t;
 
-
+/**
+ * @brief Structure gathering all the possible combination function for the multi-classifier system.
+ *  The structure currently includes :
+ *      - sum : combines the predictions with a weighted sum
+ *      - avg : combines the predictions computing the weighted average of them
+ *      - max : return the prediction of the classifier with the highest parameter which is assumed to be a confidence.
+ */
 struct combinatorial{
     static std::map<std::string,comb_fct_t> create_map(){
         std::map<std::string,comb_fct_t> map;
@@ -67,29 +73,19 @@ struct combinatorial{
 
         });
 
-//        map.emplace("max2",
-//                    [](const Eigen::VectorXd& parameters,
-//                                    const std::vector<double>& estimations) -> double {
-
-//            Eigen::Vectpr
-
-//            double max = 0, max_val = confidences(0);
-//            for(int i = 0; i < confidences.size(); i++){
-//                if(max_val < confidences[i]){
-//                    max = i;
-//                }
-//            }
-
-//            return estimations[max];
-
-//        });
-
         return map;
     }
     static const std::map<std::string,comb_fct_t> fct_map;
 
 };
 
+/**
+ * @brief Structure gathering all the possible filter function of the parameters for the multi-classifier system.
+ * The structure includes :
+ *      - none : no filtering is applied
+ *      - linear : center the parameters around the average and with value between 0 and 1.
+ *      - sigmoid : center the parameters around the average using a sigmoïd function and with a value 0 and 1.
+ */
 struct param_estimation{
     static std::map<std::string,param_fct_t> create_map(){
         std::map<std::string,param_fct_t> map;

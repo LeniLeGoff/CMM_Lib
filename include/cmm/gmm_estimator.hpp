@@ -13,6 +13,9 @@
 namespace cmm{
 
 template <class gmm>
+/**
+ * @brief Helper class to estimate the prediction of CMM with parallel reduce algo of intel tbb
+ */
 class Estimator{
 public:
     Estimator(const gmm* model, const Eigen::VectorXd& X, int lbl)
@@ -56,6 +59,12 @@ private:
 };
 
 template<class gmm>
+/**
+ * @brief estimation of the class of sample X from a classifier of type GMM (either CMM or incremental CMM)
+ * @param the classifier
+ * @param a sample
+ * @return a vector containing the probability of membership to each class of sample X
+ */
 std::vector<double> estimation(const gmm* model, Eigen::VectorXd X){
     std::map<int,double> sum_map;
     for(int i = 0; i < model->get_nbr_class(); i++){

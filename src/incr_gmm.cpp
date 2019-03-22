@@ -3,7 +3,7 @@
 
 using namespace cmm;
 
-void IncrementalGMM::add(const Eigen::VectorXd &sample, int lbl){
+void IncrementalCollabMM::add(const Eigen::VectorXd &sample, int lbl){
     int r,c; //row and column indexes
 
     _samples.add(lbl,sample);
@@ -28,7 +28,7 @@ void IncrementalGMM::add(const Eigen::VectorXd &sample, int lbl){
 
 }
 
-void IncrementalGMM::update(){
+void IncrementalCollabMM::update(){
     int n,rand_ind/*,max_size,max_ind,min_ind,min_size*/;
     _estimate_training_dataset();
 
@@ -51,27 +51,27 @@ void IncrementalGMM::update(){
     }
 }
 
-std::vector<double> IncrementalGMM::compute_estimation(const Eigen::VectorXd &X) const{
+std::vector<double> IncrementalCollabMM::compute_estimation(const Eigen::VectorXd &X) const{
     if([&]() -> bool { for(int i = 0; i < _nbr_class; i++){if(!_model.at(i).empty()) return false;} return true;}())
         return std::vector<double>(_nbr_class,1./(double)_nbr_class);
 
 
-    return estimation<IncrementalGMM>(this,X);
+    return estimation<IncrementalCollabMM>(this,X);
 }
 
-void IncrementalGMM::new_component(const Eigen::VectorXd& sample, int label){
+void IncrementalCollabMM::new_component(const Eigen::VectorXd& sample, int label){
     Component::Ptr component(new Component(_dimension,label));
     component->_incr_parameters(sample);
     _model[label].push_back(component);
     update_factors();
 }
 
-void IncrementalGMM::update_factors(){
+void IncrementalCollabMM::update_factors(){
     for(int i = 0; i < _nbr_class; i++)
         _update_factors(i);
 }
 
-void IncrementalGMM::_update_factors(int lbl){
+void IncrementalCollabMM::_update_factors(int lbl){
     double sum_size = 0;
     for(auto& components : _model[lbl])
         sum_size += components->size();
@@ -81,7 +81,7 @@ void IncrementalGMM::_update_factors(int lbl){
     }
 }
 
-bool IncrementalGMM::_split(const Component::Ptr& comp){
+bool IncrementalCollabMM::_split(const Component::Ptr& comp){
     //* If the component have to few samples abort
     if(comp->size() < 5)
         return false;
@@ -218,7 +218,7 @@ bool IncrementalGMM::_split(const Component::Ptr& comp){
     return false;
 }
 
-bool IncrementalGMM::_merge(const Component::Ptr &comp){
+bool IncrementalCollabMM::_merge(const Component::Ptr &comp){
 
     // if comp have too few samples or there is only one component in lbl model abort
     if(comp->size() < 5 || _model[comp->get_label()].size() == 1)
@@ -274,5 +274,5 @@ bool IncrementalGMM::_merge(const Component::Ptr &comp){
     }
 }
 
-double IncrementalGMM::confidence(const Eigen::VectorXd &sample) const{return 1;}
-int IncrementalGMM::next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double> > > &samples, Eigen::VectorXd &choice_dist_map){return 0;}
+double IncrementalCollabMM::confidence(const Eigen::VectorXd &sample) const{return 1;}
+int IncrementalCollabMM::next_sample(const std::vector<std::pair<Eigen::VectorXd, std::vector<double> > > &samples, Eigen::VectorXd &choice_dist_map){return 0;}

@@ -15,13 +15,25 @@
 namespace cmm{
 
 template <class Classifier>
+/**
+ * @brief Class to train a classifier in batch from a test dataset and a train dataset
+ */
 class Trainer {
 public:
+    /**
+     * @brief Default constructor
+     */
     Trainer(){
         srand(time(NULL));
         _gen.seed(rand());
         _batch_size = 10;
     }
+
+    /**
+     * @brief construct the class from one dataset file which will be the train dataset
+     * @param dataset file in yaml format
+     * @param size of the batch. Default value is 10
+     */
     Trainer(const std::string &data_file, int batch_size = 10) :
         _batch_size(batch_size){
         srand(time(NULL));
@@ -32,6 +44,12 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
+    /**
+     * @brief Construct the class from two dataset files: a train dataset and a test dataset.
+     * @param train dataset file in yaml format
+     * @param test dataset file in yaml format
+     * @param size of the batch. Default value is 10
+     */
     Trainer(const std::string &train_data_file, const std::string &test_data_file, int batch_size = 10) :
         _batch_size(batch_size){
         srand(time(NULL));
@@ -43,6 +61,13 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
+    /**
+     * @brief Construct from a train dataset
+     * @param dataset
+     * @param dimension of the data
+     * @param number of classes
+     * @param size of the batch. Default value is 10
+     */
     Trainer(const Data& data, int dimension, int nbr_class, int batch_size = 10) :
         _train_data(data), _batch_size(batch_size){
         srand(time(NULL));
@@ -51,6 +76,14 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
+    /**
+     * @brief Construct from a train dataset and a test dataset
+     * @param train dataset
+     * @param test dataset
+     * @param dimension of the data
+     * @param number of classes
+     * @param size of the batch. Default value is 10
+     */
     Trainer(const Data& train_data, const Data& test_data,  int dimension, int nbr_class, int batch_size = 10) :
         _train_data(train_data), _test_data(test_data), _batch_size(batch_size){
         srand(time(NULL));
@@ -59,46 +92,17 @@ public:
         _classifier = Classifier(dimension, nbr_class);
     }
 
-
-
+    /**
+     * @brief copy constructor
+     * @param t
+     */
     Trainer(const Trainer& t) :
         _train_data(t._train_data), _test_data(t._test_data),
         _batch_size(t._batch_size), _classifier(t._classifier){}
 
-//    void initialize(){
-//        //*build the training and test data set
-//        int index;
-//        std::vector<Eigen::VectorXd> train_data, test_data;
-//        int size;
-//        for(int i = 0 ; i < _classifier.get_nbr_class(); i++){
-//            train_data = _data.get_data(i);
-//            test_data.clear();
-//            size = train_data.size();
-//            while((float)test_data.size()/(float)size < _test_set){
-//                boost::random::uniform_int_distribution<> dist(0,train_data.size());
-//                index = dist(_gen);
-//                test_data.push_back(train_data[index]);
-//                train_data.erase(train_data.begin() + index);
-//            }
-//            for(int j = 0; j < train_data.size(); j++)
-//                _train_data.add(i,train_data[j]);
-//            for(int j = 0; j <test_data.size(); j++)
-//                _test_data.add(i,test_data[j]);
-//        }
-////        std::vector<int> subst(_train_data.size());
-////        for(int i = 0; i < _train_data.size()/2; i++){
-////            boost::random::uniform_int_distribution<> dist(_train_data.size()/2+1,_train_data.size());
-////            int index = dist(_gen);
-////            subst[i] = index;
-////            subst[index] = i;
-////        }
-////        for(int i = 0; i < _train_data.size(); i++){
-
-////        }
-
-//        //*/
-//    }
-
+    /**
+     * @brief an epoch evaluate one batch
+     */
     void epoch(){
 
         int n;
@@ -126,6 +130,11 @@ public:
             _g_count = 0;
     }
 
+    /**
+     * @brief evaluate the test dataset
+     * @param a vector of the errors relative to each class
+     * @return the global error
+     */
     double test(std::vector<double> &errors){
         double error = 0;
         errors.resize(_classifier.get_nbr_class(),0);
@@ -148,21 +157,30 @@ public:
         return error;
     }
 
+    /**
+     * @brief accessor to the classifier
+     * @return
+     */
     Classifier& access_classifier(){return _classifier;}
+
+    //** GETTERS & SETTERS
     void set_train_data(const Data& data){_train_data = data;}
     void set_test_data(const Data& data){_test_data = data;}
-
+    //*/
 
 private:
-    Data _test_data;
-    Data _train_data;
-    Classifier _classifier;
+    Data _test_data;/**<the test dataset*/
+    Data _train_data;/**<the train dataset*/
+    Classifier _classifier;/**<the classifier*/
 
     int _batch_size;
     int _g_count = 0;
 
     boost::random::mt19937 _gen;
 
+    /**
+     * @brief Helper class to compute the error in parallel using parallel reduce algo of intel tbb.
+     */
     class _error_computer{
     public:
         _error_computer(Classifier& model, Data samples) :
